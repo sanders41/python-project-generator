@@ -902,12 +902,10 @@ version-resolver:
     labels:
       - 'breaking-change'
       - 'enhancement'
-      - 'feature'
   default: patch
 categories:
   - title: 'Features'
     labels:
-      - 'feature'
       - 'enhancement'
   - title: 'Bug Fixes'
     labels:
@@ -937,7 +935,7 @@ jobs:
     steps:
       - uses: release-drafter/release-drafter@v5
         with:
-          config-name: release-draft-template.yaml
+          config-name: release-draft-template.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 "#;
