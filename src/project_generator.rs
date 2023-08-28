@@ -516,6 +516,41 @@ __version__ = VERSION
     Ok(())
 }
 
+fn create_pypi_publish_file(project_slug: &str) -> Result<()> {
+    let file_path = format!("{project_slug}/.github/workflows/pypi_publish.yml");
+    let content = r#"name: PyPi Publish
+on:
+  release:
+    types:
+    - published
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "{{ cookiecutter.python_version }}"
+    - name: Install Poetry
+      run: |
+        pip install pipx
+        pipx install poetry
+    - name: Install Dependencies
+      run: |
+        poetry install
+    - name: Add pypi token to Poetry
+      run: |
+        poetry config pypi-token.pypi {{ "${{ secrets.PYPI_API_KEY }}" }}
+    - name: Publish package
+      run: poetry publish --build
+"#;
+
+    create_file_with_content(&file_path, content)?;
+
+    Ok(())
+}
+
 fn create_pyproject_toml(project_info: &ProjectInfo) -> Result<()> {
     let pyproject_path = format!("{}/pyproject.toml", project_info.project_slug,);
     let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
@@ -847,6 +882,12 @@ pub fn generate_project(project_info: &ProjectInfo) {
 
     if create_pyproject_toml(project_info).is_err() {
         let error_message = "Error creating pyproject.toml file";
+        println!("\n{}", error_message.red());
+        std::process::exit(1);
+    }
+
+    if create_pypi_publish_file(&project_info.project_slug).is_err() {
+        let error_message = "Error creating PYPI publish file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
     }
