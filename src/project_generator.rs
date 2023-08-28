@@ -636,6 +636,63 @@ fn create_readme(project_slug: &str, project_name: &str, project_description: &s
     Ok(())
 }
 
+fn create_release_drafter_file(project_slug: &str) -> Result<()> {
+    let template_file_path = format!("{project_slug}/.github/release_drafter_template.yml");
+    let template_content = r#"name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+exclude-labels:
+  - 'dependencies'
+  - 'skip-changelog'
+version-resolver:
+  minor:
+    labels:
+      - 'breaking-change'
+      - 'enhancement'
+      - 'feature'
+  default: patch
+categories:
+  - title: 'Features'
+    labels:
+      - 'feature'
+      - 'enhancement'
+  - title: 'Bug Fixes'
+    labels:
+      - 'bug'
+  - title: '⚠ Breaking changes'
+    label: 'breaking-change'
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+template: |
+  ## Changes
+
+  $CHANGES
+"#;
+
+    create_file_with_content(&template_file_path, template_content)?;
+
+    let file_path = format!("{project_slug}/.github/workflows/release_drafter.yml");
+    let content = r#"name: Release Drafter
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update_release_draft:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: release-drafter/release-drafter@v5
+        with:
+          config-name: release-draft-template.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+"#;
+
+    create_file_with_content(&file_path, content)?;
+
+    Ok(())
+}
+
 fn create_version_file(project_slug: &str, source_dir: &str, version: &str) -> Result<()> {
     let version_file_path = format!("{project_slug}/{source_dir}/_version.py");
     let version_content = format!(r#"VERSION = "{version}""#);
@@ -797,6 +854,14 @@ pub fn generate_project(project_info: &ProjectInfo) {
     if project_info.use_dependabot {
         if create_dependabot_file(&project_info.project_slug).is_err() {
             let error_message = "Error creating dependabot file";
+            println!("\n{}", error_message.red());
+            std::process::exit(1);
+        }
+    }
+
+    if project_info.use_release_drafter {
+        if create_release_drafter_file(&project_info.project_slug).is_err() {
+            let error_message = "Error creating release drafter file";
             println!("\n{}", error_message.red());
             std::process::exit(1);
         }
