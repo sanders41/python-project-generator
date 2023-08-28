@@ -935,7 +935,7 @@ jobs:
     steps:
       - uses: release-drafter/release-drafter@v5
         with:
-          config-name: release_draft_template.yml
+          config-name: release_drafter_template.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 "#;
