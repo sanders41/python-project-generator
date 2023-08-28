@@ -23,7 +23,7 @@ pub struct ProjectInfo {
     pub python_version: String,
     pub min_python_version: String,
     pub is_application: bool,
-    pub github_action_python_test_versions: String,
+    pub github_action_python_test_versions: Vec<String>,
     pub max_line_length: u8,
     pub use_dependabot: bool,
     pub use_continuous_deployment: bool,
@@ -187,8 +187,9 @@ pub fn get_project_info() -> ProjectInfo {
     }
 }
 
-fn github_action_python_test_versions_prompt(default: String) -> String {
+fn github_action_python_test_versions_prompt(default: String) -> Vec<String> {
     let mut line = String::new();
+    let mut versions: Vec<String> = Vec::new();
 
     print!("Python Versions for Github Actions Testing ({default}): ");
     std::io::stdout().flush().unwrap();
@@ -197,7 +198,10 @@ fn github_action_python_test_versions_prompt(default: String) -> String {
         .expect("Error: Could not read a line");
 
     if line.trim() == "" {
-        return default;
+        for version in default.replace(' ', "").split(',') {
+            versions.push(version.to_string());
+        }
+        return versions;
     }
 
     let version_check = line.replace(' ', "");
@@ -209,9 +213,11 @@ fn github_action_python_test_versions_prompt(default: String) -> String {
             println!("\n{}", error_message.red());
             std::process::exit(1);
         }
+
+        versions.push(version.to_string());
     }
 
-    line.trim().to_string()
+    versions
 }
 
 fn license_prompt() -> LicenseType {
