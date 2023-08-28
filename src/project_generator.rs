@@ -189,6 +189,31 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
     Ok(())
 }
 
+fn create_dependabot_file(project_slug: &str) -> Result<()> {
+    let file_path = format!("{project_slug}/.github/dependabot.yml");
+    let content = r#"version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    labels:
+    - skip-changelog
+    - dependencies
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: daily
+    labels:
+    - skip-changelog
+    - dependencies
+"#;
+
+    create_file_with_content(&file_path, content)?;
+
+    Ok(())
+}
+
 fn create_directories(project_slug: &str, source_dir: &str) -> Result<()> {
     let src = format!("{project_slug}/{source_dir}");
     create_dir_all(src)?;
@@ -491,6 +516,111 @@ __version__ = VERSION
     Ok(())
 }
 
+fn create_pyproject_toml(project_info: &ProjectInfo) -> Result<()> {
+    let pyproject_path = format!("{}/pyproject.toml", project_info.project_slug,);
+    let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
+
+    let pyprpoject = r#"[tool.poetry]
+name = "{{ project_slug }}"
+version = "{{ version }}"
+description = "{{ project_description }}"
+authors = ["{{ creator }} <{{ creator_email }}>"]
+{% if license != "NoLicense" -%}
+license = "{{ license }}"
+{% endif -%}
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^{{ min_python_version }}"
+
+{% if is_application -%}
+[tool.poetry.group.dev.dependencies]
+black = "23.7.0"
+mypy = "1.5.1"
+pre-commit = "3.3.3"
+pytest = "7.4.0"
+pytest-cov = "4.1.0"
+ruff = "0.0.285"
+tomli = {version = "2.0.1", python = "<3.11"}
+{% else %}
+[tool.poetry.group.dev.dependencies]
+black = ">=23.7.0"
+mypy = ">=1.5.1"
+pre-commit = ">=3.3.3"
+pytest = ">=7.4.0"
+pytest-cov = ">=4.1.0"
+ruff = ">=0.0.285"
+tomli = {>=version = "2.0.1", python = "<3.11"}
+{% endif %}
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = {{ max_line_length }}
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.egg
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.nox
+  | \.tox
+  | \.venv
+  | \venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | setup.py
+)/
+'''
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--cov={{ source_dir }} --cov-report term-missing --no-cov-on-fail"
+
+[tool.coverage.report]
+exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
+
+[tool.ruff]
+select = ["E", "F", "UP", "I001", "T201", "T203"]
+ignore = ["E501"]
+line-length = {{ max_line_length }}
+target-version = "py{{ pyupgrade_version }}"
+fix = true
+"#;
+
+    let pyproject_toml = render!(
+        pyprpoject,
+        project_slug => project_info.project_slug,
+        version => project_info.version,
+        project_description => project_info.project_description,
+        creator => project_info.creator,
+        creator_email => project_info.creator_email,
+        license => format!("{:?}", project_info.license),
+        min_python_version => project_info.min_python_version,
+        max_line_length => project_info.max_line_length,
+        source_dir => project_info.source_dir,
+        is_application => project_info.is_application,
+        pyupgrade_version => pyupgrade_version,
+    );
+
+    create_file_with_content(&pyproject_path, &pyproject_toml)?;
+
+    Ok(())
+}
+
 fn create_readme(project_slug: &str, project_name: &str, project_description: &str) -> Result<()> {
     let readme_path = format!("{project_slug}/README.md");
     let readme_content = format!(
@@ -658,114 +788,17 @@ pub fn generate_project(project_info: &ProjectInfo) {
         }
     }
 
-    if generate_pyproject_toml(project_info).is_err() {
+    if create_pyproject_toml(project_info).is_err() {
         let error_message = "Error creating pyproject.toml file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
     }
-}
 
-fn generate_pyproject_toml(project_info: &ProjectInfo) -> Result<()> {
-    let pyproject_path = format!("{}/pyproject.toml", project_info.project_slug,);
-    let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
-
-    let pyprpoject = r#"[tool.poetry]
-name = "{{ project_slug }}"
-version = "{{ version }}"
-description = "{{ project_description }}"
-authors = ["{{ creator }} <{{ creator_email }}>"]
-{% if license != "NoLicense" -%}
-license = "{{ license }}"
-{% endif -%}
-readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^{{ min_python_version }}"
-
-{% if is_application -%}
-[tool.poetry.group.dev.dependencies]
-black = "23.7.0"
-mypy = "1.5.1"
-pre-commit = "3.3.3"
-pytest = "7.4.0"
-pytest-cov = "4.1.0"
-ruff = "0.0.285"
-tomli = {version = "2.0.1", python = "<3.11"}
-{% else %}
-[tool.poetry.group.dev.dependencies]
-black = ">=23.7.0"
-mypy = ">=1.5.1"
-pre-commit = ">=3.3.3"
-pytest = ">=7.4.0"
-pytest-cov = ">=4.1.0"
-ruff = ">=0.0.285"
-tomli = {>=version = "2.0.1", python = "<3.11"}
-{% endif %}
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.black]
-line-length = {{ max_line_length }}
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.egg
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.nox
-  | \.tox
-  | \.venv
-  | \venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | setup.py
-)/
-'''
-
-[tool.mypy]
-check_untyped_defs = true
-disallow_untyped_defs = true
-
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-disallow_untyped_defs = false
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "--cov={{ source_dir }} --cov-report term-missing --no-cov-on-fail"
-
-[tool.coverage.report]
-exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
-
-[tool.ruff]
-select = ["E", "F", "UP", "I001", "T201", "T203"]
-ignore = ["E501"]
-line-length = {{ max_line_length }}
-target-version = "py{{ pyupgrade_version }}"
-fix = true
-"#;
-
-    let pyproject_toml = render!(
-        pyprpoject,
-        project_slug => project_info.project_slug,
-        version => project_info.version,
-        project_description => project_info.project_description,
-        creator => project_info.creator,
-        creator_email => project_info.creator_email,
-        license => format!("{:?}", project_info.license),
-        min_python_version => project_info.min_python_version,
-        max_line_length => project_info.max_line_length,
-        source_dir => project_info.source_dir,
-        is_application => project_info.is_application,
-        pyupgrade_version => pyupgrade_version,
-    );
-
-    create_file_with_content(&pyproject_path, &pyproject_toml)?;
-
-    Ok(())
+    if project_info.use_dependabot {
+        if create_dependabot_file(&project_info.project_slug).is_err() {
+            let error_message = "Error creating dependabot file";
+            println!("\n{}", error_message.red());
+            std::process::exit(1);
+        }
+    }
 }
