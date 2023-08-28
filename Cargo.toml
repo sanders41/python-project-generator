@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.75"
 colored = "2.0.4"
+minijinja = "1.0.7"

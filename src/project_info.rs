@@ -4,7 +4,7 @@ use colored::*;
 
 #[derive(Debug)]
 pub enum LicenseType {
-    MIT,
+    Mit,
     Apache2,
     NoLicense,
 }
@@ -19,6 +19,7 @@ pub struct ProjectInfo {
     pub creator_email: String,
     pub license: LicenseType,
     pub copywright_year: Option<String>,
+    pub version: String,
     pub python_version: String,
     pub min_python_version: String,
     pub is_application: bool,
@@ -44,11 +45,11 @@ fn boolean_prompt(prompt_message: &str) -> bool {
         .expect("Error: Could not read a line");
 
     if line.trim() == "1" || line.trim() == "" {
-        return true;
+        true
     } else if line.trim() == "2" {
-        return false;
+        false
     } else {
-        let error_message = format!("Invalid selection");
+        let error_message = "Invalid selection";
         println!("\n{}", error_message.red());
         std::process::exit(1);
     }
@@ -68,21 +69,21 @@ fn is_application_prompt() -> bool {
         .expect("Error: Could not read a line");
 
     if line.trim() == "1" || line.trim() == "" {
-        return true;
+        true
     } else if line.trim() == "2" {
-        return false;
+        false
     } else {
-        let error_message = format!("Invalid license type");
+        let error_message = "Invalid license type";
         println!("\n{}", error_message.red());
         std::process::exit(1);
     }
 }
 
 fn is_valid_python_version(version: &str) -> bool {
-    let split_version = version.split(".");
+    let split_version = version.split('.');
     let split_length = split_version.clone().count();
 
-    if split_length < 2 || split_length > 3 {
+    if !(2..=3).contains(&split_length) {
         return false;
     }
 
@@ -117,7 +118,7 @@ fn copywright_year_prompt(license: &LicenseType) -> String {
     } else {
         match line.trim().parse::<i32>() {
             Ok(y) => {
-                if y < 1000 || y > 9999 {
+                if !(1000..=9999).contains(&y) {
                     let error_message = format!("{y} is not a valid year");
                     println!("\n{}", error_message.red());
                     std::process::exit(1);
@@ -131,14 +132,14 @@ fn copywright_year_prompt(license: &LicenseType) -> String {
         };
     }
 
-    line
+    line.trim().to_string()
 }
 
 pub fn get_project_info() -> ProjectInfo {
     let project_name = prompt("Project Name", None);
-    let project_slug_default = &project_name.replace(" ", "-").to_lowercase();
+    let project_slug_default = &project_name.replace(' ', "-").to_lowercase();
     let project_slug = prompt("Project Slug", Some(project_slug_default));
-    let source_dir_default = &project_name.replace(" ", "_").to_lowercase();
+    let source_dir_default = &project_name.replace(' ', "_").to_lowercase();
     let source_dir = prompt("Source Directory", Some(source_dir_default));
     let project_description = prompt("Project Description", None);
     let creator = prompt("Creator", None);
@@ -146,12 +147,13 @@ pub fn get_project_info() -> ProjectInfo {
     let license = license_prompt();
 
     let copywright_year: Option<String>;
-    if let LicenseType::MIT = license {
+    if let LicenseType::Mit = license {
         copywright_year = Some(copywright_year_prompt(&license));
     } else {
         copywright_year = None;
     }
 
+    let version = prompt("Version", Some("0.1.0"));
     let python_version = python_version_prompt("3.11");
     let min_python_version = python_version_prompt("3.8");
     let github_action_python_test_versions =
@@ -172,6 +174,7 @@ pub fn get_project_info() -> ProjectInfo {
         creator_email,
         license,
         copywright_year,
+        version,
         python_version,
         min_python_version,
         is_application,
@@ -197,10 +200,10 @@ fn github_action_python_test_versions_prompt(default: String) -> String {
         return default;
     }
 
-    let version_check = line.replace(" ", "");
+    let version_check = line.replace(' ', "");
     println!("{version_check}");
 
-    for version in version_check.split(",") {
+    for version in version_check.split(',') {
         if !is_valid_python_version(version) {
             let error_message = format!("{} is not a valid Python Version", version);
             println!("\n{}", error_message.red());
@@ -216,7 +219,7 @@ fn license_prompt() -> LicenseType {
     let license: LicenseType;
 
     println!("Select License");
-    println!("  1 - MIT");
+    println!("  1 - Mit");
     println!("  2 - Apache 2");
     println!("  3 - No License");
     print!("  Choose from [1, 2, 3] (1): ");
@@ -227,13 +230,13 @@ fn license_prompt() -> LicenseType {
         .expect("Error: Could not read a line");
 
     if line.trim() == "1" || line.trim() == "" {
-        license = LicenseType::MIT;
+        license = LicenseType::Mit;
     } else if line.trim() == "2" {
         license = LicenseType::Apache2;
     } else if line.trim() == "3" {
         license = LicenseType::NoLicense;
     } else {
-        let error_message = format!("Invalid license type");
+        let error_message = "Invalid license type";
         println!("\n{}", error_message.red());
         std::process::exit(1);
     }
