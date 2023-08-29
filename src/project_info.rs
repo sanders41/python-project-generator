@@ -1,4 +1,5 @@
 use std::io::Write;
+use std::path::Path;
 
 use colored::*;
 
@@ -160,6 +161,13 @@ pub fn get_project_info() -> ProjectInfo {
         default: Some(project_slug_default),
     };
     let project_slug = project_slug_prompt.show_prompt();
+
+    if Path::new(&project_slug).exists() {
+        let error_message = format!("The {project_slug} directory already exists");
+        println!("\n{}", error_message.red());
+        std::process::exit(1);
+    }
+
     let source_dir_default = project_name.replace(' ', "_").to_lowercase();
     let source_dir_prompt = Prompt {
         prompt_text: "Source Directory".to_string(),
