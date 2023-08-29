@@ -9,6 +9,44 @@ pub enum LicenseType {
     NoLicense,
 }
 
+struct Prompt {
+    prompt_text: String,
+    default: Option<String>,
+}
+
+trait PromptInput {
+    fn show_prompt(&self) -> String;
+}
+
+impl PromptInput for Prompt {
+    fn show_prompt(&self) -> String {
+        let mut input = String::new();
+
+        if let Some(d) = &self.default {
+            print!("{} ({d}): ", self.prompt_text);
+        } else {
+            print!("{}: ", self.prompt_text);
+        }
+
+        std::io::stdout().flush().unwrap();
+        std::io::stdin()
+            .read_line(&mut input)
+            .expect("Error: Could not read a line");
+
+        if input.trim() == "" {
+            if let Some(d) = &self.default {
+                return d.to_string();
+            } else {
+                let error_message = format!(r#"A "{}" value is required"#, self.prompt_text);
+                println!("\n{}", error_message.red());
+                std::process::exit(1);
+            }
+        }
+
+        input.trim().to_string()
+    }
+}
+
 #[derive(Debug)]
 pub struct ProjectInfo {
     pub project_name: String,
@@ -31,22 +69,16 @@ pub struct ProjectInfo {
     pub use_multi_os_ci: bool,
 }
 
-fn boolean_prompt(prompt_message: &str) -> bool {
-    let mut line = String::new();
+fn boolean_prompt(prompt_text: String) -> bool {
+    let prompt = Prompt {
+        prompt_text,
+        default: Some("1".to_string()),
+    };
+    let input = prompt.show_prompt();
 
-    println!("{prompt_message}");
-    println!("  1 - Yes");
-    println!("  2 - No");
-    print!("  Choose from [1, 2] (1): ");
-
-    std::io::stdout().flush().unwrap();
-    std::io::stdin()
-        .read_line(&mut line)
-        .expect("Error: Could not read a line");
-
-    if line.trim() == "1" || line.trim() == "" {
+    if input == "1" || input.is_empty() {
         true
-    } else if line.trim() == "2" {
+    } else if input == "2" {
         false
     } else {
         let error_message = "Invalid selection";
@@ -56,27 +88,10 @@ fn boolean_prompt(prompt_message: &str) -> bool {
 }
 
 fn is_application_prompt() -> bool {
-    let mut line = String::new();
-
-    println!("Application or Library");
-    println!("  1 - Application");
-    println!("  2 - Library");
-    print!("  Choose from [1, 2] (1): ");
-
-    std::io::stdout().flush().unwrap();
-    std::io::stdin()
-        .read_line(&mut line)
-        .expect("Error: Could not read a line");
-
-    if line.trim() == "1" || line.trim() == "" {
-        true
-    } else if line.trim() == "2" {
-        false
-    } else {
-        let error_message = "Invalid license type";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
-    }
+    let prompt_text =
+        "Application or Library\n  1 - Application\n  2 - Library\n  Choose from [1, 2]"
+            .to_string();
+    boolean_prompt(prompt_text)
 }
 
 fn is_valid_python_version(version: &str) -> bool {
@@ -102,21 +117,19 @@ fn is_valid_python_version(version: &str) -> bool {
 }
 
 fn copywright_year_prompt(license: &LicenseType) -> String {
-    let mut line = String::new();
+    let prompt_text = "Copywright Year".to_string();
+    let prompt = Prompt {
+        prompt_text,
+        default: None,
+    };
+    let input = prompt.show_prompt();
 
-    print!("Copywright Year: ");
-
-    std::io::stdout().flush().unwrap();
-    std::io::stdin()
-        .read_line(&mut line)
-        .expect("Error: Could not read a line");
-
-    if line.trim() == "" {
+    if input.is_empty() {
         let error_message = format!("A copywright year is required for {:?} license", license);
         println!("\n{}", error_message.red());
         std::process::exit(1);
     } else {
-        match line.trim().parse::<i32>() {
+        match input.parse::<i32>() {
             Ok(y) => {
                 if !(1000..=9999).contains(&y) {
                     let error_message = format!("{y} is not a valid year");
@@ -125,25 +138,49 @@ fn copywright_year_prompt(license: &LicenseType) -> String {
                 }
             }
             _ => {
-                let error_message = format!("{} is not a valid year", line.trim());
+                let error_message = format!("{input} is not a valid year");
                 println!("\n{}", error_message.red());
                 std::process::exit(1);
             }
         };
     }
 
-    line.trim().to_string()
+    input
 }
 
 pub fn get_project_info() -> ProjectInfo {
-    let project_name = prompt("Project Name", None);
-    let project_slug_default = &project_name.replace(' ', "-").to_lowercase();
-    let project_slug = prompt("Project Slug", Some(project_slug_default));
-    let source_dir_default = &project_name.replace(' ', "_").to_lowercase();
-    let source_dir = prompt("Source Directory", Some(source_dir_default));
-    let project_description = prompt("Project Description", None);
-    let creator = prompt("Creator", None);
-    let creator_email = prompt("Creator Email", None);
+    let project_name_prompt = Prompt {
+        prompt_text: "Project Name".to_string(),
+        default: None,
+    };
+    let project_name = project_name_prompt.show_prompt();
+    let project_slug_default = project_name.replace(' ', "-").to_lowercase();
+    let project_slug_prompt = Prompt {
+        prompt_text: "Project Slug".to_string(),
+        default: Some(project_slug_default),
+    };
+    let project_slug = project_slug_prompt.show_prompt();
+    let source_dir_default = project_name.replace(' ', "_").to_lowercase();
+    let source_dir_prompt = Prompt {
+        prompt_text: "Source Directory".to_string(),
+        default: Some(source_dir_default),
+    };
+    let source_dir = source_dir_prompt.show_prompt();
+    let project_description_prompt = Prompt {
+        prompt_text: "Project Description".to_string(),
+        default: None,
+    };
+    let project_description = project_description_prompt.show_prompt();
+    let creator_prompt = Prompt {
+        prompt_text: "Creator".to_string(),
+        default: None,
+    };
+    let creator = creator_prompt.show_prompt();
+    let email_prompt = Prompt {
+        prompt_text: "Creator Email".to_string(),
+        default: None,
+    };
+    let creator_email = email_prompt.show_prompt();
     let license = license_prompt();
 
     let copywright_year: Option<String>;
@@ -153,17 +190,21 @@ pub fn get_project_info() -> ProjectInfo {
         copywright_year = None;
     }
 
-    let version = prompt("Version", Some("0.1.0"));
-    let python_version = python_version_prompt("3.11");
-    let min_python_version = python_version_prompt("3.8");
+    let version_prompt = Prompt {
+        prompt_text: "Version".to_string(),
+        default: Some("0.1.0".to_string()),
+    };
+    let version = version_prompt.show_prompt();
+    let python_version = python_version_prompt("3.11".to_string());
+    let min_python_version = python_version_prompt("3.8".to_string());
     let github_action_python_test_versions =
         github_action_python_test_versions_prompt("3.8, 3.9, 3.10, 3.11".to_string());
     let is_application = is_application_prompt();
     let max_line_length = max_line_length_prompt();
-    let use_dependabot = boolean_prompt("Use Dependabot");
-    let use_continuous_deployment = boolean_prompt("Use Continuous Deployment");
-    let use_release_drafter = boolean_prompt("Use Release Drafter");
-    let use_multi_os_ci = boolean_prompt("Use Multi OS CI");
+    let use_dependabot = boolean_prompt("Use Dependabot".to_string());
+    let use_continuous_deployment = boolean_prompt("Use Continuous Deployment".to_string());
+    let use_release_drafter = boolean_prompt("Use Release Drafter".to_string());
+    let use_multi_os_ci = boolean_prompt("Use Multi OS CI".to_string());
 
     ProjectInfo {
         project_name,
@@ -188,24 +229,14 @@ pub fn get_project_info() -> ProjectInfo {
 }
 
 fn github_action_python_test_versions_prompt(default: String) -> Vec<String> {
-    let mut line = String::new();
+    let prompt = Prompt {
+        prompt_text: "Python Versions for Github Actions Testing".to_string(),
+        default: Some(default),
+    };
+    let input = prompt.show_prompt();
     let mut versions: Vec<String> = Vec::new();
 
-    print!("Python Versions for Github Actions Testing ({default}): ");
-    std::io::stdout().flush().unwrap();
-    std::io::stdin()
-        .read_line(&mut line)
-        .expect("Error: Could not read a line");
-
-    if line.trim() == "" {
-        for version in default.replace(' ', "").split(',') {
-            versions.push(version.to_string());
-        }
-        return versions;
-    }
-
-    let version_check = line.replace(' ', "");
-    println!("{version_check}");
+    let version_check = input.replace(' ', "");
 
     for version in version_check.split(',') {
         if !is_valid_python_version(version) {
@@ -221,25 +252,20 @@ fn github_action_python_test_versions_prompt(default: String) -> Vec<String> {
 }
 
 fn license_prompt() -> LicenseType {
-    let mut line = String::new();
+    let prompt = Prompt {
+        prompt_text:
+            "Select License\n  1 - Mit\n  2 - Apache 2\n  3 - No License\n  Choose from [1, 2, 3]"
+                .to_string(),
+        default: Some("1".to_string()),
+    };
+    let input = prompt.show_prompt();
     let license: LicenseType;
 
-    println!("Select License");
-    println!("  1 - Mit");
-    println!("  2 - Apache 2");
-    println!("  3 - No License");
-    print!("  Choose from [1, 2, 3] (1): ");
-
-    std::io::stdout().flush().unwrap();
-    std::io::stdin()
-        .read_line(&mut line)
-        .expect("Error: Could not read a line");
-
-    if line.trim() == "1" || line.trim() == "" {
+    if input == "1" || input.is_empty() {
         license = LicenseType::Mit;
-    } else if line.trim() == "2" {
+    } else if input == "2" {
         license = LicenseType::Apache2;
-    } else if line.trim() == "3" {
+    } else if input == "3" {
         license = LicenseType::NoLicense;
     } else {
         let error_message = "Invalid license type";
@@ -251,24 +277,17 @@ fn license_prompt() -> LicenseType {
 }
 
 fn max_line_length_prompt() -> u8 {
-    let mut line = String::new();
     let default: u8 = 100;
+    let prompt = Prompt {
+        prompt_text: "Max Line Length".to_string(),
+        default: Some(default.to_string()),
+    };
+    let input = prompt.show_prompt();
 
-    print!("Max Line Length ({default}): ");
-
-    std::io::stdout().flush().unwrap();
-    std::io::stdin()
-        .read_line(&mut line)
-        .expect("Error: Could not read a line");
-
-    if line.trim() == "" {
-        return default;
-    }
-
-    let max_line_length: u8 = match line.trim().parse::<u8>() {
+    let max_line_length: u8 = match input.parse::<u8>() {
         Ok(m) => m,
         _ => {
-            let error_message = format!("{} is not a valid line length", line.trim());
+            let error_message = format!("{} is not a valid line length", input);
             println!("\n{}", error_message.red());
             std::process::exit(1);
         }
@@ -277,54 +296,20 @@ fn max_line_length_prompt() -> u8 {
     max_line_length
 }
 
-fn prompt(prompt_text: &str, value_default: Option<&str>) -> String {
-    let mut line = String::new();
+fn python_version_prompt(default: String) -> String {
+    let prompt = Prompt {
+        prompt_text: "Python Version".to_string(),
+        default: Some(default),
+    };
+    let input = prompt.show_prompt();
 
-    if let Some(default) = value_default {
-        print!("{prompt_text} ({default}): ");
-    } else {
-        print!("{prompt_text}: ");
-    }
-
-    std::io::stdout().flush().unwrap();
-    std::io::stdin()
-        .read_line(&mut line)
-        .expect("Error: Could not read a line");
-
-    if line.trim() == "" {
-        if let Some(default) = value_default {
-            return default.to_string();
-        } else {
-            let error_message = format!(r#"A "{prompt_text}" value is required"#);
-            println!("\n{}", error_message.red());
-            std::process::exit(1);
-        }
-    }
-
-    line.trim().to_string()
-}
-
-fn python_version_prompt(default: &str) -> String {
-    let mut line = String::new();
-
-    print!("Python Version ({default}): ");
-
-    std::io::stdout().flush().unwrap();
-    std::io::stdin()
-        .read_line(&mut line)
-        .expect("Error: Could not read a line");
-
-    if line.trim() == "" {
-        line = default.to_string();
-    }
-
-    if !is_valid_python_version(line.trim()) {
-        let error_message = format!("{} is not a valid Python Version", line.trim());
+    if !is_valid_python_version(&input) {
+        let error_message = format!("{} is not a valid Python Version", input.trim());
         println!("\n{}", error_message.red());
         std::process::exit(1);
     }
 
-    line.trim().to_string()
+    input.to_string()
 }
 
 #[cfg(test)]
