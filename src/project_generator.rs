@@ -382,7 +382,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
 
     generate_python_files(
         &project_info.is_application,
-        &project_info.project_name,
+        &project_info.project_slug,
         &project_info.source_dir,
         &project_info.version,
     );
