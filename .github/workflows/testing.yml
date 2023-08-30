@@ -19,7 +19,7 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache dependencies
-      uses: Swatinem/rust-cache@2.6.2
+      uses: Swatinem/rust-cache@v2.6.2
     - name: Run cargo clippy
       uses: actions-rs/cargo@v1
       with:
