@@ -81,7 +81,6 @@ jobs:
       run: ./scripts/ci_run.sh
     - name: Cache poetry venv
       uses: actions/cache@v3
-      working-directory: ./my-project
       id: poetry-cache
       with:
         path: .venv
