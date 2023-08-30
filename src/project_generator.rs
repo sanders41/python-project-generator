@@ -305,7 +305,7 @@ fn build_latest_dev_dependencies(is_application: bool, use_defaults: bool) -> St
     version_string.trim().to_string()
 }
 
-fn create_pyproject_toml(project_info: &ProjectInfo, use_default_package_versions: bool) -> String {
+fn create_pyproject_toml(project_info: &ProjectInfo) -> String {
     let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
     let pyproject = r#"[tool.poetry]
 name = "{{ project_slug }}"
@@ -380,7 +380,7 @@ fix = true
         creator_email => project_info.creator_email,
         license => format!("{:?}", project_info.license),
         min_python_version => project_info.min_python_version,
-        dev_dependencies => build_latest_dev_dependencies(project_info.is_application, use_default_package_versions),
+        dev_dependencies => build_latest_dev_dependencies(project_info.is_application, project_info.download_latest_packages),
         max_line_length => project_info.max_line_length,
         source_dir => project_info.source_dir,
         is_application => project_info.is_application,
@@ -390,7 +390,7 @@ fix = true
 
 fn save_pyproject_toml(project_info: &ProjectInfo) -> Result<()> {
     let file_path = format!("{}/pyproject.toml", project_info.project_slug,);
-    let content = create_pyproject_toml(project_info, false);
+    let content = create_pyproject_toml(project_info);
 
     save_file_with_content(&file_path, &content)?;
 
@@ -737,6 +737,7 @@ dmypy.json
             use_continuous_deployment: true,
             use_release_drafter: true,
             use_multi_os_ci: true,
+            download_latest_packages: false,
         };
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
@@ -820,7 +821,7 @@ fix = true"#,
 
         println!("{expected}");
 
-        assert_eq!(create_pyproject_toml(&project_info, true), expected);
+        assert_eq!(create_pyproject_toml(&project_info), expected);
     }
 
     #[test]
@@ -849,6 +850,7 @@ fix = true"#,
             use_continuous_deployment: true,
             use_release_drafter: true,
             use_multi_os_ci: true,
+            download_latest_packages: false,
         };
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
@@ -932,7 +934,7 @@ fix = true"#,
 
         println!("{expected}");
 
-        assert_eq!(create_pyproject_toml(&project_info, true), expected);
+        assert_eq!(create_pyproject_toml(&project_info), expected);
     }
 
     #[test]
@@ -961,6 +963,7 @@ fix = true"#,
             use_continuous_deployment: true,
             use_release_drafter: true,
             use_multi_os_ci: true,
+            download_latest_packages: false,
         };
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
@@ -1043,7 +1046,7 @@ fix = true"#,
 
         println!("{expected}");
 
-        assert_eq!(create_pyproject_toml(&project_info, true), expected);
+        assert_eq!(create_pyproject_toml(&project_info), expected);
     }
 
     #[test]
@@ -1072,6 +1075,7 @@ fix = true"#,
             use_continuous_deployment: true,
             use_release_drafter: true,
             use_multi_os_ci: true,
+            download_latest_packages: false,
         };
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
@@ -1155,7 +1159,7 @@ fix = true"#,
 
         println!("{expected}");
 
-        assert_eq!(create_pyproject_toml(&project_info, true), expected);
+        assert_eq!(create_pyproject_toml(&project_info), expected);
     }
 
     #[test]

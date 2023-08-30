@@ -68,6 +68,7 @@ pub struct ProjectInfo {
     pub use_continuous_deployment: bool,
     pub use_release_drafter: bool,
     pub use_multi_os_ci: bool,
+    pub download_latest_packages: bool,
 }
 
 fn boolean_prompt(prompt_text: String) -> bool {
@@ -233,6 +234,7 @@ pub fn get_project_info() -> ProjectInfo {
         use_continuous_deployment,
         use_release_drafter,
         use_multi_os_ci,
+        download_latest_packages: false,
     }
 }
 
