@@ -178,26 +178,24 @@ mod tests {
 
     #[test]
     fn test_create_project_init_file() {
-        let expected = format!(
-            r#"from src._version import VERSION
+        let expected = r#"from src._version import VERSION
 
 
 __version__ = VERSION
 "#
-        );
+        .to_string();
 
         assert_eq!(create_project_init_file("src"), expected);
     }
 
     #[test]
     fn test_create_dunder_main_file() {
-        let expected = format!(
-            r#"from src.main import main  #  pragma: no cover
+        let expected = r#"from src.main import main  #  pragma: no cover
 
 if __name__ == "__main__":
     raise SystemExit(main())
 "#
-        );
+        .to_string();
 
         assert_eq!(create_dunder_main_file("src"), expected);
     }
@@ -220,28 +218,26 @@ if __name__ == "__main__":
 
     #[test]
     fn test_create_main_test_file() {
-        let expected = format!(
-            r#"from src.main import main
+        let expected = r#"from src.main import main
 
 
 def test_main():
     assert main() == 0
 "#
-        );
+        .to_string();
 
         assert_eq!(create_main_test_file("src"), expected);
     }
 
     #[test]
     fn test_create_version_file() {
-        let expected = format!(r#"VERSION = "1.2.3""#);
+        let expected = r#"VERSION = "1.2.3""#.to_string();
         assert_eq!(create_version_file("1.2.3"), expected);
     }
 
     #[test]
     fn test_create_version_test_file() {
-        let expected = format!(
-            r#"import sys
+        let expected = r#"import sys
 from pathlib import Path
 
 from src._version import VERSION
@@ -261,7 +257,7 @@ def test_versions_match():
     assert VERSION == pyproject_version
 
 "#
-        );
+        .to_string();
 
         assert_eq!(create_version_test_file("src"), expected);
     }

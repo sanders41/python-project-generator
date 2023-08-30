@@ -443,8 +443,7 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
     #[test]
     fn test_create_mit_license() {
-        let expected = format!(
-            r#"MIT License
+        let expected = r#"MIT License
 
 Copyright (c) 2023 Arthur Dent
 
@@ -465,7 +464,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE."#
-        );
+            .to_string();
 
         assert_eq!(create_mit_license("2023", "Arthur Dent"), expected);
     }

@@ -388,8 +388,7 @@ mod tests {
 
     #[test]
     fn test_create_ci_testing_linux_only_file() {
-        let expected = format!(
-            r#"name: Testing
+        let expected = r#"name: Testing
 
 on:
   push:
@@ -421,7 +420,7 @@ jobs:
       id: poetry-cache
       with:
         path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
+        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
     - name: Ensure cache is healthy
       if: steps.poetry-cache.outputs.cache-hit == 'true'
       shell: bash
@@ -446,10 +445,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python {{{{ matrix.python-version }}}}
+    - name: Set up Python {{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: {{{{ matrix.python-version }}}}
+        python-version: {{ matrix.python-version }}
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
@@ -466,7 +465,7 @@ jobs:
       id: poetry-cache
       with:
         path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
+        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
     - name: Ensure cache is healthy
       if: steps.poetry-cache.outputs.cache-hit == 'true'
       shell: bash
@@ -477,8 +476,7 @@ jobs:
       run: |
         poetry run pytest
 
-"#
-        );
+"#.to_string();
 
         assert_eq!(
             create_ci_testing_linux_only_file(
@@ -497,7 +495,7 @@ jobs:
 
     #[test]
     fn test_create_ci_testing_multi_os_file() {
-        let expected = format!(
+        let expected =
             r#"name: Testing
 
 on:
@@ -530,7 +528,7 @@ jobs:
       id: poetry-cache
       with:
         path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
+        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
     - name: Ensure cache is healthy
       if: steps.poetry-cache.outputs.cache-hit == 'true'
       shell: bash
@@ -553,13 +551,13 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
         os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: {{{{matrix.os}}}}
+    runs-on: {{matrix.os}}
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python {{{{ matrix.python-version }}}}
+    - name: Set up Python {{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: {{{{ matrix.python-version }}}}
+        python-version: {{ matrix.python-version }}
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
@@ -576,7 +574,7 @@ jobs:
       id: poetry-cache
       with:
         path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
+        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
     - name: Ensure cache is healthy
       if: steps.poetry-cache.outputs.cache-hit == 'true'
       shell: bash
@@ -587,8 +585,7 @@ jobs:
       run: |
         poetry run pytest
 
-"#
-        );
+"#.to_string();
 
         assert_eq!(
             create_ci_testing_multi_os_file(
