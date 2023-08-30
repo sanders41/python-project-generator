@@ -79,21 +79,22 @@ jobs:
       run: cargo build --release
     - name: Run creation
       run: ./scripts/ci_run.sh
-    - name: Change to newly created directory
-      run: cd my-project
     - name: Cache poetry venv
-      uses: actions/cache@v3
       id: poetry-cache
+      working-directory: ./my-project
       with:
         path: .venv
         key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
     - name: Ensure cache is healthy
+      working-directory: ./my-project
       if: steps.poetry-cache.outputs.cache-hit == 'true'
       shell: bash
       run: timeout 10s poetry run pip --version || rm -rf .venv
     - name: Install Dependencies
+      working-directory: ./my-project
       run: poetry install
     - name: Test with pytest
+      working-directory: ./my-project
       run: poetry run pytest
 
 
