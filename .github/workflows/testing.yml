@@ -80,8 +80,8 @@ jobs:
     - name: Run creation
       run: ./scripts/ci_run.sh
     - name: Cache poetry venv
-      working-directory: ./my-project
       uses: actions/cache@v3
+      working-directory: ./my-project
       id: poetry-cache
       with:
         path: .venv
