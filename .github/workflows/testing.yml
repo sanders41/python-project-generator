@@ -80,9 +80,9 @@ jobs:
     - name: Run creation
       run: ./scripts/ci_run.sh
     - name: Cache poetry venv
+      working-directory: ./my-project
       uses: actions/cache@v3
       id: poetry-cache
-      working-directory: ./my-project
       with:
         path: .venv
         key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
