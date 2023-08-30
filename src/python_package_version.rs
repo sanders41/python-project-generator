@@ -14,8 +14,11 @@ pub struct PythonPackageVersion {
 impl PypiPackage for PythonPackageVersion {
     fn get_latest_version(&self) -> Result<Self> {
         let url = format!("https://pypi.org/pypi/{}/json", self.name);
-        let result = reqwest::blocking::get(url)?.json::<Self>()?;
+        let response = reqwest::blocking::get(url)?.text()?;
+        let info: serde_json::Value = serde_json::from_str(&response)?;
+        let name = info["info"]["name"].to_string().replace('"', "");
+        let version = info["info"]["version"].to_string().replace('"', "");
 
-        Ok(result)
+        Ok(Self { name, version })
     }
 }

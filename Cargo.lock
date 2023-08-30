@@ -584,6 +584,7 @@ dependencies = [
  "minijinja",
  "reqwest",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
