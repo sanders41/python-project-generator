@@ -53,7 +53,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        is_application: ["1", "2"]
+        is_application: ["application", "lib"]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -98,7 +98,3 @@ jobs:
     - name: Test with pytest
       working-directory: ./my-project
       run: poetry run pytest
-
-
-
-
