@@ -12,6 +12,7 @@ use crate::github_actions::{
 use crate::licenses::generate_license;
 use crate::project_info::ProjectInfo;
 use crate::python_files::generate_python_files;
+use crate::python_package_version::{PypiPackage, PythonPackageVersion};
 
 fn create_directories(project_slug: &str, source_dir: &str) -> Result<()> {
     let src = format!("{project_slug}/{source_dir}");
@@ -201,7 +202,7 @@ fn create_pre_commit_file(max_line_length: &u8) -> String {
     hooks:
     - id: mypy
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.285
+    rev: v0.0.286
     hooks:
     - id: ruff
       args: [--fix, --exit-non-zero-on-fix]
@@ -215,6 +216,93 @@ fn save_pre_commit_file(project_slug: &str, max_line_length: &u8) -> Result<()> 
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
+}
+
+fn build_latest_dev_dependencies(is_application: bool, use_defaults: bool) -> String {
+    let mut version_string = String::new();
+    let packages = vec![
+        PythonPackageVersion {
+            name: "black".to_string(),
+            version: "23.7.0".to_string(),
+        },
+        PythonPackageVersion {
+            name: "mypy".to_string(),
+            version: "1.5.1".to_string(),
+        },
+        PythonPackageVersion {
+            name: "pre-commit".to_string(),
+            version: "3.3.3".to_string(),
+        },
+        PythonPackageVersion {
+            name: "pytest".to_string(),
+            version: "7.4.0".to_string(),
+        },
+        PythonPackageVersion {
+            name: "pytest-cov".to_string(),
+            version: "4.1.0".to_string(),
+        },
+        PythonPackageVersion {
+            name: "ruff".to_string(),
+            version: "0.0.286".to_string(),
+        },
+        PythonPackageVersion {
+            name: "tomli".to_string(),
+            version: "2.0.1".to_string(),
+        },
+    ];
+
+    for package in packages {
+        let version: String;
+        if !use_defaults {
+            package.get_latest_version().unwrap();
+            if let Ok(p) = package.get_latest_version() {
+                if is_application {
+                    version = p.version;
+                } else {
+                    version = format!(">={}", p.version);
+                }
+                if p.name == "tomli" {
+                    version_string.push_str(&format!(
+                        "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
+                        p.name, version
+                    ));
+                } else {
+                    version_string.push_str(&format!("{} = \"{}\"\n", p.name, version));
+                }
+            } else {
+                if is_application {
+                    version = package.version;
+                } else {
+                    version = format!(">={}", package.version);
+                }
+                if package.name == "tomli" {
+                    version_string.push_str(&format!(
+                        "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
+                        package.name, version
+                    ));
+                } else {
+                    version_string.push_str(&format!("{} = \"{}\"\n", package.name, version));
+                }
+            }
+        } else {
+            if is_application {
+                version = package.version;
+            } else {
+                version = format!(">={}", package.version);
+            }
+            if package.name == "tomli" {
+                version_string.push_str(&format!(
+                    "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
+                    package.name, version
+                ));
+            } else {
+                version_string.push_str(&format!("{} = \"{}\"\n", package.name, version));
+            }
+        }
+    }
+
+    println!("{version_string}");
+    version_string.trim().to_string()
 }
 
 fn create_pyproject_toml(project_info: &ProjectInfo) -> String {
@@ -232,25 +320,9 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^{{ min_python_version }}"
 
-{% if is_application -%}
 [tool.poetry.group.dev.dependencies]
-black = "23.7.0"
-mypy = "1.5.1"
-pre-commit = "3.3.3"
-pytest = "7.4.0"
-pytest-cov = "4.1.0"
-ruff = "0.0.285"
-tomli = { version = "2.0.1", python = "<3.11" }
-{% else -%}
-[tool.poetry.group.dev.dependencies]
-black = ">=23.7.0"
-mypy = ">=1.5.1"
-pre-commit = ">=3.3.3"
-pytest = ">=7.4.0"
-pytest-cov = ">=4.1.0"
-ruff = ">=0.0.285"
-tomli = { version = ">=2.0.1", python = "<3.11" }
-{% endif %}
+{{ dev_dependencies }}
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
@@ -308,6 +380,7 @@ fix = true
         creator_email => project_info.creator_email,
         license => format!("{:?}", project_info.license),
         min_python_version => project_info.min_python_version,
+        dev_dependencies => build_latest_dev_dependencies(project_info.is_application, project_info.download_latest_packages),
         max_line_length => project_info.max_line_length,
         source_dir => project_info.source_dir,
         is_application => project_info.is_application,
@@ -628,7 +701,7 @@ dmypy.json
     hooks:
     - id: mypy
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.285
+    rev: v0.0.286
     hooks:
     - id: ruff
       args: [--fix, --exit-non-zero-on-fix]
@@ -664,6 +737,7 @@ dmypy.json
             use_continuous_deployment: true,
             use_release_drafter: true,
             use_multi_os_ci: true,
+            download_latest_packages: false,
         };
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
@@ -684,8 +758,8 @@ mypy = "1.5.1"
 pre-commit = "3.3.3"
 pytest = "7.4.0"
 pytest-cov = "4.1.0"
-ruff = "0.0.285"
-tomli = {{ version = "2.0.1", python = "<3.11" }}
+ruff = "0.0.286"
+tomli = {{version = "2.0.1", python = "<3.11"}}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -776,6 +850,7 @@ fix = true"#,
             use_continuous_deployment: true,
             use_release_drafter: true,
             use_multi_os_ci: true,
+            download_latest_packages: false,
         };
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
@@ -796,8 +871,8 @@ mypy = "1.5.1"
 pre-commit = "3.3.3"
 pytest = "7.4.0"
 pytest-cov = "4.1.0"
-ruff = "0.0.285"
-tomli = {{ version = "2.0.1", python = "<3.11" }}
+ruff = "0.0.286"
+tomli = {{version = "2.0.1", python = "<3.11"}}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -888,6 +963,7 @@ fix = true"#,
             use_continuous_deployment: true,
             use_release_drafter: true,
             use_multi_os_ci: true,
+            download_latest_packages: false,
         };
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
@@ -907,8 +983,8 @@ mypy = "1.5.1"
 pre-commit = "3.3.3"
 pytest = "7.4.0"
 pytest-cov = "4.1.0"
-ruff = "0.0.285"
-tomli = {{ version = "2.0.1", python = "<3.11" }}
+ruff = "0.0.286"
+tomli = {{version = "2.0.1", python = "<3.11"}}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -999,6 +1075,7 @@ fix = true"#,
             use_continuous_deployment: true,
             use_release_drafter: true,
             use_multi_os_ci: true,
+            download_latest_packages: false,
         };
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
@@ -1019,8 +1096,8 @@ mypy = ">=1.5.1"
 pre-commit = ">=3.3.3"
 pytest = ">=7.4.0"
 pytest-cov = ">=4.1.0"
-ruff = ">=0.0.285"
-tomli = {{ version = ">=2.0.1", python = "<3.11" }}
+ruff = ">=0.0.286"
+tomli = {{version = ">=2.0.1", python = "<3.11"}}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
