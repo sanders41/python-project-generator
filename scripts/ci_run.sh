@@ -52,3 +52,8 @@ $use_continuous_deployment
 $use_release_drafter
 $use_multi_os_ci
 EOF
+
+if [ ! -d $project_slug ]; then
+  echo "Directory not created"
+  exit 1
+fi
