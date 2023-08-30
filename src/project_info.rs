@@ -57,7 +57,7 @@ pub struct ProjectInfo {
     pub creator: String,
     pub creator_email: String,
     pub license: LicenseType,
-    pub copywright_year: Option<String>,
+    pub copyright_year: Option<String>,
     pub version: String,
     pub python_version: String,
     pub min_python_version: String,
@@ -117,8 +117,8 @@ fn is_valid_python_version(version: &str) -> bool {
     true
 }
 
-fn copywright_year_prompt(license: &LicenseType) -> String {
-    let prompt_text = "Copywright Year".to_string();
+fn copyright_year_prompt(license: &LicenseType) -> String {
+    let prompt_text = "copyright Year".to_string();
     let prompt = Prompt {
         prompt_text,
         default: None,
@@ -126,7 +126,7 @@ fn copywright_year_prompt(license: &LicenseType) -> String {
     let input = prompt.show_prompt();
 
     if input.is_empty() {
-        let error_message = format!("A copywright year is required for {:?} license", license);
+        let error_message = format!("A copyright year is required for {:?} license", license);
         println!("\n{}", error_message.red());
         std::process::exit(1);
     } else {
@@ -191,11 +191,11 @@ pub fn get_project_info() -> ProjectInfo {
     let creator_email = email_prompt.show_prompt();
     let license = license_prompt();
 
-    let copywright_year: Option<String>;
+    let copyright_year: Option<String>;
     if let LicenseType::Mit = license {
-        copywright_year = Some(copywright_year_prompt(&license));
+        copyright_year = Some(copyright_year_prompt(&license));
     } else {
-        copywright_year = None;
+        copyright_year = None;
     }
 
     let version_prompt = Prompt {
@@ -222,7 +222,7 @@ pub fn get_project_info() -> ProjectInfo {
         creator,
         creator_email,
         license,
-        copywright_year,
+        copyright_year,
         version,
         python_version,
         min_python_version,
