@@ -50,7 +50,6 @@ jobs:
     - name: Run cargo test
       run: cargo test --locked
   python-test:
-    name: Python Tests
     fail-fast: false
     matrix:
       is_application: ["1", "2"]
