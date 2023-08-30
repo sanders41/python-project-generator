@@ -49,9 +49,11 @@ jobs:
       uses: Swatinem/rust-cache@v2.6.2
     - name: Run cargo test
       run: cargo test --locked
-
   python-test:
     name: Python Tests
+    fail-fast: false
+    matrix:
+      is_application: ["1", "2"]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -78,7 +80,7 @@ jobs:
     - name: Build package
       run: cargo build --release
     - name: Run creation
-      run: ./scripts/ci_run.sh
+      run: ./scripts/ci_run.sh {{ matrix.is_application }}
     - name: Cache poetry venv
       uses: actions/cache@v3
       id: poetry-cache
