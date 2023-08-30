@@ -118,7 +118,7 @@ fn is_valid_python_version(version: &str) -> bool {
 }
 
 fn copyright_year_prompt(license: &LicenseType) -> String {
-    let prompt_text = "copyright Year".to_string();
+    let prompt_text = "Copyright Year".to_string();
     let prompt = Prompt {
         prompt_text,
         default: None,
@@ -204,7 +204,7 @@ pub fn get_project_info() -> ProjectInfo {
     };
     let version = version_prompt.show_prompt();
     let python_version = python_version_prompt("3.11".to_string());
-    let min_python_version = python_version_prompt("3.8".to_string());
+    let min_python_version = python_min_version_prompt("3.8".to_string());
     let github_action_python_test_versions =
         github_action_python_test_versions_prompt("3.8, 3.9, 3.10, 3.11".to_string());
     let is_application = is_application_prompt();
@@ -302,6 +302,22 @@ fn max_line_length_prompt() -> u8 {
     };
 
     max_line_length
+}
+
+fn python_min_version_prompt(default: String) -> String {
+    let prompt = Prompt {
+        prompt_text: "Minimum Python Version".to_string(),
+        default: Some(default),
+    };
+    let input = prompt.show_prompt();
+
+    if !is_valid_python_version(&input) {
+        let error_message = format!("{} is not a valid Python Version", input.trim());
+        println!("\n{}", error_message.red());
+        std::process::exit(1);
+    }
+
+    input.to_string()
 }
 
 fn python_version_prompt(default: String) -> String {
