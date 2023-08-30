@@ -53,7 +53,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        is_application: ["application", "lib"]
+        project_type: ["application", "lib"]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -80,7 +80,7 @@ jobs:
     - name: Build package
       run: cargo build --release
     - name: Run creation
-      run: ./scripts/ci_run.sh {{ matrix.is_application }}
+      run: ./scripts/ci_run.sh ${{ matrix.project_type }}
     - name: Cache poetry venv
       uses: actions/cache@v3
       id: poetry-cache
