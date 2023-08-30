@@ -50,9 +50,10 @@ jobs:
     - name: Run cargo test
       run: cargo test --locked
   python-test:
-    fail-fast: false
-    matrix:
-      is_application: ["1", "2"]
+    strategy:
+      fail-fast: false
+      matrix:
+        is_application: ["1", "2"]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
