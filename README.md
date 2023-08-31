@@ -26,7 +26,7 @@ python-project-generator
 
 You will be asked a series of questions that will be used to generate your project. The project
 generator will check pypi for the lastest version of the included packages and use those while
-generating the project. this feature can be disabled by using with either `-s` or
+generating the project. This feature can be disabled by using with either `-s` or
 `--skip-download-latest-packages` when running the generator. If either there is an issue with
 retrieving the latest versions or if you have decided to skip looking up the latest version, the
 packages will be be created with default version.
