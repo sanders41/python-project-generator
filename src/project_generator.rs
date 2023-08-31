@@ -218,7 +218,7 @@ fn save_pre_commit_file(project_slug: &str, max_line_length: &u8) -> Result<()> 
     Ok(())
 }
 
-fn build_latest_dev_dependencies(is_application: bool, use_defaults: bool) -> String {
+fn build_latest_dev_dependencies(is_application: bool, download_latest_packages: bool) -> String {
     let mut version_string = String::new();
     let packages = vec![
         PythonPackageVersion {
@@ -253,7 +253,7 @@ fn build_latest_dev_dependencies(is_application: bool, use_defaults: bool) -> St
 
     for package in packages {
         let version: String;
-        if !use_defaults {
+        if download_latest_packages {
             package.get_latest_version().unwrap();
             if let Ok(p) = package.get_latest_version() {
                 if is_application {
@@ -301,7 +301,6 @@ fn build_latest_dev_dependencies(is_application: bool, use_defaults: bool) -> St
         }
     }
 
-    println!("{version_string}");
     version_string.trim().to_string()
 }
 
