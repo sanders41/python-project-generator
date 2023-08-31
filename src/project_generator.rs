@@ -254,7 +254,6 @@ fn build_latest_dev_dependencies(is_application: bool, download_latest_packages:
     for package in packages {
         let version: String;
         if download_latest_packages {
-            package.get_latest_version().unwrap();
             if let Ok(p) = package.get_latest_version() {
                 if is_application {
                     version = p.version;
