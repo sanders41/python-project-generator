@@ -32,7 +32,7 @@ use_continuous_deployment=""
 use_release_drafter=""
 use_multi_os_ci=""
 
-./target/release/python-project-generator << EOF
+./target/release/python-project-generator -s << EOF
 $project_name
 $project_slug
 $source_dir
