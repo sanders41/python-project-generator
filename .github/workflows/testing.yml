@@ -86,7 +86,7 @@ jobs:
       uses: actions/cache@v3
       id: poetry-cache
       with:
-        path: .venv
+        path: my-project/.venv
         key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
     - name: Ensure cache is healthy
       working-directory: my-project
