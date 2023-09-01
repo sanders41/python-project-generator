@@ -113,7 +113,6 @@ def test_versions_match():
         pyproject_version = data["tool"]["poetry"]["version"]
 
     assert VERSION == pyproject_version
-
 "#
     )
 }
@@ -255,7 +254,6 @@ def test_versions_match():
         pyproject_version = data["tool"]["poetry"]["version"]
 
     assert VERSION == pyproject_version
-
 "#
         .to_string();
 
