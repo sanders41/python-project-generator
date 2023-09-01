@@ -2,6 +2,15 @@
 name = "python-project-generator"
 version = "0.1.0"
 edition = "2021"
+authors = ["Paul Sanders <psanders1@gmail.com>"]
+description = "Generates a Python project structure."
+documentation = "https://github.com/sanders41/python-project-generator"
+homepage = "https://github.com/sanders41/python-project-generator"
+repository = "https://github.com/sanders41/python-project-generator"
+readme = "README.md"
+keywords = ["cli", "python", "template"]
+categories = ["command-line-utilities"]
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
