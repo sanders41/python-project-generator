@@ -98,7 +98,7 @@ jobs:
       run: poetry install
     - name: Pre-commit install
       working-directory: my-project
-      run: pre-commit install
+      run: poetry run pre-commit install
     - name: Test with pytest
       working-directory: my-project
       run: poetry run pytest
