@@ -168,7 +168,6 @@ dmypy.json
 # editors
 .idea
 .vscode
-
 "#
     .to_string()
 }
@@ -705,7 +704,6 @@ dmypy.json
 # editors
 .idea
 .vscode
-
 "#
         .to_string();
 
