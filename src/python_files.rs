@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
 fn create_main_file() -> String {
     r#"def main() -> int:
-    print("Hello world!")
+    print("Hello world!")  # noqa: T201
 
     return 0
 
