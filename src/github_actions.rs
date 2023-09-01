@@ -71,10 +71,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python {{{{ matrix.python-version }}}}
+    - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v4
       with:
-        python-version: {{{{ matrix.python-version }}}}
+        python-version: ${{{{ matrix.python-version }}}}
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
@@ -101,7 +101,6 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run pytest
-
 "#
     )
 }
@@ -191,13 +190,13 @@ jobs:
       matrix:
         python-version: [{python_versions}]
         os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: {{{{matrix.os}}}}
+    runs-on: ${{{{ matrix.os }}}}
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python {{{{ matrix.python-version }}}}
+    - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v4
       with:
-        python-version: {{{{ matrix.python-version }}}}
+        python-version: ${{{{ matrix.python-version }}}}
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
@@ -224,7 +223,6 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run pytest
-
 "#
     )
 }
@@ -445,10 +443,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python {{ matrix.python-version }}
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: {{ matrix.python-version }}
+        python-version: ${{ matrix.python-version }}
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
@@ -475,7 +473,6 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run pytest
-
 "#.to_string();
 
         assert_eq!(
@@ -551,13 +548,13 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
         os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: {{matrix.os}}
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python {{ matrix.python-version }}
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: {{ matrix.python-version }}
+        python-version: ${{ matrix.python-version }}
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
@@ -584,7 +581,6 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run pytest
-
 "#.to_string();
 
         assert_eq!(

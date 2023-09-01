@@ -168,7 +168,6 @@ dmypy.json
 # editors
 .idea
 .vscode
-
 "#
     .to_string()
 }
@@ -399,6 +398,7 @@ ignore = ["E501"]
 line-length = {{ max_line_length }}
 target-version = "py{{ pyupgrade_version }}"
 fix = true
+
 "#;
 
     render!(
@@ -705,7 +705,6 @@ dmypy.json
 # editors
 .idea
 .vscode
-
 "#
         .to_string();
 
@@ -842,7 +841,8 @@ select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore = ["E501"]
 line-length = {}
 target-version = "py{}"
-fix = true"#,
+fix = true
+"#,
             project_info.project_slug,
             project_info.version,
             project_info.project_description,
@@ -955,7 +955,8 @@ select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore = ["E501"]
 line-length = {}
 target-version = "py{}"
-fix = true"#,
+fix = true
+"#,
             project_info.project_slug,
             project_info.version,
             project_info.project_description,
@@ -1067,7 +1068,8 @@ select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore = ["E501"]
 line-length = {}
 target-version = "py{}"
-fix = true"#,
+fix = true
+"#,
             project_info.project_slug,
             project_info.version,
             project_info.project_description,
@@ -1180,7 +1182,8 @@ select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore = ["E501"]
 line-length = {}
 target-version = "py{}"
-fix = true"#,
+fix = true
+"#,
             project_info.project_slug,
             project_info.version,
             project_info.project_description,

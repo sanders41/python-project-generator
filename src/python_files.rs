@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
 fn create_main_file() -> String {
     r#"def main() -> int:
-    print("Hello world!")
+    print("Hello world!")  # noqa: T201
 
     return 0
 
@@ -65,7 +65,6 @@ fn create_project_init_file(source_dir: &str) -> String {
     format!(
         r#"from {source_dir}._version import VERSION
 
-
 __version__ = VERSION
 "#
     )
@@ -81,7 +80,7 @@ fn save_project_init_file(project_slug: &str, source_dir: &str) -> Result<()> {
 }
 
 fn create_version_file(version: &str) -> String {
-    format!(r#"VERSION = "{version}""#)
+    format!("VERSION = \"{version}\"\n")
 }
 
 fn save_version_file(project_slug: &str, source_dir: &str, version: &str) -> Result<()> {
@@ -113,7 +112,6 @@ def test_versions_match():
         pyproject_version = data["tool"]["poetry"]["version"]
 
     assert VERSION == pyproject_version
-
 "#
     )
 }
@@ -180,7 +178,6 @@ mod tests {
     fn test_create_project_init_file() {
         let expected = r#"from src._version import VERSION
 
-
 __version__ = VERSION
 "#
         .to_string();
@@ -203,7 +200,7 @@ if __name__ == "__main__":
     #[test]
     fn test_create_main_file() {
         let expected = r#"def main() -> int:
-    print("Hello world!")
+    print("Hello world!")  # noqa: T201
 
     return 0
 
@@ -231,7 +228,7 @@ def test_main():
 
     #[test]
     fn test_create_version_file() {
-        let expected = r#"VERSION = "1.2.3""#.to_string();
+        let expected = "VERSION = \"1.2.3\"\n".to_string();
         assert_eq!(create_version_file("1.2.3"), expected);
     }
 
@@ -255,7 +252,6 @@ def test_versions_match():
         pyproject_version = data["tool"]["poetry"]["version"]
 
     assert VERSION == pyproject_version
-
 "#
         .to_string();
 

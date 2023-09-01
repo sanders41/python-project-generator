@@ -178,8 +178,9 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
    of any other Contributor, and only if You agree to indemnify,
    defend, and hold each Contributor harmless for any liability
    incurred by, or claims asserted against, such Contributor by reason
-   of your accepting any such warranty or additional liability."#
-        .to_string()
+   of your accepting any such warranty or additional liability.
+"#
+    .to_string()
 }
 
 fn save_apache_license(project_slug: &str) -> Result<()> {
@@ -213,7 +214,8 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE."#
+SOFTWARE.
+"#
     )
 }
 
@@ -435,8 +437,9 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
    of any other Contributor, and only if You agree to indemnify,
    defend, and hold each Contributor harmless for any liability
    incurred by, or claims asserted against, such Contributor by reason
-   of your accepting any such warranty or additional liability."#
-            .to_string();
+   of your accepting any such warranty or additional liability.
+"#
+        .to_string();
 
         assert_eq!(create_apache_license(), expected);
     }
@@ -463,8 +466,9 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE."#
-            .to_string();
+SOFTWARE.
+"#
+        .to_string();
 
         assert_eq!(create_mit_license("2023", "Arthur Dent"), expected);
     }
