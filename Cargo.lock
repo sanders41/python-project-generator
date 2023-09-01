@@ -685,7 +685,6 @@ dependencies = [
  "colored",
  "minijinja",
  "reqwest",
- "serde",
  "serde_json",
 ]
 
