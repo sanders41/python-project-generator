@@ -20,7 +20,7 @@ use crate::project_generator::generate_project;
 use crate::project_info::{get_project_info, ProjectInfo};
 
 fn create(project_info: &ProjectInfo) -> Result<()> {
-    generate_project(&project_info);
+    generate_project(project_info);
     Command::new("git")
         .args(["init", &project_info.project_slug])
         .output()
@@ -56,7 +56,7 @@ fn main() {
         }
         Err(_) => {
             let error_message =
-                format!("\nAn Error occurred creating the project. Please try again.",);
+                "\nAn Error occurred creating the project. Please try again.".to_string();
             println!("{}", error_message.red());
         }
     };
