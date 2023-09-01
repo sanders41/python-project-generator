@@ -200,7 +200,7 @@ if __name__ == "__main__":
     #[test]
     fn test_create_main_file() {
         let expected = r#"def main() -> int:
-    print("Hello world!")
+    print("Hello world!")  # noqa: T201
 
     return 0
 
