@@ -12,7 +12,9 @@ use crate::github_actions::{
 use crate::licenses::generate_license;
 use crate::project_info::ProjectInfo;
 use crate::python_files::generate_python_files;
-use crate::python_package_version::{PypiPackage, PythonPackageVersion};
+use crate::python_package_version::{
+    LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackageVersion,
+};
 
 fn create_directories(project_slug: &str, source_dir: &str) -> Result<()> {
     let src = format!("{project_slug}/{source_dir}");
@@ -179,40 +181,94 @@ fn save_gitigngore_file(project_slug: &str) -> Result<()> {
     Ok(())
 }
 
-fn create_pre_commit_file(max_line_length: &u8) -> String {
-    format!(
-        r#"repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
-    hooks:
-    - id: check-added-large-files
-    - id: check-toml
-    - id: check-yaml
-    - id: debug-statements
-    - id: end-of-file-fixer
-    - id: trailing-whitespace
-  - repo: https://github.com/psf/black
-    rev: 23.7.0
-    hooks:
-    - id: black
-      language_version: python3
-      args: [--line-length={max_line_length}]
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.5.1
-    hooks:
-    - id: mypy
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.286
-    hooks:
-    - id: ruff
-      args: [--fix, --exit-non-zero-on-fix]
-"#
-    )
+fn build_latest_pre_commit_dependencies(
+    download_latest_packages: bool,
+) -> Vec<PreCommitHookVersion> {
+    let mut hooks = vec![
+        PreCommitHookVersion {
+            id: PreCommitHook::PreCommit,
+            repo: "https://github.com/pre-commit/pre-commit-hooks".to_string(),
+            rev: "v4.4.0".to_string(),
+        },
+        PreCommitHookVersion {
+            id: PreCommitHook::Black,
+            repo: "https://github.com/psf/black".to_string(),
+            rev: "23.7.0".to_string(),
+        },
+        PreCommitHookVersion {
+            id: PreCommitHook::MyPy,
+            repo: "https://github.com/pre-commit/mirrors-mypy".to_string(),
+            rev: "v1.5.1".to_string(),
+        },
+        PreCommitHookVersion {
+            id: PreCommitHook::Ruff,
+            repo: "https://github.com/astral-sh/ruff-pre-commit".to_string(),
+            rev: "v0.0.286".to_string(),
+        },
+    ];
+
+    if download_latest_packages {
+        for hook in &mut hooks {
+            if hook.get_latest_version().is_err() {
+                let error_message = format!(
+                    "Error retrieving latest pre-commit version for {:?}. Using default.",
+                    hook.id
+                );
+                println!("\n{}", error_message.yellow());
+            }
+        }
+    }
+
+    hooks
 }
 
-fn save_pre_commit_file(project_slug: &str, max_line_length: &u8) -> Result<()> {
-    let file_path = format!("{project_slug}/.pre-commit-config.yml");
-    let content = create_pre_commit_file(max_line_length);
+fn create_pre_commit_file(max_line_length: &u8, download_latest_packages: bool) -> String {
+    let mut pre_commit_str = "repos:".to_string();
+    let hooks = build_latest_pre_commit_dependencies(download_latest_packages);
+    for hook in hooks {
+        match hook.id {
+            PreCommitHook::PreCommit => {
+                let info = format!(
+                    "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: check-added-large-files\n    - id: check-toml\n    - id: check-yaml\n    - id: debug-statements\n    - id: end-of-file-fixer\n    - id: trailing-whitespace",
+                    hook.repo, hook.rev
+                );
+                pre_commit_str.push_str(&info);
+            }
+            PreCommitHook::Black => {
+                let info = format!(
+                    "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: black\n      language_version: python3\n      args: [--line-length={max_line_length}]",
+                    hook.repo, hook.rev
+                );
+                pre_commit_str.push_str(&info);
+            }
+            PreCommitHook::MyPy => {
+                let info = format!(
+                    "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: mypy",
+                    hook.repo, hook.rev
+                );
+                pre_commit_str.push_str(&info);
+            }
+            PreCommitHook::Ruff => {
+                let info = format!(
+                    "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: ruff\n      args: [--fix, --exit-non-zero-on-fix]",
+                    hook.repo, hook.rev
+                );
+                pre_commit_str.push_str(&info);
+            }
+        }
+    }
+
+    pre_commit_str.push('\n');
+    pre_commit_str
+}
+
+fn save_pre_commit_file(
+    project_slug: &str,
+    max_line_length: &u8,
+    download_latest_packages: bool,
+) -> Result<()> {
+    let file_path = format!("{project_slug}/.pre-commit-config.yaml");
+    let content = create_pre_commit_file(max_line_length, download_latest_packages);
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
@@ -251,52 +307,28 @@ fn build_latest_dev_dependencies(is_application: bool, download_latest_packages:
         },
     ];
 
-    for package in packages {
-        let version: String;
-        if download_latest_packages {
-            if let Ok(p) = package.get_latest_version() {
-                if is_application {
-                    version = p.version;
-                } else {
-                    version = format!(">={}", p.version);
-                }
-                if p.name == "tomli" {
-                    version_string.push_str(&format!(
-                        "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
-                        p.name, version
-                    ));
-                } else {
-                    version_string.push_str(&format!("{} = \"{}\"\n", p.name, version));
-                }
-            } else {
-                if is_application {
-                    version = package.version;
-                } else {
-                    version = format!(">={}", package.version);
-                }
-                if package.name == "tomli" {
-                    version_string.push_str(&format!(
-                        "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
-                        package.name, version
-                    ));
-                } else {
-                    version_string.push_str(&format!("{} = \"{}\"\n", package.name, version));
-                }
-            }
+    for mut package in packages {
+        if download_latest_packages && package.get_latest_version().is_err() {
+            let error_message = format!(
+                "Error retrieving latest python package version for {:?}. Using default.",
+                package.name
+            );
+            println!("\n{}", error_message.yellow());
+        }
+
+        let version: String = if is_application {
+            package.version
         } else {
-            if is_application {
-                version = package.version;
-            } else {
-                version = format!(">={}", package.version);
-            }
-            if package.name == "tomli" {
-                version_string.push_str(&format!(
-                    "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
-                    package.name, version
-                ));
-            } else {
-                version_string.push_str(&format!("{} = \"{}\"\n", package.name, version));
-            }
+            format!(">={}", package.version)
+        };
+
+        if package.name == "tomli" {
+            version_string.push_str(&format!(
+                "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
+                package.name, version
+            ));
+        } else {
+            version_string.push_str(&format!("{} = \"{}\"\n", package.name, version));
         }
     }
 
@@ -425,7 +457,13 @@ pub fn generate_project(project_info: &ProjectInfo) {
         std::process::exit(1);
     }
 
-    if save_pre_commit_file(&project_info.project_slug, &project_info.max_line_length).is_err() {
+    if save_pre_commit_file(
+        &project_info.project_slug,
+        &project_info.max_line_length,
+        project_info.download_latest_packages,
+    )
+    .is_err()
+    {
         let error_message = "Error creating .gitignore file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
@@ -706,7 +744,7 @@ dmypy.json
 "#
         );
 
-        assert_eq!(create_pre_commit_file(&max_line_length), expected);
+        assert_eq!(create_pre_commit_file(&max_line_length, false), expected);
     }
 
     #[test]
