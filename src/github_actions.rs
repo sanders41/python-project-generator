@@ -101,7 +101,6 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run pytest
-
 "#
     )
 }
@@ -224,7 +223,6 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run pytest
-
 "#
     )
 }
@@ -475,7 +473,6 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run pytest
-
 "#.to_string();
 
         assert_eq!(
@@ -584,7 +581,6 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run pytest
-
 "#.to_string();
 
         assert_eq!(
