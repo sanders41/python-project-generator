@@ -2,8 +2,6 @@
 
 [![Tests Status](https://github.com/sanders41/python-project-generator/workflows/Testing/badge.svg?branch=main&event=push)](https://github.com/sanders41/python-project-generator/actions?query=workflow%3ATesting+branch%3Amain+event%3Apush)
 
-Note: This is currently a work in progress.
-
 Generates a Python project structure with Poetry for package management and github actions for
 continuous integration and continuous deployment.
 
