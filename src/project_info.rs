@@ -108,6 +108,7 @@ fn is_application_prompt(default: Option<bool>) -> bool {
 }
 
 pub fn is_valid_python_version(version: &str) -> bool {
+    println!("{}", version);
     let split_version = version.split('.');
     let split_length = split_version.clone().count();
 
@@ -235,7 +236,7 @@ pub fn get_project_info() -> ProjectInfo {
     let github_actions_python_test_version_default =
         match config.github_actions_python_test_versions {
             Some(versions) => versions.join(", "),
-            None => "3.8, 3.9, 3,10, 3.11".to_string(),
+            None => "3.8, 3.9, 3.10, 3.11".to_string(),
         };
     let github_actions_python_test_versions =
         github_actions_python_test_versions_prompt(github_actions_python_test_version_default);
