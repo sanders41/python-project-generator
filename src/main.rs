@@ -8,14 +8,17 @@ mod project_info;
 mod python_files;
 mod python_package_version;
 
+use std::process::exit;
 use std::time::Duration;
 
 use anyhow::Result;
 use clap::Parser;
+use cli::ApplicationOrLib;
 use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
 
-use crate::cli::{Args, Command};
+use crate::cli::{Args, BooleanChoice, Command, Param};
+use crate::config::Config;
 use crate::project_generator::generate_project;
 use crate::project_info::{get_project_info, ProjectInfo};
 
@@ -65,6 +68,49 @@ fn main() {
                 }
             };
         }
-        Command::Config {} => println!("Config"),
+        Command::Config(config) => match config.param {
+            Param::Creator { value } => Config::save_creator(value),
+            Param::CreatorEmail { value } => Config::save_creator_email(value),
+            Param::License { value } => Config::save_license(value),
+            Param::PythonVersion { value } => Config::save_python_version(value),
+            Param::MinPythonVersion { value } => Config::save_min_python_version(value),
+            Param::ApplicationOrLibrary { value } => match value {
+                ApplicationOrLib::Application => Config::save_is_application(true),
+                ApplicationOrLib::Lib => Config::save_is_application(false),
+            },
+            Param::GithubActionPythonTestVersions { value } => {
+                Config::save_github_actions_python_test_versions(value)
+            }
+            Param::MaxLineLength { value } => Config::save_max_line_length(value),
+            Param::UseDependabot { value } => match value {
+                BooleanChoice::True => Config::save_use_dependabot(true),
+                BooleanChoice::False => Config::save_use_dependabot(false),
+            },
+            Param::UseContinuousDeployment { value } => match value {
+                BooleanChoice::True => Config::save_use_continuous_deployment(true),
+                BooleanChoice::False => Config::save_use_continuous_deployment(false),
+            },
+            Param::UseReleaseDrafter { value } => match value {
+                BooleanChoice::True => Config::save_use_release_drafter(true),
+                BooleanChoice::False => Config::save_use_release_drafter(false),
+            },
+            Param::UseMultiOsCi { value } => match value {
+                BooleanChoice::True => Config::save_use_multi_os_ci(true),
+                BooleanChoice::False => Config::save_use_multi_os_ci(false),
+            },
+
+            Param::DownloadLatestPackages { value } => match value {
+                BooleanChoice::True => Config::save_download_latest_packages(true),
+                BooleanChoice::False => Config::save_download_latest_packages(false),
+            },
+            Param::Reset => {
+                if Config::reset().is_err() {
+                    let message = "Error resetting config.";
+                    println!("{}", message.red());
+                    exit(1);
+                }
+            }
+            Param::Show => Config::show(),
+        },
     }
 }

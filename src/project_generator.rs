@@ -524,7 +524,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
             &project_info.project_slug,
             &project_info.source_dir,
             &project_info.min_python_version,
-            &project_info.github_action_python_test_versions,
+            &project_info.github_actions_python_test_versions,
         )
         .is_err()
         {
@@ -536,7 +536,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
         &project_info.project_slug,
         &project_info.source_dir,
         &project_info.min_python_version,
-        &project_info.github_action_python_test_versions,
+        &project_info.github_actions_python_test_versions,
     )
     .is_err()
     {
@@ -761,7 +761,7 @@ dmypy.json
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
             is_application: true,
-            github_action_python_test_versions: vec![
+            github_actions_python_test_versions: vec![
                 "3.8".to_string(),
                 "3.9".to_string(),
                 "3.10".to_string(),
@@ -875,7 +875,7 @@ fix = true
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
             is_application: true,
-            github_action_python_test_versions: vec![
+            github_actions_python_test_versions: vec![
                 "3.8".to_string(),
                 "3.9".to_string(),
                 "3.10".to_string(),
@@ -989,7 +989,7 @@ fix = true
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
             is_application: true,
-            github_action_python_test_versions: vec![
+            github_actions_python_test_versions: vec![
                 "3.8".to_string(),
                 "3.9".to_string(),
                 "3.10".to_string(),
@@ -1102,7 +1102,7 @@ fix = true
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
             is_application: false,
-            github_action_python_test_versions: vec![
+            github_actions_python_test_versions: vec![
                 "3.8".to_string(),
                 "3.9".to_string(),
                 "3.10".to_string(),

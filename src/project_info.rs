@@ -1,12 +1,13 @@
 use std::io::Write;
 use std::path::Path;
 
+use clap::ValueEnum;
 use colored::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::config::Config;
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum)]
 pub enum LicenseType {
     Mit,
     Apache2,
@@ -65,7 +66,7 @@ pub struct ProjectInfo {
     pub python_version: String,
     pub min_python_version: String,
     pub is_application: bool,
-    pub github_action_python_test_versions: Vec<String>,
+    pub github_actions_python_test_versions: Vec<String>,
     pub max_line_length: u8,
     pub use_dependabot: bool,
     pub use_continuous_deployment: bool,
@@ -106,7 +107,7 @@ fn is_application_prompt(default: Option<bool>) -> bool {
     boolean_prompt(prompt_text, default)
 }
 
-fn is_valid_python_version(version: &str) -> bool {
+pub fn is_valid_python_version(version: &str) -> bool {
     let split_version = version.split('.');
     let split_length = split_version.clone().count();
 
@@ -165,7 +166,6 @@ pub fn get_project_info() -> ProjectInfo {
         Ok(c) => c,
         Err(_) => Config::new(),
     };
-    println!("{:?}", config);
     let project_name_prompt = Prompt {
         prompt_text: "Project Name".to_string(),
         default: None,
@@ -232,17 +232,13 @@ pub fn get_project_info() -> ProjectInfo {
     };
     let min_python_version = python_min_version_prompt(min_python_version_default);
 
-    let github_actions_python_test_version_default = match config.github_action_python_test_versions
-    {
-        Some(versions) => versions
-            .iter()
-            .map(|x| format!(r#""{x}""#))
-            .collect::<Vec<String>>()
-            .join(", "),
-        None => "3.8, 3.9, 3,10, 3.11".to_string(),
-    };
-    let github_action_python_test_versions =
-        github_action_python_test_versions_prompt(github_actions_python_test_version_default);
+    let github_actions_python_test_version_default =
+        match config.github_actions_python_test_versions {
+            Some(versions) => versions.join(", "),
+            None => "3.8, 3.9, 3,10, 3.11".to_string(),
+        };
+    let github_actions_python_test_versions =
+        github_actions_python_test_versions_prompt(github_actions_python_test_version_default);
 
     let is_application = is_application_prompt(config.is_application);
     let max_line_length = max_line_length_prompt(config.max_line_length);
@@ -270,7 +266,7 @@ pub fn get_project_info() -> ProjectInfo {
         python_version,
         min_python_version,
         is_application,
-        github_action_python_test_versions,
+        github_actions_python_test_versions,
         max_line_length,
         use_dependabot,
         use_continuous_deployment,
@@ -280,7 +276,7 @@ pub fn get_project_info() -> ProjectInfo {
     }
 }
 
-fn github_action_python_test_versions_prompt(default: String) -> Vec<String> {
+fn github_actions_python_test_versions_prompt(default: String) -> Vec<String> {
     let prompt = Prompt {
         prompt_text: "Python Versions for Github Actions Testing".to_string(),
         default: Some(default),
@@ -292,6 +288,7 @@ fn github_action_python_test_versions_prompt(default: String) -> Vec<String> {
 
     for version in version_check.split(',') {
         if !is_valid_python_version(version) {
+            println!("{version}");
             let error_message = format!("{} is not a valid Python Version", version);
             println!("\n{}", error_message.red());
             std::process::exit(1);
