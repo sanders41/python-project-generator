@@ -16,10 +16,12 @@ continuous integration and continuous deployment.
 
 ## How to use
 
+### Create a new project
+
 From your terminal run:
 
 ```sh
-python-project-generator
+python-project create
 ```
 
 You will be asked a series of questions that will be used to generate your project. The project
@@ -30,7 +32,7 @@ retrieving the latest versions or if you have decided to skip looking up the lat
 packages will be be created with default version.
 
 ```sh
-python-project-generator -s
+python-project create -s
 ```
 
 After running the generator a new directory will be created with the name you used for the
@@ -45,3 +47,30 @@ pre-commit install
 ```
 
 Now your project is ready to use.
+
+### Save custom default values
+
+You can specify default values for many of the project options. For example to save a default
+creator:
+
+```sh
+python-project config creator "Wade Watts"
+```
+
+To see a full list of values that be set as defaults run:
+
+```sh
+python-project config --help
+```
+
+To view the current saved defaults:
+
+```sh
+python-project config show
+```
+
+To remove custom defaults:
+
+```sh
+python-project config reset
+```
