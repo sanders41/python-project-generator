@@ -21,10 +21,10 @@ jobs:
             asset_name: python-project-generator-macos-amd64
 
     steps:
-      - uses: hecrj/setup-rust-action@v1
-        with:
-          rust-version: stable
       - uses: actions/checkout@v4
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - name: Build
         run: cargo build --release --locked
       - name: Compress binaries
