@@ -4,6 +4,7 @@ use std::path::Path;
 use clap::ValueEnum;
 use colored::*;
 use serde::{Deserialize, Serialize};
+use time::OffsetDateTime;
 
 use crate::config::Config;
 
@@ -132,9 +133,13 @@ pub fn is_valid_python_version(version: &str) -> bool {
 
 fn copyright_year_prompt(license: &LicenseType) -> String {
     let prompt_text = "Copyright Year".to_string();
+    let mut default: Option<String> = None;
+    if let Ok(now) = OffsetDateTime::now_local() {
+        default = Some(now.year().to_string());
+    };
     let prompt = Prompt {
         prompt_text,
-        default: None,
+        default,
     };
     let input = prompt.show_prompt();
 
