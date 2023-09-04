@@ -14,6 +14,14 @@ continuous integration and continuous deployment.
 - [pytest-cov](https://github.com/pytest-dev/pytest-cov) for test coverage reports
 - [ruff](https://beta.ruff.rs/docs/) for linting
 
+## Installation
+
+First install [Rust](https://www.rust-lang.org/tools/install). Then to install the package run:
+
+```sh
+cargo install python-project-generator
+```
+
 ## How to use
 
 ### Create a new project
