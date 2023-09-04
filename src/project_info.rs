@@ -83,6 +83,7 @@ fn boolean_prompt(prompt_text: String, default: Option<bool>) -> bool {
         },
         None => "1".to_string(),
     };
+
     let prompt = Prompt {
         prompt_text,
         default: Some(default_str),
@@ -108,7 +109,6 @@ fn is_application_prompt(default: Option<bool>) -> bool {
 }
 
 pub fn is_valid_python_version(version: &str) -> bool {
-    println!("{}", version);
     let split_version = version.split('.');
     let split_length = split_version.clone().count();
 
@@ -243,16 +243,23 @@ pub fn get_project_info() -> ProjectInfo {
 
     let is_application = is_application_prompt(config.is_application);
     let max_line_length = max_line_length_prompt(config.max_line_length);
-    let use_dependabot = boolean_prompt("Use Dependabot".to_string(), config.use_dependabot);
+
+    let use_dependabot = boolean_prompt(
+        "Use Dependabot\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+        config.use_dependabot,
+    );
     let use_continuous_deployment = boolean_prompt(
-        "Use Continuous Deployment".to_string(),
+        "Use Continuous Deployment\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
         config.use_continuous_deployment,
     );
     let use_release_drafter = boolean_prompt(
-        "Use Release Drafter".to_string(),
+        "Use Release Drafter\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
         config.use_release_drafter,
     );
-    let use_multi_os_ci = boolean_prompt("Use Multi OS CI".to_string(), config.use_multi_os_ci);
+    let use_multi_os_ci = boolean_prompt(
+        "Use Multi OS CI\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+        config.use_multi_os_ci,
+    );
 
     ProjectInfo {
         project_name,
@@ -289,7 +296,6 @@ fn github_actions_python_test_versions_prompt(default: String) -> Vec<String> {
 
     for version in version_check.split(',') {
         if !is_valid_python_version(version) {
-            println!("{version}");
             let error_message = format!("{} is not a valid Python Version", version);
             println!("\n{}", error_message.red());
             std::process::exit(1);
