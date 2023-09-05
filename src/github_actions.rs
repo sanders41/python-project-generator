@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use anyhow::Result;
 
 use crate::file_manager::save_file_with_content;
@@ -110,8 +112,15 @@ pub fn save_ci_testing_linux_only_file(
     source_dir: &str,
     min_python_version: &str,
     github_action_python_test_versions: &[String],
+    project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
-    let file_path = format!("{project_slug}/.github/workflows/testing.yml");
+    let file_path = match project_root_dir {
+        Some(root) => format!(
+            "{}/{project_slug}/.github/workflows/testing.yml",
+            root.display()
+        ),
+        None => format!("{project_slug}/.github/workflows/testing.yml"),
+    };
     let content = create_ci_testing_linux_only_file(
         source_dir,
         min_python_version,
@@ -232,8 +241,15 @@ pub fn save_ci_testing_multi_os_file(
     source_dir: &str,
     min_python_version: &str,
     github_action_python_test_versions: &[String],
+    project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
-    let file_path = format!("{project_slug}/.github/workflows/testing.yml");
+    let file_path = match project_root_dir {
+        Some(root) => format!(
+            "{}/{project_slug}/.github/workflows/testing.yml",
+            root.display()
+        ),
+        None => format!("{project_slug}/.github/workflows/testing.yml"),
+    };
     let content = create_ci_testing_multi_os_file(
         source_dir,
         min_python_version,
@@ -266,8 +282,11 @@ updates:
     .to_string()
 }
 
-pub fn save_dependabot_file(project_slug: &str) -> Result<()> {
-    let file_path = format!("{project_slug}/.github/dependabot.yml");
+pub fn save_dependabot_file(project_slug: &str, project_root_dir: &Option<PathBuf>) -> Result<()> {
+    let file_path = match project_root_dir {
+        Some(root) => format!("{}/{project_slug}/.github/dependabot.yml", root.display()),
+        None => format!("{project_slug}/.github/dependabot.yml"),
+    };
     let content = create_dependabot_file();
 
     save_file_with_content(&file_path, &content)?;
@@ -306,8 +325,17 @@ jobs:
     .to_string()
 }
 
-pub fn save_pypi_publish_file(project_slug: &str) -> Result<()> {
-    let file_path = format!("{project_slug}/.github/workflows/pypi_publish.yml");
+pub fn save_pypi_publish_file(
+    project_slug: &str,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
+    let file_path = match project_root_dir {
+        Some(root) => format!(
+            "{}/{project_slug}/.github/workflows/pypi_publish.yml",
+            root.display()
+        ),
+        None => format!("{project_slug}/.github/workflows/pypi_publish.yml"),
+    };
     let content = create_pypi_publish_file();
 
     save_file_with_content(&file_path, &content)?;
@@ -366,13 +394,20 @@ template: |
     .to_string()
 }
 
-pub fn save_release_drafter_file(project_slug: &str) -> Result<()> {
-    let template_file_path = format!("{project_slug}/.github/release_drafter_template.yml");
+pub fn save_release_drafter_file(
+    project_slug: &str,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
+    let base = match project_root_dir {
+        Some(root) => format!("{}/{project_slug}/.github", root.display()),
+        None => format!("{project_slug}/.github"),
+    };
+    let template_file_path = format!("{base}/release_drafter_template.yml");
     let template_content = create_release_drafter_template_file();
 
     save_file_with_content(&template_file_path, &template_content)?;
 
-    let file_path = format!("{project_slug}/.github/workflows/release_drafter.yml");
+    let file_path = format!("{base}/workflows/release_drafter.yml");
     let content = create_release_drafter_file();
 
     save_file_with_content(&file_path, &content)?;
@@ -383,9 +418,11 @@ pub fn save_release_drafter_file(project_slug: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs::create_dir_all;
+    use tempfile::tempdir;
 
     #[test]
-    fn test_create_ci_testing_linux_only_file() {
+    fn test_save_ci_testing_linux_only_file() {
         let expected = r#"name: Testing
 
 on:
@@ -475,23 +512,33 @@ jobs:
         poetry run pytest
 "#.to_string();
 
-        assert_eq!(
-            create_ci_testing_linux_only_file(
-                "src",
-                "3.8",
-                &[
-                    "3.8".to_string(),
-                    "3.9".to_string(),
-                    "3.10".to_string(),
-                    "3.11".to_string()
-                ]
-            ),
-            expected
-        );
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
+        let expected_file = base.join(format!("{project_slug}/.github/workflows/testing.yml"));
+        save_ci_testing_linux_only_file(
+            &project_slug,
+            "src",
+            "3.8",
+            &[
+                "3.8".to_string(),
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string(),
+            ],
+            &Some(base),
+        )
+        .unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
     }
 
     #[test]
-    fn test_create_ci_testing_multi_os_file() {
+    fn test_save_ci_testing_multi_os_file() {
         let expected =
             r#"name: Testing
 
@@ -583,23 +630,33 @@ jobs:
         poetry run pytest
 "#.to_string();
 
-        assert_eq!(
-            create_ci_testing_multi_os_file(
-                "src",
-                "3.8",
-                &[
-                    "3.8".to_string(),
-                    "3.9".to_string(),
-                    "3.10".to_string(),
-                    "3.11".to_string()
-                ]
-            ),
-            expected
-        );
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
+        let expected_file = base.join(format!("{project_slug}/.github/workflows/testing.yml"));
+        save_ci_testing_multi_os_file(
+            &project_slug,
+            "src",
+            "3.8",
+            &[
+                "3.8".to_string(),
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string(),
+            ],
+            &Some(base),
+        )
+        .unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
     }
 
     #[test]
-    fn test_create_dependabot_file() {
+    fn test_save_dependabot_file() {
         let expected = r#"version: 2
 updates:
   - package-ecosystem: "pip"
@@ -619,11 +676,21 @@ updates:
 "#
         .to_string();
 
-        assert_eq!(create_dependabot_file(), expected);
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(format!("{project_slug}/.github"))).unwrap();
+        let expected_file = base.join(format!("{project_slug}/.github/dependabot.yml"));
+        save_dependabot_file(&project_slug, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
     }
 
     #[test]
-    fn test_create_pypi_publish_file() {
+    fn test_save_pypi_publish_file() {
         let expected = r#"name: PyPi Publish
 on:
   release:
@@ -653,12 +720,22 @@ jobs:
 "#
         .to_string();
 
-        assert_eq!(create_pypi_publish_file(), expected);
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
+        let expected_file = base.join(format!("{project_slug}/.github/workflows/pypi_publish.yml"));
+        save_pypi_publish_file(&project_slug, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
     }
 
     #[test]
-    fn test_create_release_drafter_file() {
-        let expected = r#"name: Release Drafter
+    fn test_save_release_drafter_file() {
+        let release_drafer_file_expected = r#"name: Release Drafter
 
 on:
   push:
@@ -677,12 +754,7 @@ jobs:
 "#
         .to_string();
 
-        assert_eq!(create_release_drafter_file(), expected);
-    }
-
-    #[test]
-    fn test_create_release_drafter_template_file() {
-        let expected = r#"name-template: 'v$RESOLVED_VERSION'
+        let expected_release_drafter_template = r#"name-template: 'v$RESOLVED_VERSION'
 tag-template: 'v$RESOLVED_VERSION'
 exclude-labels:
   - 'dependencies'
@@ -710,6 +782,31 @@ template: |
 "#
         .to_string();
 
-        assert_eq!(create_release_drafter_template_file(), expected);
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
+        let expected_release_drafter_file = base.join(format!(
+            "{project_slug}/.github/workflows/release_drafter.yml"
+        ));
+        let expected_release_drafter_template_file = base.join(format!(
+            "{project_slug}/.github//release_drafter_template.yml"
+        ));
+        save_release_drafter_file(&project_slug, &Some(base)).unwrap();
+
+        assert!(expected_release_drafter_file.is_file());
+        assert!(expected_release_drafter_template_file.is_file());
+
+        let release_drafter_file_content =
+            std::fs::read_to_string(expected_release_drafter_file).unwrap();
+
+        assert_eq!(release_drafter_file_content, release_drafer_file_expected);
+
+        let release_drafter_file_template_content =
+            std::fs::read_to_string(expected_release_drafter_template_file).unwrap();
+
+        assert_eq!(
+            release_drafter_file_template_content,
+            expected_release_drafter_template
+        );
     }
 }

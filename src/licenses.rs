@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use anyhow::Result;
 use colored::*;
 
@@ -183,11 +185,14 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
     .to_string()
 }
 
-fn save_apache_license(project_slug: &str) -> Result<()> {
-    let license_path = format!("{project_slug}/LICENSE");
-    let license_content = create_apache_license();
+fn save_apache_license(project_slug: &str, project_root_dir: &Option<PathBuf>) -> Result<()> {
+    let file_path = match project_root_dir {
+        Some(root) => format!("{}/{project_slug}/LICENSE", root.display()),
+        None => format!("{project_slug}/LICENSE"),
+    };
+    let content = create_apache_license();
 
-    save_file_with_content(&license_path, &license_content)?;
+    save_file_with_content(&file_path, &content)?;
 
     Ok(())
 }
@@ -219,10 +224,18 @@ SOFTWARE.
     )
 }
 
-fn save_mit_license(project_slug: &str, copyright_year: &str, creator: &str) -> Result<()> {
-    let license_path = format!("{project_slug}/LICENSE");
-    let license_content = create_mit_license(copyright_year, creator);
-    save_file_with_content(&license_path, &license_content)?;
+fn save_mit_license(
+    project_slug: &str,
+    copyright_year: &str,
+    creator: &str,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
+    let file_path = match project_root_dir {
+        Some(root) => format!("{}/{project_slug}/LICENSE", root.display()),
+        None => format!("{project_slug}/LICENSE"),
+    };
+    let content = create_mit_license(copyright_year, creator);
+    save_file_with_content(&file_path, &content)?;
 
     Ok(())
 }
@@ -232,11 +245,12 @@ pub fn generate_license(
     copywright_year: &Option<String>,
     project_slug: &str,
     creator: &str,
+    project_root_dir: &Option<PathBuf>,
 ) {
     match license {
         LicenseType::Mit => {
             if let Some(year) = copywright_year {
-                if save_mit_license(project_slug, year, creator).is_err() {
+                if save_mit_license(project_slug, year, creator, project_root_dir).is_err() {
                     let error_message = "Error creating MIT license file";
                     println!("\n{}", error_message.red());
                     std::process::exit(1);
@@ -248,7 +262,7 @@ pub fn generate_license(
             }
         }
         LicenseType::Apache2 => {
-            if save_apache_license(project_slug).is_err() {
+            if save_apache_license(project_slug, project_root_dir).is_err() {
                 let error_message = "Error creating Apache2 license file";
                 println!("\n{}", error_message.red());
                 std::process::exit(1);
@@ -261,9 +275,11 @@ pub fn generate_license(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs::create_dir_all;
+    use tempfile::tempdir;
 
     #[test]
-    fn test_create_apache_license() {
+    fn test_save_apache_license() {
         let expected = r#"                               Apache License
                          Version 2.0, January 2004
                       http://www.apache.org/licenses/
@@ -441,7 +457,17 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 "#
         .to_string();
 
-        assert_eq!(create_apache_license(), expected);
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/LICENSE"));
+        save_apache_license(&project_slug, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
     }
 
     #[test]
@@ -470,6 +496,16 @@ SOFTWARE.
 "#
         .to_string();
 
-        assert_eq!(create_mit_license("2023", "Arthur Dent"), expected);
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/LICENSE"));
+        save_mit_license(&project_slug, "2023", "Arthur Dent", &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
     }
 }

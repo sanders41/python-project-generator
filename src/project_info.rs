@@ -1,5 +1,5 @@
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use clap::ValueEnum;
 use colored::*;
@@ -74,6 +74,7 @@ pub struct ProjectInfo {
     pub use_release_drafter: bool,
     pub use_multi_os_ci: bool,
     pub download_latest_packages: bool,
+    pub project_root_dir: Option<PathBuf>,
 }
 
 fn boolean_prompt(prompt_text: String, default: Option<bool>) -> bool {
@@ -286,6 +287,7 @@ pub fn get_project_info() -> ProjectInfo {
         use_release_drafter,
         use_multi_os_ci,
         download_latest_packages: false,
+        project_root_dir: None,
     }
 }
 
