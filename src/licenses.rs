@@ -461,7 +461,7 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
         let project_slug = "test-project";
         create_dir_all(base.join(project_slug)).unwrap();
         let expected_file = base.join(format!("{project_slug}/LICENSE"));
-        save_apache_license(&project_slug, &Some(base)).unwrap();
+        save_apache_license(project_slug, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -500,7 +500,7 @@ SOFTWARE.
         let project_slug = "test-project";
         create_dir_all(base.join(project_slug)).unwrap();
         let expected_file = base.join(format!("{project_slug}/LICENSE"));
-        save_mit_license(&project_slug, "2023", "Arthur Dent", &Some(base)).unwrap();
+        save_mit_license(project_slug, "2023", "Arthur Dent", &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 

@@ -517,7 +517,7 @@ jobs:
         create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/.github/workflows/testing.yml"));
         save_ci_testing_linux_only_file(
-            &project_slug,
+            project_slug,
             "src",
             "3.8",
             &[
@@ -635,7 +635,7 @@ jobs:
         create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/.github/workflows/testing.yml"));
         save_ci_testing_multi_os_file(
-            &project_slug,
+            project_slug,
             "src",
             "3.8",
             &[
@@ -680,7 +680,7 @@ updates:
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/.github"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/.github/dependabot.yml"));
-        save_dependabot_file(&project_slug, &Some(base)).unwrap();
+        save_dependabot_file(project_slug, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -724,7 +724,7 @@ jobs:
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/.github/workflows/pypi_publish.yml"));
-        save_pypi_publish_file(&project_slug, &Some(base)).unwrap();
+        save_pypi_publish_file(project_slug, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -791,7 +791,7 @@ template: |
         let expected_release_drafter_template_file = base.join(format!(
             "{project_slug}/.github//release_drafter_template.yml"
         ));
-        save_release_drafter_file(&project_slug, &Some(base)).unwrap();
+        save_release_drafter_file(project_slug, &Some(base)).unwrap();
 
         assert!(expected_release_drafter_file.is_file());
         assert!(expected_release_drafter_template_file.is_file());

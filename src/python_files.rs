@@ -227,7 +227,7 @@ __version__ = VERSION
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/src"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/src/__init__.py"));
-        save_project_init_file(&project_slug, "src", &Some(base)).unwrap();
+        save_project_init_file(project_slug, "src", &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -261,7 +261,7 @@ if __name__ == "__main__":
         create_dir_all(base.join(format!("{project_slug}/src"))).unwrap();
         let expected_dunder_main_file = base.join(format!("{project_slug}/src/__main__.py"));
         let expected_main_file = base.join(format!("{project_slug}/src/main.py"));
-        save_main_files(&project_slug, "src", &Some(base)).unwrap();
+        save_main_files(project_slug, "src", &Some(base)).unwrap();
 
         assert!(expected_dunder_main_file.is_file());
         assert!(expected_main_file.is_file());
@@ -289,7 +289,7 @@ def test_main():
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/tests"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/tests/test_main.py"));
-        save_main_test_file(&project_slug, "src", &Some(base)).unwrap();
+        save_main_test_file(project_slug, "src", &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -306,7 +306,7 @@ def test_main():
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/src"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/src/_version.py"));
-        save_version_file(&project_slug, "src", "1.2.3", &Some(base)).unwrap();
+        save_version_file(project_slug, "src", "1.2.3", &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -342,7 +342,7 @@ def test_versions_match():
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/tests"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/tests/test_version.py"));
-        save_version_test_file(&project_slug, "src", &Some(base)).unwrap();
+        save_version_test_file(project_slug, "src", &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 

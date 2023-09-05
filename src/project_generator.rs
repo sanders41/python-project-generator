@@ -760,7 +760,7 @@ dmypy.json
         let project_slug = "test-project";
         create_dir_all(base.join(project_slug)).unwrap();
         let expected_file = base.join(format!("{project_slug}/.gitignore"));
-        save_gitigngore_file(&project_slug, &Some(base)).unwrap();
+        save_gitigngore_file(project_slug, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -805,7 +805,7 @@ dmypy.json
         let project_slug = "test-project";
         create_dir_all(base.join(project_slug)).unwrap();
         let expected_file = base.join(format!("{project_slug}/.pre-commit-config.yaml"));
-        save_pre_commit_file(&project_slug, &max_line_length, false, &Some(base)).unwrap();
+        save_pre_commit_file(project_slug, &max_line_length, false, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -1325,7 +1325,7 @@ fix = true
         create_dir_all(base.join(project_slug)).unwrap();
         let expected_file = base.join(format!("{project_slug}/README.md"));
         save_readme_file(
-            &project_slug,
+            project_slug,
             project_name,
             project_description,
             &Some(base),
