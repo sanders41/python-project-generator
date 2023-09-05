@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::prelude::*;
+use std::path::PathBuf;
 
 use anyhow::Result;
 
@@ -10,9 +11,17 @@ pub fn save_file_with_content(file_path: &str, file_content: &str) -> Result<()>
     Ok(())
 }
 
-pub fn save_empty_src_file(project_slug: &str, source_dir: &str, file_name: &str) -> Result<()> {
-    let init_file = format!("{project_slug}/{source_dir}/{file_name}");
-    File::create(init_file)?;
+pub fn save_empty_src_file(
+    project_slug: &str,
+    source_dir: &str,
+    file_name: &str,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
+    let file_path = match project_root_dir {
+        Some(root) => format!("{}/{project_slug}/{source_dir}/{file_name}", root.display()),
+        None => format!("{project_slug}/{source_dir}/{file_name}"),
+    };
+    File::create(file_path)?;
 
     Ok(())
 }

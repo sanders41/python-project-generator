@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use anyhow::Result;
 use colored::*;
 
@@ -26,8 +28,15 @@ if __name__ == "__main__":
     .to_string()
 }
 
-fn save_main_files(project_slug: &str, source_dir: &str) -> Result<()> {
-    let src = format!("{project_slug}/{source_dir}");
+fn save_main_files(
+    project_slug: &str,
+    source_dir: &str,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
+    let src = match project_root_dir {
+        Some(root) => format!("{}/{project_slug}/{source_dir}", root.display()),
+        None => format!("{project_slug}/{source_dir}"),
+    };
     let main = format!("{src}/main.py");
     let main_content = create_main_file();
 
@@ -52,11 +61,18 @@ def test_main():
     )
 }
 
-fn save_main_test_file(project_slug: &str, source_dir: &str) -> Result<()> {
-    let main_test_path = format!("{project_slug}/tests/test_main.py");
-    let main_test_content = create_main_test_file(source_dir);
+fn save_main_test_file(
+    project_slug: &str,
+    source_dir: &str,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
+    let file_path = match project_root_dir {
+        Some(root) => format!("{}/{project_slug}/tests/test_main.py", root.display()),
+        None => format!("{project_slug}/tests/test_main.py"),
+    };
+    let content = create_main_test_file(source_dir);
 
-    save_file_with_content(&main_test_path, &main_test_content)?;
+    save_file_with_content(&file_path, &content)?;
 
     Ok(())
 }
@@ -70,8 +86,15 @@ __version__ = VERSION
     )
 }
 
-fn save_project_init_file(project_slug: &str, source_dir: &str) -> Result<()> {
-    let file_path = format!("{project_slug}/{source_dir}/__init__.py");
+fn save_project_init_file(
+    project_slug: &str,
+    source_dir: &str,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
+    let file_path = match project_root_dir {
+        Some(root) => format!("{}/{project_slug}/{source_dir}/__init__.py", root.display()),
+        None => format!("{project_slug}/{source_dir}/__init__.py"),
+    };
     let content = create_project_init_file(source_dir);
 
     save_file_with_content(&file_path, &content)?;
@@ -83,11 +106,19 @@ fn create_version_file(version: &str) -> String {
     format!("VERSION = \"{version}\"\n")
 }
 
-fn save_version_file(project_slug: &str, source_dir: &str, version: &str) -> Result<()> {
-    let version_file_path = format!("{project_slug}/{source_dir}/_version.py");
-    let version_content = create_version_file(version);
+fn save_version_file(
+    project_slug: &str,
+    source_dir: &str,
+    version: &str,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
+    let file_path = match project_root_dir {
+        Some(root) => format!("{}/{project_slug}/{source_dir}/_version.py", root.display()),
+        None => format!("{project_slug}/{source_dir}/_version.py"),
+    };
+    let content = create_version_file(version);
 
-    save_file_with_content(&version_file_path, &version_content)?;
+    save_file_with_content(&file_path, &content)?;
 
     Ok(())
 }
@@ -116,8 +147,15 @@ def test_versions_match():
     )
 }
 
-fn save_version_test_file(project_slug: &str, source_dir: &str) -> Result<()> {
-    let file_path = format!("{project_slug}/tests/test_version.py");
+fn save_version_test_file(
+    project_slug: &str,
+    source_dir: &str,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
+    let file_path = match project_root_dir {
+        Some(root) => format!("{}/{project_slug}/tests/test_version.py", root.display()),
+        None => format!("{project_slug}/tests/test_version.py"),
+    };
     let content = create_version_test_file(source_dir);
 
     save_file_with_content(&file_path, &content)?;
@@ -130,40 +168,41 @@ pub fn generate_python_files(
     project_slug: &str,
     source_dir: &str,
     version: &str,
+    project_root_dir: &Option<PathBuf>,
 ) {
-    if save_project_init_file(project_slug, source_dir).is_err() {
+    if save_project_init_file(project_slug, source_dir, project_root_dir).is_err() {
         let error_message = "Error creating __init__.py file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
     }
 
-    if save_empty_src_file(project_slug, "tests", "__init__.py").is_err() {
+    if save_empty_src_file(project_slug, "tests", "__init__.py", project_root_dir).is_err() {
         let error_message = "Error creating test __init__.py file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
     }
 
     if *is_application {
-        if save_main_files(project_slug, source_dir).is_err() {
+        if save_main_files(project_slug, source_dir, project_root_dir).is_err() {
             let error_message = "Error creating main files";
             println!("\n{}", error_message.red());
             std::process::exit(1);
         }
 
-        if save_main_test_file(project_slug, source_dir).is_err() {
+        if save_main_test_file(project_slug, source_dir, project_root_dir).is_err() {
             let error_message = "Error creating main test file";
             println!("\n{}", error_message.red());
             std::process::exit(1);
         }
     }
 
-    if save_version_file(project_slug, source_dir, version).is_err() {
+    if save_version_file(project_slug, source_dir, version, project_root_dir).is_err() {
         let error_message = "Error creating version file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
     }
 
-    if save_version_test_file(project_slug, source_dir).is_err() {
+    if save_version_test_file(project_slug, source_dir, project_root_dir).is_err() {
         let error_message = "Error creating version test file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
@@ -173,33 +212,40 @@ pub fn generate_python_files(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs::create_dir_all;
+    use tempfile::tempdir;
 
     #[test]
-    fn test_create_project_init_file() {
+    fn test_save_project_init_file() {
         let expected = r#"from src._version import VERSION
 
 __version__ = VERSION
 "#
         .to_string();
 
-        assert_eq!(create_project_init_file("src"), expected);
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(format!("{project_slug}/src"))).unwrap();
+        let expected_file = base.join(format!("{project_slug}/src/__init__.py"));
+        save_project_init_file(project_slug, "src", &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
     }
 
     #[test]
-    fn test_create_dunder_main_file() {
-        let expected = r#"from src.main import main  #  pragma: no cover
+    fn test_save_main_files() {
+        let expected_dunder_main = r#"from src.main import main  #  pragma: no cover
 
 if __name__ == "__main__":
     raise SystemExit(main())
 "#
         .to_string();
 
-        assert_eq!(create_dunder_main_file("src"), expected);
-    }
-
-    #[test]
-    fn test_create_main_file() {
-        let expected = r#"def main() -> int:
+        let expected_main = r#"def main() -> int:
     print("Hello world!")  # noqa: T201
 
     return 0
@@ -210,11 +256,27 @@ if __name__ == "__main__":
 "#
         .to_string();
 
-        assert_eq!(create_main_file(), expected);
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(format!("{project_slug}/src"))).unwrap();
+        let expected_dunder_main_file = base.join(format!("{project_slug}/src/__main__.py"));
+        let expected_main_file = base.join(format!("{project_slug}/src/main.py"));
+        save_main_files(project_slug, "src", &Some(base)).unwrap();
+
+        assert!(expected_dunder_main_file.is_file());
+        assert!(expected_main_file.is_file());
+
+        let dunder_main_content = std::fs::read_to_string(expected_dunder_main_file).unwrap();
+
+        assert_eq!(dunder_main_content, expected_dunder_main);
+
+        let main_content = std::fs::read_to_string(expected_main_file).unwrap();
+
+        assert_eq!(main_content, expected_main);
     }
 
     #[test]
-    fn test_create_main_test_file() {
+    fn test_save_main_test_file() {
         let expected = r#"from src.main import main
 
 
@@ -223,17 +285,38 @@ def test_main():
 "#
         .to_string();
 
-        assert_eq!(create_main_test_file("src"), expected);
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(format!("{project_slug}/tests"))).unwrap();
+        let expected_file = base.join(format!("{project_slug}/tests/test_main.py"));
+        save_main_test_file(project_slug, "src", &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
     }
 
     #[test]
-    fn test_create_version_file() {
+    fn test_save_version_file() {
         let expected = "VERSION = \"1.2.3\"\n".to_string();
-        assert_eq!(create_version_file("1.2.3"), expected);
+
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(format!("{project_slug}/src"))).unwrap();
+        let expected_file = base.join(format!("{project_slug}/src/_version.py"));
+        save_version_file(project_slug, "src", "1.2.3", &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
     }
 
     #[test]
-    fn test_create_version_test_file() {
+    fn test_save_version_test_file() {
         let expected = r#"import sys
 from pathlib import Path
 
@@ -255,6 +338,16 @@ def test_versions_match():
 "#
         .to_string();
 
-        assert_eq!(create_version_test_file("src"), expected);
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(format!("{project_slug}/tests"))).unwrap();
+        let expected_file = base.join(format!("{project_slug}/tests/test_version.py"));
+        save_version_test_file(project_slug, "src", &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
     }
 }

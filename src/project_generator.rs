@@ -1,4 +1,5 @@
 use std::fs::create_dir_all;
+use std::path::PathBuf;
 
 use anyhow::Result;
 use colored::*;
@@ -16,14 +17,22 @@ use crate::python_package_version::{
     LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackageVersion,
 };
 
-fn create_directories(project_slug: &str, source_dir: &str) -> Result<()> {
-    let src = format!("{project_slug}/{source_dir}");
+fn create_directories(
+    project_slug: &str,
+    source_dir: &str,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
+    let base = match project_root_dir {
+        Some(root) => format!("{}/{}", root.display(), project_slug),
+        None => project_slug.to_string(),
+    };
+    let src = format!("{base}/{source_dir}");
     create_dir_all(src)?;
 
-    let github_dir = format!("{project_slug}/.github/workflows");
+    let github_dir = format!("{base}/.github/workflows");
     create_dir_all(github_dir)?;
 
-    let test_dir = format!("{project_slug}/tests");
+    let test_dir = format!("{base}/tests");
     create_dir_all(test_dir)?;
 
     Ok(())
@@ -172,8 +181,11 @@ dmypy.json
     .to_string()
 }
 
-fn save_gitigngore_file(project_slug: &str) -> Result<()> {
-    let file_path = format!("{project_slug}/.gitignore");
+fn save_gitigngore_file(project_slug: &str, project_root_dir: &Option<PathBuf>) -> Result<()> {
+    let file_path = match project_root_dir {
+        Some(root) => format!("{}/{project_slug}/.gitignore", root.display()),
+        None => format!("{project_slug}/.gitignore"),
+    };
     let content = create_gitigngore_file();
     save_file_with_content(&file_path, &content)?;
 
@@ -265,8 +277,12 @@ fn save_pre_commit_file(
     project_slug: &str,
     max_line_length: &u8,
     download_latest_packages: bool,
+    project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
-    let file_path = format!("{project_slug}/.pre-commit-config.yaml");
+    let file_path = match project_root_dir {
+        Some(root) => format!("{}/{project_slug}/.pre-commit-config.yaml", root.display()),
+        None => format!("{project_slug}/.pre-commit-config.yaml"),
+    };
     let content = create_pre_commit_file(max_line_length, download_latest_packages);
     save_file_with_content(&file_path, &content)?;
 
@@ -418,8 +434,15 @@ fix = true
     )
 }
 
-fn save_pyproject_toml(project_info: &ProjectInfo) -> Result<()> {
-    let file_path = format!("{}/pyproject.toml", project_info.project_slug,);
+fn save_pyproject_toml_file(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = match &project_info.project_root_dir {
+        Some(root) => format!(
+            "{}/{}/pyproject.toml",
+            root.display(),
+            project_info.project_slug
+        ),
+        None => format!("{}/pyproject.toml", project_info.project_slug),
+    };
     let content = create_pyproject_toml(project_info);
 
     save_file_with_content(&file_path, &content)?;
@@ -427,7 +450,7 @@ fn save_pyproject_toml(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_readme(project_name: &str, project_description: &str) -> String {
+fn create_readme_file(project_name: &str, project_description: &str) -> String {
     format!(
         r#"# {project_name}
 
@@ -436,22 +459,36 @@ fn create_readme(project_name: &str, project_description: &str) -> String {
     )
 }
 
-fn save_readme(project_slug: &str, project_name: &str, project_description: &str) -> Result<()> {
-    let readme_path = format!("{project_slug}/README.md");
-    let readme_content = create_readme(project_name, project_description);
-    save_file_with_content(&readme_path, &readme_content)?;
+fn save_readme_file(
+    project_slug: &str,
+    project_name: &str,
+    project_description: &str,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
+    let file_path = match project_root_dir {
+        Some(root) => format!("{}/{project_slug}/README.md", root.display()),
+        None => format!("{project_slug}/README.md"),
+    };
+    let content = create_readme_file(project_name, project_description);
+    save_file_with_content(&file_path, &content)?;
 
     Ok(())
 }
 
 pub fn generate_project(project_info: &ProjectInfo) {
-    if create_directories(&project_info.project_slug, &project_info.source_dir).is_err() {
+    if create_directories(
+        &project_info.project_slug,
+        &project_info.source_dir,
+        &project_info.project_root_dir,
+    )
+    .is_err()
+    {
         let error_message = "Error creating project directories";
         println!("\n{}", error_message.red());
         std::process::exit(1);
     }
 
-    if save_gitigngore_file(&project_info.project_slug).is_err() {
+    if save_gitigngore_file(&project_info.project_slug, &project_info.project_root_dir).is_err() {
         let error_message = "Error creating .gitignore file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
@@ -461,6 +498,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
         &project_info.project_slug,
         &project_info.max_line_length,
         project_info.download_latest_packages,
+        &project_info.project_root_dir,
     )
     .is_err()
     {
@@ -469,10 +507,11 @@ pub fn generate_project(project_info: &ProjectInfo) {
         std::process::exit(1);
     }
 
-    if save_readme(
+    if save_readme_file(
         &project_info.project_slug,
         &project_info.project_name,
         &project_info.project_description,
+        &project_info.project_root_dir,
     )
     .is_err()
     {
@@ -486,12 +525,14 @@ pub fn generate_project(project_info: &ProjectInfo) {
         &project_info.copyright_year,
         &project_info.project_slug,
         &project_info.creator,
+        &project_info.project_root_dir,
     );
 
     if save_empty_src_file(
         &project_info.project_slug,
         &project_info.source_dir,
         "py.typed",
+        &project_info.project_root_dir,
     )
     .is_err()
     {
@@ -505,15 +546,16 @@ pub fn generate_project(project_info: &ProjectInfo) {
         &project_info.project_slug,
         &project_info.source_dir,
         &project_info.version,
+        &project_info.project_root_dir,
     );
 
-    if save_pyproject_toml(project_info).is_err() {
+    if save_pyproject_toml_file(project_info).is_err() {
         let error_message = "Error creating pyproject.toml file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
     }
 
-    if save_pypi_publish_file(&project_info.project_slug).is_err() {
+    if save_pypi_publish_file(&project_info.project_slug, &project_info.project_root_dir).is_err() {
         let error_message = "Error creating PYPI publish file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
@@ -525,6 +567,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
             &project_info.source_dir,
             &project_info.min_python_version,
             &project_info.github_actions_python_test_versions,
+            &project_info.project_root_dir,
         )
         .is_err()
         {
@@ -537,6 +580,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
         &project_info.source_dir,
         &project_info.min_python_version,
         &project_info.github_actions_python_test_versions,
+        &project_info.project_root_dir,
     )
     .is_err()
     {
@@ -545,14 +589,17 @@ pub fn generate_project(project_info: &ProjectInfo) {
         std::process::exit(1);
     }
 
-    if project_info.use_dependabot && save_dependabot_file(&project_info.project_slug).is_err() {
+    if project_info.use_dependabot
+        && save_dependabot_file(&project_info.project_slug, &project_info.project_root_dir).is_err()
+    {
         let error_message = "Error creating dependabot file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
     }
 
     if project_info.use_release_drafter
-        && save_release_drafter_file(&project_info.project_slug).is_err()
+        && save_release_drafter_file(&project_info.project_slug, &project_info.project_root_dir)
+            .is_err()
     {
         let error_message = "Error creating release drafter file";
         println!("\n{}", error_message.red());
@@ -564,9 +611,10 @@ pub fn generate_project(project_info: &ProjectInfo) {
 mod tests {
     use super::*;
     use crate::project_info::{LicenseType, ProjectInfo};
+    use tempfile::tempdir;
 
     #[test]
-    fn test_create_gitigngore_file() {
+    fn test_save_gitigngore_file() {
         let expected = r#"
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -708,11 +756,21 @@ dmypy.json
 "#
         .to_string();
 
-        assert_eq!(create_gitigngore_file(), expected);
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/.gitignore"));
+        save_gitigngore_file(project_slug, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
     }
 
     #[test]
-    fn test_create_pre_commit_file() {
+    fn test_save_pre_commit_file() {
         let max_line_length: u8 = 100;
         let expected = format!(
             r#"repos:
@@ -743,14 +801,29 @@ dmypy.json
 "#
         );
 
-        assert_eq!(create_pre_commit_file(&max_line_length, false), expected);
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/.pre-commit-config.yaml"));
+        save_pre_commit_file(project_slug, &max_line_length, false, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
     }
 
     #[test]
-    fn test_create_pyproject_toml_mit_application() {
+    fn test_save_pyproject_toml_file_mit_application() {
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/pyproject.toml"));
+
         let project_info = ProjectInfo {
             project_name: "My project".to_string(),
-            project_slug: "my-project".to_string(),
+            project_slug: project_slug.to_string(),
             source_dir: "my_project".to_string(),
             project_description: "This is a test".to_string(),
             creator: "Arthur Dent".to_string(),
@@ -773,6 +846,7 @@ dmypy.json
             use_release_drafter: true,
             use_multi_os_ci: true,
             download_latest_packages: false,
+            project_root_dir: Some(base),
         };
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
@@ -855,16 +929,25 @@ fix = true
             pyupgrade_version,
         );
 
-        println!("{expected}");
+        save_pyproject_toml_file(&project_info).unwrap();
 
-        assert_eq!(create_pyproject_toml(&project_info), expected);
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
     }
 
     #[test]
-    fn test_create_pyproject_toml_apache_application() {
+    fn test_save_pyproject_toml_file_apache_application() {
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/pyproject.toml"));
+
         let project_info = ProjectInfo {
             project_name: "My project".to_string(),
-            project_slug: "my-project".to_string(),
+            project_slug: project_slug.to_string(),
             source_dir: "my_project".to_string(),
             project_description: "This is a test".to_string(),
             creator: "Arthur Dent".to_string(),
@@ -887,6 +970,7 @@ fix = true
             use_release_drafter: true,
             use_multi_os_ci: true,
             download_latest_packages: false,
+            project_root_dir: Some(base),
         };
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
@@ -969,16 +1053,25 @@ fix = true
             pyupgrade_version,
         );
 
-        println!("{expected}");
+        save_pyproject_toml_file(&project_info).unwrap();
 
-        assert_eq!(create_pyproject_toml(&project_info), expected);
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
     }
 
     #[test]
-    fn test_create_pyproject_toml_no_license_application() {
+    fn test_save_pyproject_toml_file_no_license_application() {
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/pyproject.toml"));
+
         let project_info = ProjectInfo {
             project_name: "My project".to_string(),
-            project_slug: "my-project".to_string(),
+            project_slug: project_slug.to_string(),
             source_dir: "my_project".to_string(),
             project_description: "This is a test".to_string(),
             creator: "Arthur Dent".to_string(),
@@ -1001,6 +1094,7 @@ fix = true
             use_release_drafter: true,
             use_multi_os_ci: true,
             download_latest_packages: false,
+            project_root_dir: Some(base),
         };
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
@@ -1082,16 +1176,25 @@ fix = true
             pyupgrade_version,
         );
 
-        println!("{expected}");
+        save_pyproject_toml_file(&project_info).unwrap();
 
-        assert_eq!(create_pyproject_toml(&project_info), expected);
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
     }
 
     #[test]
     fn test_create_pyproject_toml_mit_lib() {
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/pyproject.toml"));
+
         let project_info = ProjectInfo {
             project_name: "My project".to_string(),
-            project_slug: "my-project".to_string(),
+            project_slug: project_slug.to_string(),
             source_dir: "my_project".to_string(),
             project_description: "This is a test".to_string(),
             creator: "Arthur Dent".to_string(),
@@ -1114,6 +1217,7 @@ fix = true
             use_release_drafter: true,
             use_multi_os_ci: true,
             download_latest_packages: false,
+            project_root_dir: Some(base),
         };
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
@@ -1196,13 +1300,17 @@ fix = true
             pyupgrade_version,
         );
 
-        println!("{expected}");
+        save_pyproject_toml_file(&project_info).unwrap();
 
-        assert_eq!(create_pyproject_toml(&project_info), expected);
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
     }
 
     #[test]
-    fn test_create_readme() {
+    fn test_save_readme_file() {
         let project_name = "My Project";
         let project_description = "Some test project";
         let expected = format!(
@@ -1212,6 +1320,16 @@ fix = true
 "#
         );
 
-        assert_eq!(create_readme(project_name, project_description), expected);
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/README.md"));
+        save_readme_file(project_slug, project_name, project_description, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
     }
 }
