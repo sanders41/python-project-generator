@@ -1324,13 +1324,7 @@ fix = true
         let project_slug = "test-project";
         create_dir_all(base.join(project_slug)).unwrap();
         let expected_file = base.join(format!("{project_slug}/README.md"));
-        save_readme_file(
-            project_slug,
-            project_name,
-            project_description,
-            &Some(base),
-        )
-        .unwrap();
+        save_readme_file(project_slug, project_name, project_description, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
