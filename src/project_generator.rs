@@ -306,7 +306,7 @@ fn build_latest_dev_dependencies(is_application: bool, download_latest_packages:
         },
         PythonPackageVersion {
             name: "pytest".to_string(),
-            version: "7.4.1".to_string(),
+            version: "7.4.2".to_string(),
         },
         PythonPackageVersion {
             name: "pytest-cov".to_string(),
@@ -870,7 +870,7 @@ python = "^{}"
 black = "23.7.0"
 mypy = "1.5.1"
 pre-commit = "3.3.3"
-pytest = "7.4.1"
+pytest = "7.4.2"
 pytest-cov = "4.1.0"
 ruff = "0.0.287"
 tomli = {{version = "2.0.1", python = "<3.11"}}
@@ -994,7 +994,7 @@ python = "^{}"
 black = "23.7.0"
 mypy = "1.5.1"
 pre-commit = "3.3.3"
-pytest = "7.4.1"
+pytest = "7.4.2"
 pytest-cov = "4.1.0"
 ruff = "0.0.287"
 tomli = {{version = "2.0.1", python = "<3.11"}}
@@ -1241,7 +1241,7 @@ python = "^{}"
 black = ">=23.7.0"
 mypy = ">=1.5.1"
 pre-commit = ">=3.3.3"
-pytest = ">=7.4.1"
+pytest = ">=7.4.2"
 pytest-cov = ">=4.1.0"
 ruff = ">=0.0.287"
 tomli = {{version = ">=2.0.1", python = "<3.11"}}
