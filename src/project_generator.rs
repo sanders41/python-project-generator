@@ -11,7 +11,7 @@ use crate::github_actions::{
     save_pypi_publish_file, save_release_drafter_file,
 };
 use crate::licenses::generate_license;
-use crate::project_info::ProjectInfo;
+use crate::project_info::{LicenseType, ProjectInfo};
 use crate::python_files::generate_python_files;
 use crate::python_package_version::{
     LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackageVersion,
@@ -352,6 +352,11 @@ fn build_latest_dev_dependencies(is_application: bool, download_latest_packages:
 
 fn create_pyproject_toml(project_info: &ProjectInfo) -> String {
     let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
+    let license_text = match &project_info.license {
+        LicenseType::Mit => "MIT",
+        LicenseType::Apache2 => "Apache-2.0",
+        LicenseType::NoLicense => "NoLicense",
+    };
     let pyproject = r#"[tool.poetry]
 name = "{{ project_name }}"
 version = "{{ version }}"
@@ -424,7 +429,7 @@ fix = true
         project_description => project_info.project_description,
         creator => project_info.creator,
         creator_email => project_info.creator_email,
-        license => format!("{:?}", project_info.license),
+        license => license_text,
         min_python_version => project_info.min_python_version,
         dev_dependencies => build_latest_dev_dependencies(project_info.is_application, project_info.download_latest_packages),
         max_line_length => project_info.max_line_length,
@@ -855,7 +860,7 @@ name = "{}"
 version = "{}"
 description = "{}"
 authors = ["{} <{}>"]
-license = "Mit"
+license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -979,7 +984,7 @@ name = "{}"
 version = "{}"
 description = "{}"
 authors = ["{} <{}>"]
-license = "Apache2"
+license = "Apache-2.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -1226,7 +1231,7 @@ name = "{}"
 version = "{}"
 description = "{}"
 authors = ["{} <{}>"]
-license = "Mit"
+license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
