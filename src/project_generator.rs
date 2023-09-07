@@ -353,7 +353,7 @@ fn build_latest_dev_dependencies(is_application: bool, download_latest_packages:
 fn create_pyproject_toml(project_info: &ProjectInfo) -> String {
     let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
     let pyproject = r#"[tool.poetry]
-name = "{{ project_slug }}"
+name = "{{ project_name }}"
 version = "{{ version }}"
 description = "{{ project_description }}"
 authors = ["{{ creator }} <{{ creator_email }}>"]
@@ -419,7 +419,7 @@ fix = true
 
     render!(
         pyproject,
-        project_slug => project_info.project_slug,
+        project_name => project_info.source_dir.replace('_', "-"),
         version => project_info.version,
         project_description => project_info.project_description,
         creator => project_info.creator,
@@ -917,7 +917,7 @@ line-length = {}
 target-version = "py{}"
 fix = true
 "#,
-            project_info.project_slug,
+            project_info.source_dir.replace('_', "-"),
             project_info.version,
             project_info.project_description,
             project_info.creator,
@@ -1041,7 +1041,7 @@ line-length = {}
 target-version = "py{}"
 fix = true
 "#,
-            project_info.project_slug,
+            project_info.source_dir.replace('_', "-"),
             project_info.version,
             project_info.project_description,
             project_info.creator,
@@ -1164,7 +1164,7 @@ line-length = {}
 target-version = "py{}"
 fix = true
 "#,
-            project_info.project_slug,
+            project_info.source_dir.replace('_', "-"),
             project_info.version,
             project_info.project_description,
             project_info.creator,
@@ -1288,7 +1288,7 @@ line-length = {}
 target-version = "py{}"
 fix = true
 "#,
-            project_info.project_slug,
+            project_info.source_dir.replace('_', "-"),
             project_info.version,
             project_info.project_description,
             project_info.creator,
