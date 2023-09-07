@@ -1117,7 +1117,7 @@ python = "^{}"
 black = "23.7.0"
 mypy = "1.5.1"
 pre-commit = "3.3.3"
-pytest = "7.4.1"
+pytest = "7.4.2"
 pytest-cov = "4.1.0"
 ruff = "0.0.287"
 tomli = {{version = "2.0.1", python = "<3.11"}}
