@@ -289,9 +289,13 @@ fn save_pre_commit_file(
     Ok(())
 }
 
-fn build_latest_dev_dependencies(is_application: bool, download_latest_packages: bool) -> String {
+fn build_latest_dev_dependencies(
+    is_application: bool,
+    download_latest_packages: bool,
+    use_pyo3: bool,
+) -> String {
     let mut version_string = String::new();
-    let packages = vec![
+    let mut packages = vec![
         PythonPackageVersion {
             name: "black".to_string(),
             version: "23.7.0".to_string(),
@@ -316,11 +320,19 @@ fn build_latest_dev_dependencies(is_application: bool, download_latest_packages:
             name: "ruff".to_string(),
             version: "0.0.287".to_string(),
         },
-        PythonPackageVersion {
+    ];
+
+    if use_pyo3 {
+        packages.push(PythonPackageVersion {
+            name: "maturin".to_string(),
+            version: "1.2.3".to_string(),
+        });
+    } else {
+        packages.push(PythonPackageVersion {
             name: "tomli".to_string(),
             version: "2.0.1".to_string(),
-        },
-    ];
+        })
+    }
 
     for mut package in packages {
         if download_latest_packages && package.get_latest_version().is_err() {
@@ -331,23 +343,35 @@ fn build_latest_dev_dependencies(is_application: bool, download_latest_packages:
             println!("\n{}", error_message.yellow());
         }
 
-        let version: String = if is_application {
-            package.version
+        if use_pyo3 {
+            if is_application {
+                version_string.push_str(&format!("{}=={}\n", package.name, package.version));
+            } else {
+                version_string.push_str(&format!("{}>={}\n", package.name, package.version));
+            };
         } else {
-            format!(">={}", package.version)
-        };
+            let version: String = if is_application {
+                package.version
+            } else {
+                format!(">={}", package.version)
+            };
 
-        if package.name == "tomli" {
-            version_string.push_str(&format!(
-                "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
-                package.name, version
-            ));
-        } else {
-            version_string.push_str(&format!("{} = \"{}\"\n", package.name, version));
+            if package.name == "tomli" {
+                version_string.push_str(&format!(
+                    "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
+                    package.name, version
+                ));
+            } else {
+                version_string.push_str(&format!("{} = \"{}\"\n", package.name, version));
+            }
         }
     }
 
-    version_string.trim().to_string()
+    if use_pyo3 {
+        version_string
+    } else {
+        version_string.trim().to_string()
+    }
 }
 
 fn create_pyproject_toml(project_info: &ProjectInfo) -> String {
@@ -459,7 +483,7 @@ fix = true
         creator_email => project_info.creator_email,
         license => license_text,
         min_python_version => project_info.min_python_version,
-        dev_dependencies => build_latest_dev_dependencies(project_info.is_application, project_info.download_latest_packages),
+        dev_dependencies => build_latest_dev_dependencies(project_info.is_application, project_info.download_latest_packages, project_info.use_pyo3),
         max_line_length => project_info.max_line_length,
         source_dir => project_info.source_dir,
         is_application => project_info.is_application,
@@ -477,6 +501,23 @@ fn save_pyproject_toml_file(project_info: &ProjectInfo) -> Result<()> {
         None => format!("{}/pyproject.toml", project_info.project_slug),
     };
     let content = create_pyproject_toml(project_info);
+
+    save_file_with_content(&file_path, &content)?;
+
+    Ok(())
+}
+
+fn save_pyo3_dev_requirements(
+    project_slug: &str,
+    is_application: bool,
+    download_latest_packages: bool,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
+    let file_path = match project_root_dir {
+        Some(root) => format!("{}/{project_slug}/requirements-dev.txt", root.display()),
+        None => format!("{project_slug}/requirements-dev.txt"),
+    };
+    let content = build_latest_dev_dependencies(is_application, download_latest_packages, true);
 
     save_file_with_content(&file_path, &content)?;
 
@@ -584,6 +625,20 @@ pub fn generate_project(project_info: &ProjectInfo) {
 
     if save_pyproject_toml_file(project_info).is_err() {
         let error_message = "Error creating pyproject.toml file";
+        println!("\n{}", error_message.red());
+        std::process::exit(1);
+    }
+
+    if project_info.use_pyo3
+        && save_pyo3_dev_requirements(
+            &project_info.project_slug,
+            project_info.is_application,
+            project_info.download_latest_packages,
+            &project_info.project_root_dir,
+        )
+        .is_err()
+    {
+        let error_message = "Error creating requirements-dev.txt file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
     }
@@ -1688,6 +1743,58 @@ fix = true
         );
 
         save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_pyo3_dev_requirements_application_file() {
+        let expected = format!(
+            r#"black==23.7.0
+mypy==1.5.1
+pre-commit==3.3.3
+pytest==7.4.2
+pytest-cov==4.1.0
+ruff==0.0.287
+maturin==1.2.3
+"#
+        );
+
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/requirements-dev.txt"));
+        save_pyo3_dev_requirements(project_slug, true, false, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_pyo3_dev_requirements_lib_file() {
+        let expected = format!(
+            r#"black>=23.7.0
+mypy>=1.5.1
+pre-commit>=3.3.3
+pytest>=7.4.2
+pytest-cov>=4.1.0
+ruff>=0.0.287
+maturin>=1.2.3
+"#
+        );
+
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/requirements-dev.txt"));
+        save_pyo3_dev_requirements(project_slug, false, false, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
