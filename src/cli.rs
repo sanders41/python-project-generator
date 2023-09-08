@@ -75,6 +75,12 @@ pub enum Param {
         value: String,
     },
 
+    /// Use pyo3
+    UsePyo3 {
+        #[clap(help = "Use pyo3")]
+        value: BooleanChoice,
+    },
+
     /// Save a default value for Is Application
     ApplicationOrLibrary {
         #[clap(help = "Default Is Application value")]

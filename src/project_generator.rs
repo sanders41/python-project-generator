@@ -357,7 +357,29 @@ fn create_pyproject_toml(project_info: &ProjectInfo) -> String {
         LicenseType::Apache2 => "Apache-2.0",
         LicenseType::NoLicense => "NoLicense",
     };
-    let pyproject = r#"[tool.poetry]
+
+    let mut pyproject = match &project_info.use_pyo3 {
+        true => r#"[build-system]
+requires = ["maturin>=1.0.0"]
+build-backend = "maturin"
+
+[project]
+name = "{{ project_name }}"
+description = "{{ project_description }}"
+authors = [{name = "{{ creator }}", email =  "{{ creator_email }}"}]
+{% if license != "NoLicense" -%}
+license = "{{ license }}"
+{% endif -%}
+readme = "README.md"
+
+[tool.maturin]
+module-name = "{{ source_dir }}._{{ source_dir }}"
+binding = "pyo3"
+features = ["pyo3/extension-module"]
+
+"#
+        .to_string(),
+        false => r#"[tool.poetry]
 name = "{{ project_name }}"
 version = "{{ version }}"
 description = "{{ project_description }}"
@@ -377,7 +399,12 @@ python = "^{{ min_python_version }}"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.black]
+"#
+        .to_string(),
+    };
+
+    pyproject.push_str(
+        r#"[tool.black]
 line-length = {{ max_line_length }}
 include = '\.pyi?$'
 exclude = '''
@@ -420,10 +447,11 @@ line-length = {{ max_line_length }}
 target-version = "py{{ pyupgrade_version }}"
 fix = true
 
-"#;
+"#,
+    );
 
     render!(
-        pyproject,
+        &pyproject,
         project_name => project_info.source_dir.replace('_', "-"),
         version => project_info.version,
         project_description => project_info.project_description,
@@ -838,6 +866,7 @@ dmypy.json
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
+            use_pyo3: false,
             is_application: true,
             github_actions_python_test_versions: vec![
                 "3.8".to_string(),
@@ -962,6 +991,7 @@ fix = true
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
+            use_pyo3: false,
             is_application: true,
             github_actions_python_test_versions: vec![
                 "3.8".to_string(),
@@ -1086,6 +1116,7 @@ fix = true
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
+            use_pyo3: false,
             is_application: true,
             github_actions_python_test_versions: vec![
                 "3.8".to_string(),
@@ -1209,6 +1240,7 @@ fix = true
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
+            use_pyo3: false,
             is_application: false,
             github_actions_python_test_versions: vec![
                 "3.8".to_string(),
@@ -1299,6 +1331,356 @@ fix = true
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
+            project_info.max_line_length,
+            project_info.source_dir,
+            project_info.max_line_length,
+            pyupgrade_version,
+        );
+
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_pyproject_toml_file_mit_pyo3() {
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/pyproject.toml"));
+
+        let project_info = ProjectInfo {
+            project_name: "My project".to_string(),
+            project_slug: project_slug.to_string(),
+            source_dir: "my_project".to_string(),
+            project_description: "This is a test".to_string(),
+            creator: "Arthur Dent".to_string(),
+            creator_email: "authur@heartofgold.com".to_string(),
+            license: LicenseType::Mit,
+            copyright_year: Some("2023".to_string()),
+            version: "0.1.0".to_string(),
+            python_version: "3.11".to_string(),
+            min_python_version: "3.8".to_string(),
+            use_pyo3: true,
+            is_application: false,
+            github_actions_python_test_versions: vec![
+                "3.8".to_string(),
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string(),
+            ],
+            max_line_length: 100,
+            use_dependabot: true,
+            use_continuous_deployment: true,
+            use_release_drafter: true,
+            use_multi_os_ci: true,
+            download_latest_packages: false,
+            project_root_dir: Some(base),
+        };
+        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
+        let expected = format!(
+            r#"[build-system]
+requires = ["maturin>=1.0.0"]
+build-backend = "maturin"
+
+[project]
+name = "{}"
+description = "{}"
+authors = [{{name = "{}", email =  "{}"}}]
+license = "MIT"
+readme = "README.md"
+
+[tool.maturin]
+module-name = "{}._{}"
+binding = "pyo3"
+features = ["pyo3/extension-module"]
+
+[tool.black]
+line-length = {}
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.egg
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.nox
+  | \.tox
+  | \.venv
+  | \venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | setup.py
+)/
+'''
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
+
+[tool.coverage.report]
+exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
+
+[tool.ruff]
+select = ["E", "F", "UP", "I001", "T201", "T203"]
+ignore = ["E501"]
+line-length = {}
+target-version = "py{}"
+fix = true
+"#,
+            project_info.source_dir.replace('_', "-"),
+            project_info.project_description,
+            project_info.creator,
+            project_info.creator_email,
+            project_info.source_dir,
+            project_info.source_dir,
+            project_info.max_line_length,
+            project_info.source_dir,
+            project_info.max_line_length,
+            pyupgrade_version,
+        );
+
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_pyproject_toml_file_apache_pyo3() {
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/pyproject.toml"));
+
+        let project_info = ProjectInfo {
+            project_name: "My project".to_string(),
+            project_slug: project_slug.to_string(),
+            source_dir: "my_project".to_string(),
+            project_description: "This is a test".to_string(),
+            creator: "Arthur Dent".to_string(),
+            creator_email: "authur@heartofgold.com".to_string(),
+            license: LicenseType::Apache2,
+            copyright_year: Some("2023".to_string()),
+            version: "0.1.0".to_string(),
+            python_version: "3.11".to_string(),
+            min_python_version: "3.8".to_string(),
+            use_pyo3: true,
+            is_application: false,
+            github_actions_python_test_versions: vec![
+                "3.8".to_string(),
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string(),
+            ],
+            max_line_length: 100,
+            use_dependabot: true,
+            use_continuous_deployment: true,
+            use_release_drafter: true,
+            use_multi_os_ci: true,
+            download_latest_packages: false,
+            project_root_dir: Some(base),
+        };
+        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
+        let expected = format!(
+            r#"[build-system]
+requires = ["maturin>=1.0.0"]
+build-backend = "maturin"
+
+[project]
+name = "{}"
+description = "{}"
+authors = [{{name = "{}", email =  "{}"}}]
+license = "Apache-2.0"
+readme = "README.md"
+
+[tool.maturin]
+module-name = "{}._{}"
+binding = "pyo3"
+features = ["pyo3/extension-module"]
+
+[tool.black]
+line-length = {}
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.egg
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.nox
+  | \.tox
+  | \.venv
+  | \venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | setup.py
+)/
+'''
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
+
+[tool.coverage.report]
+exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
+
+[tool.ruff]
+select = ["E", "F", "UP", "I001", "T201", "T203"]
+ignore = ["E501"]
+line-length = {}
+target-version = "py{}"
+fix = true
+"#,
+            project_info.source_dir.replace('_', "-"),
+            project_info.project_description,
+            project_info.creator,
+            project_info.creator_email,
+            project_info.source_dir,
+            project_info.source_dir,
+            project_info.max_line_length,
+            project_info.source_dir,
+            project_info.max_line_length,
+            pyupgrade_version,
+        );
+
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_pyproject_toml_file_no_license_pyo3() {
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/pyproject.toml"));
+
+        let project_info = ProjectInfo {
+            project_name: "My project".to_string(),
+            project_slug: project_slug.to_string(),
+            source_dir: "my_project".to_string(),
+            project_description: "This is a test".to_string(),
+            creator: "Arthur Dent".to_string(),
+            creator_email: "authur@heartofgold.com".to_string(),
+            license: LicenseType::NoLicense,
+            copyright_year: Some("2023".to_string()),
+            version: "0.1.0".to_string(),
+            python_version: "3.11".to_string(),
+            min_python_version: "3.8".to_string(),
+            use_pyo3: true,
+            is_application: false,
+            github_actions_python_test_versions: vec![
+                "3.8".to_string(),
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string(),
+            ],
+            max_line_length: 100,
+            use_dependabot: true,
+            use_continuous_deployment: true,
+            use_release_drafter: true,
+            use_multi_os_ci: true,
+            download_latest_packages: false,
+            project_root_dir: Some(base),
+        };
+        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
+        let expected = format!(
+            r#"[build-system]
+requires = ["maturin>=1.0.0"]
+build-backend = "maturin"
+
+[project]
+name = "{}"
+description = "{}"
+authors = [{{name = "{}", email =  "{}"}}]
+readme = "README.md"
+
+[tool.maturin]
+module-name = "{}._{}"
+binding = "pyo3"
+features = ["pyo3/extension-module"]
+
+[tool.black]
+line-length = {}
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.egg
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.nox
+  | \.tox
+  | \.venv
+  | \venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | setup.py
+)/
+'''
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
+
+[tool.coverage.report]
+exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
+
+[tool.ruff]
+select = ["E", "F", "UP", "I001", "T201", "T203"]
+ignore = ["E501"]
+line-length = {}
+target-version = "py{}"
+fix = true
+"#,
+            project_info.source_dir.replace('_', "-"),
+            project_info.project_description,
+            project_info.creator,
+            project_info.creator_email,
+            project_info.source_dir,
+            project_info.source_dir,
             project_info.max_line_length,
             project_info.source_dir,
             project_info.max_line_length,

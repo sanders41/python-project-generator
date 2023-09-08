@@ -74,6 +74,10 @@ fn main() {
             Param::License { value } => Config::save_license(value),
             Param::PythonVersion { value } => Config::save_python_version(value),
             Param::MinPythonVersion { value } => Config::save_min_python_version(value),
+            Param::UsePyo3 { value } => match value {
+                BooleanChoice::True => Config::save_use_pyo3(true),
+                BooleanChoice::False => Config::save_use_pyo3(false),
+            },
             Param::ApplicationOrLibrary { value } => match value {
                 ApplicationOrLib::Application => Config::save_is_application(true),
                 ApplicationOrLib::Lib => Config::save_is_application(false),

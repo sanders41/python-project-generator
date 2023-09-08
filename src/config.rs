@@ -15,6 +15,7 @@ pub struct Config {
     pub license: Option<LicenseType>,
     pub python_version: Option<String>,
     pub min_python_version: Option<String>,
+    pub use_pyo3: Option<bool>,
     pub is_application: Option<bool>,
     pub github_actions_python_test_versions: Option<Vec<String>>,
     pub max_line_length: Option<u8>,
@@ -33,6 +34,7 @@ impl Config {
             license: None,
             python_version: None,
             min_python_version: None,
+            use_pyo3: None,
             is_application: None,
             github_actions_python_test_versions: None,
             max_line_length: None,
@@ -144,6 +146,17 @@ impl Config {
             if config.save().is_err() {
                 print_config_save_error_and_exit();
             };
+        } else {
+            print_config_save_error_and_exit();
+        }
+    }
+
+    pub fn save_use_pyo3(value: bool) {
+        if let Ok(mut config) = Config::load_config() {
+            config.use_pyo3 = Some(value);
+            if config.save().is_err() {
+                print_config_save_error_and_exit();
+            }
         } else {
             print_config_save_error_and_exit();
         }
