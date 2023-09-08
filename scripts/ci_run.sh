@@ -13,6 +13,7 @@ python_version=""
 min_python_version=""
 gha_versions=""
 application=""
+use_pyo3="2"
 
 # Check for user provided application input
 if [ $# -gt 0 ]; then

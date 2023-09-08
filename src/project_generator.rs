@@ -1829,16 +1829,14 @@ fix = true
 
     #[test]
     fn test_save_pyo3_dev_requirements_application_file() {
-        let expected = format!(
-            r#"black==23.7.0
+        let expected = r#"black==23.7.0
 mypy==1.5.1
 pre-commit==3.3.3
 pytest==7.4.2
 pytest-cov==4.1.0
 ruff==0.0.287
 maturin==1.2.3
-"#
-        );
+"#;
 
         let base = tempdir().unwrap().path().to_path_buf();
         let project_slug = "test-project";
@@ -1855,16 +1853,14 @@ maturin==1.2.3
 
     #[test]
     fn test_save_pyo3_dev_requirements_lib_file() {
-        let expected = format!(
-            r#"black>=23.7.0
+        let expected = r#"black>=23.7.0
 mypy>=1.5.1
 pre-commit>=3.3.3
 pytest>=7.4.2
 pytest-cov>=4.1.0
 ruff>=0.0.287
 maturin>=1.2.3
-"#
-        );
+"#;
 
         let base = tempdir().unwrap().path().to_path_buf();
         let project_slug = "test-project";
@@ -1930,7 +1926,7 @@ maturin>=1.2.3
         let project_slug = "test-project";
         create_dir_all(base.join(project_slug)).unwrap();
         let expected_file = base.join(format!("{project_slug}/justfile"));
-        save_pyo3_justfile(project_slug, &source_dir, &Some(base)).unwrap();
+        save_pyo3_justfile(project_slug, source_dir, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
