@@ -16,10 +16,12 @@ use crate::python_files::generate_python_files;
 use crate::python_package_version::{
     LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackageVersion,
 };
+use crate::rust_files::save_lib_file;
 
 fn create_directories(
     project_slug: &str,
     source_dir: &str,
+    use_pyo3: bool,
     project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
     let base = match project_root_dir {
@@ -34,6 +36,11 @@ fn create_directories(
 
     let test_dir = format!("{base}/tests");
     create_dir_all(test_dir)?;
+
+    if use_pyo3 {
+        let rust_src = format!("{base}/src");
+        create_dir_all(rust_src)?;
+    }
 
     Ok(())
 }
@@ -616,6 +623,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
     if create_directories(
         &project_info.project_slug,
         &project_info.source_dir,
+        project_info.use_pyo3,
         &project_info.project_root_dir,
     )
     .is_err()
@@ -714,6 +722,18 @@ pub fn generate_project(project_info: &ProjectInfo) {
         .is_err()
         {
             let error_message = "Error creating justfile";
+            println!("\n{}", error_message.red());
+            std::process::exit(1);
+        }
+
+        if save_lib_file(
+            &project_info.project_slug,
+            &project_info.source_dir,
+            &project_info.project_root_dir,
+        )
+        .is_err()
+        {
+            let error_message = "Error creating Rust lib.rs file";
             println!("\n{}", error_message.red());
             std::process::exit(1);
         }
