@@ -46,6 +46,7 @@ $version
 $python_version
 $min_python_version
 $gha_versions
+$use_pyo3
 $application
 $max_line_length
 $use_dependabot
