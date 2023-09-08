@@ -524,6 +524,69 @@ fn save_pyo3_dev_requirements(
     Ok(())
 }
 
+fn create_pyo3_justfile(source_dir: &str) -> String {
+    format!(
+        r#"@develop:
+  maturin develop
+
+@install: && develop
+  pip install -r requirements-dev.txt
+
+@lint:
+  echo cargo check
+  just --justfile {{{{justfile()}}}} check
+  echo cargo clippy
+  just --justfile {{{{justfile()}}}} clippy
+  echo cargo fmt
+  just --justfile {{{{justfile()}}}} fmt
+  echo mypy
+  just --justfile {{{{justfile()}}}} mypy
+  echo black
+  just --justfile {{{{justfile()}}}} black
+  echo ruff
+  just --justfile {{{{justfile()}}}} ruff
+
+@check:
+  cargo check
+
+@clippy:
+  cargo clippy
+
+@fmt:
+  cargo fmt
+
+@black:
+  black {} tests
+
+@mypy:
+  mypy .
+
+@ruff:
+  ruff check . --fix
+
+@test:
+  pytest
+"#,
+        source_dir
+    )
+}
+
+fn save_pyo3_justfile(
+    project_slug: &str,
+    source_dir: &str,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
+    let file_path = match project_root_dir {
+        Some(root) => format!("{}/{project_slug}/justfile", root.display()),
+        None => format!("{project_slug}/justfile"),
+    };
+    let content = create_pyo3_justfile(source_dir);
+
+    save_file_with_content(&file_path, &content)?;
+
+    Ok(())
+}
+
 fn create_readme_file(project_name: &str, project_description: &str) -> String {
     format!(
         r#"# {project_name}
@@ -629,18 +692,31 @@ pub fn generate_project(project_info: &ProjectInfo) {
         std::process::exit(1);
     }
 
-    if project_info.use_pyo3
-        && save_pyo3_dev_requirements(
+    if project_info.use_pyo3 {
+        if save_pyo3_dev_requirements(
             &project_info.project_slug,
             project_info.is_application,
             project_info.download_latest_packages,
             &project_info.project_root_dir,
         )
         .is_err()
-    {
-        let error_message = "Error creating requirements-dev.txt file";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        {
+            let error_message = "Error creating requirements-dev.txt file";
+            println!("\n{}", error_message.red());
+            std::process::exit(1);
+        }
+
+        if save_pyo3_justfile(
+            &project_info.project_slug,
+            &project_info.source_dir,
+            &project_info.project_root_dir,
+        )
+        .is_err()
+        {
+            let error_message = "Error creating justfile";
+            println!("\n{}", error_message.red());
+            std::process::exit(1);
+        }
     }
 
     if save_pypi_publish_file(&project_info.project_slug, &project_info.project_root_dir).is_err() {
@@ -1795,6 +1871,66 @@ maturin>=1.2.3
         create_dir_all(base.join(project_slug)).unwrap();
         let expected_file = base.join(format!("{project_slug}/requirements-dev.txt"));
         save_pyo3_dev_requirements(project_slug, false, false, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_pyo3_justfile() {
+        let source_dir = "my_src";
+        let expected = format!(
+            r#"@develop:
+  maturin develop
+
+@install: && develop
+  pip install -r requirements-dev.txt
+
+@lint:
+  echo cargo check
+  just --justfile {{{{justfile()}}}} check
+  echo cargo clippy
+  just --justfile {{{{justfile()}}}} clippy
+  echo cargo fmt
+  just --justfile {{{{justfile()}}}} fmt
+  echo mypy
+  just --justfile {{{{justfile()}}}} mypy
+  echo black
+  just --justfile {{{{justfile()}}}} black
+  echo ruff
+  just --justfile {{{{justfile()}}}} ruff
+
+@check:
+  cargo check
+
+@clippy:
+  cargo clippy
+
+@fmt:
+  cargo fmt
+
+@black:
+  black {source_dir} tests
+
+@mypy:
+  mypy .
+
+@ruff:
+  ruff check . --fix
+
+@test:
+  pytest
+"#
+        );
+
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/justfile"));
+        save_pyo3_justfile(project_slug, &source_dir, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
