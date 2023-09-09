@@ -221,28 +221,23 @@ fn save_version_file(
 }
 
 fn create_version_test_file(source_dir: &str, use_pyo3: bool) -> String {
-    let version_test: String;
-    if use_pyo3 {
-        version_test = format!(
-            r#"def test_versions_match():
+    let version_test: &str = if use_pyo3 {
+        r#"def test_versions_match():
     cargo = Path().absolute() / "Cargo.toml"
     with open(cargo, "rb") as f:
         data = tomllib.load(f)
         cargo_version = data["package"]["version"]
 
     assert VERSION == cargo_version"#
-        );
     } else {
-        version_test = format!(
-            r#"def test_versions_match():
+        r#"def test_versions_match():
     pyproject = Path().absolute() / "pyproject.toml"
     with open(pyproject, "rb") as f:
         data = tomllib.load(f)
         pyproject_version = data["tool"]["poetry"]["version"]
 
     assert VERSION == pyproject_version"#
-        );
-    }
+    };
 
     format!(
         r#"import sys
