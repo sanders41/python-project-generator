@@ -45,8 +45,8 @@ fn create_directories(
     Ok(())
 }
 
-fn create_gitigngore_file() -> String {
-    r#"
+fn create_gitigngore_file(use_pyo3: bool) -> String {
+    let mut gitignore = r#"
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -185,15 +185,30 @@ dmypy.json
 .idea
 .vscode
 "#
-    .to_string()
+    .to_string();
+
+    if use_pyo3 {
+        gitignore.push_str(
+            r#"
+# Rust
+/target
+"#,
+        );
+    }
+
+    gitignore
 }
 
-fn save_gitigngore_file(project_slug: &str, project_root_dir: &Option<PathBuf>) -> Result<()> {
+fn save_gitigngore_file(
+    project_slug: &str,
+    use_pyo3: bool,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
     let file_path = match project_root_dir {
         Some(root) => format!("{}/{project_slug}/.gitignore", root.display()),
         None => format!("{project_slug}/.gitignore"),
     };
-    let content = create_gitigngore_file();
+    let content = create_gitigngore_file(use_pyo3);
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
@@ -628,7 +643,13 @@ pub fn generate_project(project_info: &ProjectInfo) {
         std::process::exit(1);
     }
 
-    if save_gitigngore_file(&project_info.project_slug, &project_info.project_root_dir).is_err() {
+    if save_gitigngore_file(
+        &project_info.project_slug,
+        project_info.use_pyo3,
+        &project_info.project_root_dir,
+    )
+    .is_err()
+    {
         let error_message = "Error creating .gitignore file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
@@ -955,7 +976,166 @@ dmypy.json
         let project_slug = "test-project";
         create_dir_all(base.join(project_slug)).unwrap();
         let expected_file = base.join(format!("{project_slug}/.gitignore"));
-        save_gitigngore_file(project_slug, &Some(base)).unwrap();
+        save_gitigngore_file(project_slug, false, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_gitigngore_pyo3_file() {
+        let expected = r#"
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS Files
+*.swp
+*.DS_Store
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+#   install all needed dependencies.
+#Pipfile.lock
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# editors
+.idea
+.vscode
+
+# Rust
+/target
+"#
+        .to_string();
+
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/.gitignore"));
+        save_gitigngore_file(project_slug, true, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
