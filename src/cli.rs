@@ -31,6 +31,12 @@ pub enum Command {
             help = "If set the default package versions will be used instead of the latest"
         )]
         skip_download_latest_packages: bool,
+        #[clap(
+            short,
+            long,
+            help = "Use saved configuration and default values instead of prompting where possible"
+        )]
+        default: bool,
     },
 
     /// Save default config values
