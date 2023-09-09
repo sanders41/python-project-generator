@@ -66,6 +66,7 @@ pub struct ProjectInfo {
     pub version: String,
     pub python_version: String,
     pub min_python_version: String,
+    pub use_pyo3: bool,
     pub is_application: bool,
     pub github_actions_python_test_versions: Vec<String>,
     pub max_line_length: u8,
@@ -247,6 +248,10 @@ pub fn get_project_info() -> ProjectInfo {
     let github_actions_python_test_versions =
         github_actions_python_test_versions_prompt(github_actions_python_test_version_default);
 
+    let use_pyo3 = boolean_prompt(
+        "Use pyo3\n  1 - Yes\n  2 - No\n  Choose from[1, 2]".to_string(),
+        config.use_pyo3,
+    );
     let is_application = is_application_prompt(config.is_application);
     let max_line_length = max_line_length_prompt(config.max_line_length);
 
@@ -279,6 +284,7 @@ pub fn get_project_info() -> ProjectInfo {
         version,
         python_version,
         min_python_version,
+        use_pyo3,
         is_application,
         github_actions_python_test_versions,
         max_line_length,

@@ -3,10 +3,11 @@ mod config;
 mod file_manager;
 mod github_actions;
 mod licenses;
+mod package_version;
 mod project_generator;
 mod project_info;
 mod python_files;
-mod python_package_version;
+mod rust_files;
 
 use std::process::exit;
 use std::time::Duration;
@@ -74,6 +75,10 @@ fn main() {
             Param::License { value } => Config::save_license(value),
             Param::PythonVersion { value } => Config::save_python_version(value),
             Param::MinPythonVersion { value } => Config::save_min_python_version(value),
+            Param::UsePyo3 { value } => match value {
+                BooleanChoice::True => Config::save_use_pyo3(true),
+                BooleanChoice::False => Config::save_use_pyo3(false),
+            },
             Param::ApplicationOrLibrary { value } => match value {
                 ApplicationOrLib::Application => Config::save_is_application(true),
                 ApplicationOrLib::Lib => Config::save_is_application(false),

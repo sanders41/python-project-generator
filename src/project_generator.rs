@@ -10,16 +10,18 @@ use crate::github_actions::{
     save_ci_testing_linux_only_file, save_ci_testing_multi_os_file, save_dependabot_file,
     save_pypi_publish_file, save_release_drafter_file,
 };
-use crate::licenses::generate_license;
-use crate::project_info::{LicenseType, ProjectInfo};
-use crate::python_files::generate_python_files;
-use crate::python_package_version::{
+use crate::licenses::{generate_license, license_str};
+use crate::package_version::{
     LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackageVersion,
 };
+use crate::project_info::ProjectInfo;
+use crate::python_files::generate_python_files;
+use crate::rust_files::{save_cargo_toml_file, save_lib_file};
 
 fn create_directories(
     project_slug: &str,
     source_dir: &str,
+    use_pyo3: bool,
     project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
     let base = match project_root_dir {
@@ -35,11 +37,16 @@ fn create_directories(
     let test_dir = format!("{base}/tests");
     create_dir_all(test_dir)?;
 
+    if use_pyo3 {
+        let rust_src = format!("{base}/src");
+        create_dir_all(rust_src)?;
+    }
+
     Ok(())
 }
 
-fn create_gitigngore_file() -> String {
-    r#"
+fn create_gitigngore_file(use_pyo3: bool) -> String {
+    let mut gitignore = r#"
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -178,15 +185,30 @@ dmypy.json
 .idea
 .vscode
 "#
-    .to_string()
+    .to_string();
+
+    if use_pyo3 {
+        gitignore.push_str(
+            r#"
+# Rust
+/target
+"#,
+        );
+    }
+
+    gitignore
 }
 
-fn save_gitigngore_file(project_slug: &str, project_root_dir: &Option<PathBuf>) -> Result<()> {
+fn save_gitigngore_file(
+    project_slug: &str,
+    use_pyo3: bool,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
     let file_path = match project_root_dir {
         Some(root) => format!("{}/{project_slug}/.gitignore", root.display()),
         None => format!("{project_slug}/.gitignore"),
     };
-    let content = create_gitigngore_file();
+    let content = create_gitigngore_file(use_pyo3);
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
@@ -289,9 +311,13 @@ fn save_pre_commit_file(
     Ok(())
 }
 
-fn build_latest_dev_dependencies(is_application: bool, download_latest_packages: bool) -> String {
+fn build_latest_dev_dependencies(
+    is_application: bool,
+    download_latest_packages: bool,
+    use_pyo3: bool,
+) -> String {
     let mut version_string = String::new();
-    let packages = vec![
+    let mut packages = vec![
         PythonPackageVersion {
             name: "black".to_string(),
             version: "23.7.0".to_string(),
@@ -316,11 +342,19 @@ fn build_latest_dev_dependencies(is_application: bool, download_latest_packages:
             name: "ruff".to_string(),
             version: "0.0.287".to_string(),
         },
-        PythonPackageVersion {
+    ];
+
+    if use_pyo3 {
+        packages.push(PythonPackageVersion {
+            name: "maturin".to_string(),
+            version: "1.2.3".to_string(),
+        });
+    } else {
+        packages.push(PythonPackageVersion {
             name: "tomli".to_string(),
             version: "2.0.1".to_string(),
-        },
-    ];
+        })
+    }
 
     for mut package in packages {
         if download_latest_packages && package.get_latest_version().is_err() {
@@ -331,33 +365,62 @@ fn build_latest_dev_dependencies(is_application: bool, download_latest_packages:
             println!("\n{}", error_message.yellow());
         }
 
-        let version: String = if is_application {
-            package.version
+        if use_pyo3 {
+            if is_application {
+                version_string.push_str(&format!("{}=={}\n", package.name, package.version));
+            } else {
+                version_string.push_str(&format!("{}>={}\n", package.name, package.version));
+            };
         } else {
-            format!(">={}", package.version)
-        };
+            let version: String = if is_application {
+                package.version
+            } else {
+                format!(">={}", package.version)
+            };
 
-        if package.name == "tomli" {
-            version_string.push_str(&format!(
-                "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
-                package.name, version
-            ));
-        } else {
-            version_string.push_str(&format!("{} = \"{}\"\n", package.name, version));
+            if package.name == "tomli" {
+                version_string.push_str(&format!(
+                    "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
+                    package.name, version
+                ));
+            } else {
+                version_string.push_str(&format!("{} = \"{}\"\n", package.name, version));
+            }
         }
     }
 
-    version_string.trim().to_string()
+    if use_pyo3 {
+        version_string
+    } else {
+        version_string.trim().to_string()
+    }
 }
 
 fn create_pyproject_toml(project_info: &ProjectInfo) -> String {
     let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
-    let license_text = match &project_info.license {
-        LicenseType::Mit => "MIT",
-        LicenseType::Apache2 => "Apache-2.0",
-        LicenseType::NoLicense => "NoLicense",
-    };
-    let pyproject = r#"[tool.poetry]
+    let license_text = license_str(&project_info.license);
+    let mut pyproject = match &project_info.use_pyo3 {
+        true => r#"[build-system]
+requires = ["maturin>=1.0.0"]
+build-backend = "maturin"
+
+[project]
+name = "{{ project_name }}"
+description = "{{ project_description }}"
+authors = [{name = "{{ creator }}", email =  "{{ creator_email }}"}]
+{% if license != "NoLicense" -%}
+license = "{{ license }}"
+{% endif -%}
+readme = "README.md"
+
+[tool.maturin]
+module-name = "{{ source_dir }}._{{ source_dir }}"
+binding = "pyo3"
+features = ["pyo3/extension-module"]
+
+"#
+        .to_string(),
+        false => r#"[tool.poetry]
 name = "{{ project_name }}"
 version = "{{ version }}"
 description = "{{ project_description }}"
@@ -377,7 +440,12 @@ python = "^{{ min_python_version }}"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.black]
+"#
+        .to_string(),
+    };
+
+    pyproject.push_str(
+        r#"[tool.black]
 line-length = {{ max_line_length }}
 include = '\.pyi?$'
 exclude = '''
@@ -420,10 +488,11 @@ line-length = {{ max_line_length }}
 target-version = "py{{ pyupgrade_version }}"
 fix = true
 
-"#;
+"#,
+    );
 
     render!(
-        pyproject,
+        &pyproject,
         project_name => project_info.source_dir.replace('_', "-"),
         version => project_info.version,
         project_description => project_info.project_description,
@@ -431,7 +500,7 @@ fix = true
         creator_email => project_info.creator_email,
         license => license_text,
         min_python_version => project_info.min_python_version,
-        dev_dependencies => build_latest_dev_dependencies(project_info.is_application, project_info.download_latest_packages),
+        dev_dependencies => build_latest_dev_dependencies(project_info.is_application, project_info.download_latest_packages, project_info.use_pyo3),
         max_line_length => project_info.max_line_length,
         source_dir => project_info.source_dir,
         is_application => project_info.is_application,
@@ -449,6 +518,86 @@ fn save_pyproject_toml_file(project_info: &ProjectInfo) -> Result<()> {
         None => format!("{}/pyproject.toml", project_info.project_slug),
     };
     let content = create_pyproject_toml(project_info);
+
+    save_file_with_content(&file_path, &content)?;
+
+    Ok(())
+}
+
+fn save_pyo3_dev_requirements(
+    project_slug: &str,
+    is_application: bool,
+    download_latest_packages: bool,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
+    let file_path = match project_root_dir {
+        Some(root) => format!("{}/{project_slug}/requirements-dev.txt", root.display()),
+        None => format!("{project_slug}/requirements-dev.txt"),
+    };
+    let content = build_latest_dev_dependencies(is_application, download_latest_packages, true);
+
+    save_file_with_content(&file_path, &content)?;
+
+    Ok(())
+}
+
+fn create_pyo3_justfile(source_dir: &str) -> String {
+    format!(
+        r#"@develop:
+  maturin develop
+
+@install: && develop
+  python -m pip install -r requirements-dev.txt
+
+@lint:
+  echo cargo check
+  just --justfile {{{{justfile()}}}} check
+  echo cargo clippy
+  just --justfile {{{{justfile()}}}} clippy
+  echo cargo fmt
+  just --justfile {{{{justfile()}}}} fmt
+  echo mypy
+  just --justfile {{{{justfile()}}}} mypy
+  echo black
+  just --justfile {{{{justfile()}}}} black
+  echo ruff
+  just --justfile {{{{justfile()}}}} ruff
+
+@check:
+  cargo check
+
+@clippy:
+  cargo clippy
+
+@fmt:
+  cargo fmt
+
+@black:
+  black {} tests
+
+@mypy:
+  mypy .
+
+@ruff:
+  ruff check . --fix
+
+@test:
+  pytest
+"#,
+        source_dir
+    )
+}
+
+fn save_pyo3_justfile(
+    project_slug: &str,
+    source_dir: &str,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
+    let file_path = match project_root_dir {
+        Some(root) => format!("{}/{project_slug}/justfile", root.display()),
+        None => format!("{project_slug}/justfile"),
+    };
+    let content = create_pyo3_justfile(source_dir);
 
     save_file_with_content(&file_path, &content)?;
 
@@ -484,6 +633,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
     if create_directories(
         &project_info.project_slug,
         &project_info.source_dir,
+        project_info.use_pyo3,
         &project_info.project_root_dir,
     )
     .is_err()
@@ -493,7 +643,13 @@ pub fn generate_project(project_info: &ProjectInfo) {
         std::process::exit(1);
     }
 
-    if save_gitigngore_file(&project_info.project_slug, &project_info.project_root_dir).is_err() {
+    if save_gitigngore_file(
+        &project_info.project_slug,
+        project_info.use_pyo3,
+        &project_info.project_root_dir,
+    )
+    .is_err()
+    {
         let error_message = "Error creating .gitignore file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
@@ -551,6 +707,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
         &project_info.project_slug,
         &project_info.source_dir,
         &project_info.version,
+        project_info.use_pyo3,
         &project_info.project_root_dir,
     );
 
@@ -560,7 +717,69 @@ pub fn generate_project(project_info: &ProjectInfo) {
         std::process::exit(1);
     }
 
-    if save_pypi_publish_file(&project_info.project_slug, &project_info.project_root_dir).is_err() {
+    if project_info.use_pyo3 {
+        if save_pyo3_dev_requirements(
+            &project_info.project_slug,
+            project_info.is_application,
+            project_info.download_latest_packages,
+            &project_info.project_root_dir,
+        )
+        .is_err()
+        {
+            let error_message = "Error creating requirements-dev.txt file";
+            println!("\n{}", error_message.red());
+            std::process::exit(1);
+        }
+
+        if save_pyo3_justfile(
+            &project_info.project_slug,
+            &project_info.source_dir,
+            &project_info.project_root_dir,
+        )
+        .is_err()
+        {
+            let error_message = "Error creating justfile";
+            println!("\n{}", error_message.red());
+            std::process::exit(1);
+        }
+
+        if save_lib_file(
+            &project_info.project_slug,
+            &project_info.source_dir,
+            &project_info.project_root_dir,
+        )
+        .is_err()
+        {
+            let error_message = "Error creating Rust lib.rs file";
+            println!("\n{}", error_message.red());
+            std::process::exit(1);
+        }
+
+        if save_cargo_toml_file(
+            &project_info.project_slug,
+            &project_info.source_dir,
+            &project_info.project_description,
+            &project_info.license,
+            &project_info.min_python_version,
+            project_info.download_latest_packages,
+            &project_info.project_root_dir,
+        )
+        .is_err()
+        {
+            let error_message = "Error creating Rust lib.rs file";
+            println!("\n{}", error_message.red());
+            std::process::exit(1);
+        }
+    }
+
+    if save_pypi_publish_file(
+        &project_info.project_slug,
+        &project_info.python_version,
+        project_info.use_pyo3,
+        &project_info.project_root_dir,
+    )
+    .is_err()
+    {
         let error_message = "Error creating PYPI publish file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
@@ -572,6 +791,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
             &project_info.source_dir,
             &project_info.min_python_version,
             &project_info.github_actions_python_test_versions,
+            project_info.use_multi_os_ci,
             &project_info.project_root_dir,
         )
         .is_err()
@@ -585,6 +805,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
         &project_info.source_dir,
         &project_info.min_python_version,
         &project_info.github_actions_python_test_versions,
+        project_info.use_pyo3,
         &project_info.project_root_dir,
     )
     .is_err()
@@ -595,7 +816,12 @@ pub fn generate_project(project_info: &ProjectInfo) {
     }
 
     if project_info.use_dependabot
-        && save_dependabot_file(&project_info.project_slug, &project_info.project_root_dir).is_err()
+        && save_dependabot_file(
+            &project_info.project_slug,
+            project_info.use_pyo3,
+            &project_info.project_root_dir,
+        )
+        .is_err()
     {
         let error_message = "Error creating dependabot file";
         println!("\n{}", error_message.red());
@@ -765,7 +991,166 @@ dmypy.json
         let project_slug = "test-project";
         create_dir_all(base.join(project_slug)).unwrap();
         let expected_file = base.join(format!("{project_slug}/.gitignore"));
-        save_gitigngore_file(project_slug, &Some(base)).unwrap();
+        save_gitigngore_file(project_slug, false, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_gitigngore_pyo3_file() {
+        let expected = r#"
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS Files
+*.swp
+*.DS_Store
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+#   install all needed dependencies.
+#Pipfile.lock
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# editors
+.idea
+.vscode
+
+# Rust
+/target
+"#
+        .to_string();
+
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/.gitignore"));
+        save_gitigngore_file(project_slug, true, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -838,6 +1223,7 @@ dmypy.json
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
+            use_pyo3: false,
             is_application: true,
             github_actions_python_test_versions: vec![
                 "3.8".to_string(),
@@ -962,6 +1348,7 @@ fix = true
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
+            use_pyo3: false,
             is_application: true,
             github_actions_python_test_versions: vec![
                 "3.8".to_string(),
@@ -1086,6 +1473,7 @@ fix = true
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
+            use_pyo3: false,
             is_application: true,
             github_actions_python_test_versions: vec![
                 "3.8".to_string(),
@@ -1209,6 +1597,7 @@ fix = true
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
+            use_pyo3: false,
             is_application: false,
             github_actions_python_test_versions: vec![
                 "3.8".to_string(),
@@ -1306,6 +1695,464 @@ fix = true
         );
 
         save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_pyproject_toml_file_mit_pyo3() {
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/pyproject.toml"));
+
+        let project_info = ProjectInfo {
+            project_name: "My project".to_string(),
+            project_slug: project_slug.to_string(),
+            source_dir: "my_project".to_string(),
+            project_description: "This is a test".to_string(),
+            creator: "Arthur Dent".to_string(),
+            creator_email: "authur@heartofgold.com".to_string(),
+            license: LicenseType::Mit,
+            copyright_year: Some("2023".to_string()),
+            version: "0.1.0".to_string(),
+            python_version: "3.11".to_string(),
+            min_python_version: "3.8".to_string(),
+            use_pyo3: true,
+            is_application: false,
+            github_actions_python_test_versions: vec![
+                "3.8".to_string(),
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string(),
+            ],
+            max_line_length: 100,
+            use_dependabot: true,
+            use_continuous_deployment: true,
+            use_release_drafter: true,
+            use_multi_os_ci: true,
+            download_latest_packages: false,
+            project_root_dir: Some(base),
+        };
+        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
+        let expected = format!(
+            r#"[build-system]
+requires = ["maturin>=1.0.0"]
+build-backend = "maturin"
+
+[project]
+name = "{}"
+description = "{}"
+authors = [{{name = "{}", email =  "{}"}}]
+license = "MIT"
+readme = "README.md"
+
+[tool.maturin]
+module-name = "{}._{}"
+binding = "pyo3"
+features = ["pyo3/extension-module"]
+
+[tool.black]
+line-length = {}
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.egg
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.nox
+  | \.tox
+  | \.venv
+  | \venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | setup.py
+)/
+'''
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
+
+[tool.coverage.report]
+exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
+
+[tool.ruff]
+select = ["E", "F", "UP", "I001", "T201", "T203"]
+ignore = ["E501"]
+line-length = {}
+target-version = "py{}"
+fix = true
+"#,
+            project_info.source_dir.replace('_', "-"),
+            project_info.project_description,
+            project_info.creator,
+            project_info.creator_email,
+            project_info.source_dir,
+            project_info.source_dir,
+            project_info.max_line_length,
+            project_info.source_dir,
+            project_info.max_line_length,
+            pyupgrade_version,
+        );
+
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_pyproject_toml_file_apache_pyo3() {
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/pyproject.toml"));
+
+        let project_info = ProjectInfo {
+            project_name: "My project".to_string(),
+            project_slug: project_slug.to_string(),
+            source_dir: "my_project".to_string(),
+            project_description: "This is a test".to_string(),
+            creator: "Arthur Dent".to_string(),
+            creator_email: "authur@heartofgold.com".to_string(),
+            license: LicenseType::Apache2,
+            copyright_year: Some("2023".to_string()),
+            version: "0.1.0".to_string(),
+            python_version: "3.11".to_string(),
+            min_python_version: "3.8".to_string(),
+            use_pyo3: true,
+            is_application: false,
+            github_actions_python_test_versions: vec![
+                "3.8".to_string(),
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string(),
+            ],
+            max_line_length: 100,
+            use_dependabot: true,
+            use_continuous_deployment: true,
+            use_release_drafter: true,
+            use_multi_os_ci: true,
+            download_latest_packages: false,
+            project_root_dir: Some(base),
+        };
+        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
+        let expected = format!(
+            r#"[build-system]
+requires = ["maturin>=1.0.0"]
+build-backend = "maturin"
+
+[project]
+name = "{}"
+description = "{}"
+authors = [{{name = "{}", email =  "{}"}}]
+license = "Apache-2.0"
+readme = "README.md"
+
+[tool.maturin]
+module-name = "{}._{}"
+binding = "pyo3"
+features = ["pyo3/extension-module"]
+
+[tool.black]
+line-length = {}
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.egg
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.nox
+  | \.tox
+  | \.venv
+  | \venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | setup.py
+)/
+'''
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
+
+[tool.coverage.report]
+exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
+
+[tool.ruff]
+select = ["E", "F", "UP", "I001", "T201", "T203"]
+ignore = ["E501"]
+line-length = {}
+target-version = "py{}"
+fix = true
+"#,
+            project_info.source_dir.replace('_', "-"),
+            project_info.project_description,
+            project_info.creator,
+            project_info.creator_email,
+            project_info.source_dir,
+            project_info.source_dir,
+            project_info.max_line_length,
+            project_info.source_dir,
+            project_info.max_line_length,
+            pyupgrade_version,
+        );
+
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_pyproject_toml_file_no_license_pyo3() {
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/pyproject.toml"));
+
+        let project_info = ProjectInfo {
+            project_name: "My project".to_string(),
+            project_slug: project_slug.to_string(),
+            source_dir: "my_project".to_string(),
+            project_description: "This is a test".to_string(),
+            creator: "Arthur Dent".to_string(),
+            creator_email: "authur@heartofgold.com".to_string(),
+            license: LicenseType::NoLicense,
+            copyright_year: Some("2023".to_string()),
+            version: "0.1.0".to_string(),
+            python_version: "3.11".to_string(),
+            min_python_version: "3.8".to_string(),
+            use_pyo3: true,
+            is_application: false,
+            github_actions_python_test_versions: vec![
+                "3.8".to_string(),
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string(),
+            ],
+            max_line_length: 100,
+            use_dependabot: true,
+            use_continuous_deployment: true,
+            use_release_drafter: true,
+            use_multi_os_ci: true,
+            download_latest_packages: false,
+            project_root_dir: Some(base),
+        };
+        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
+        let expected = format!(
+            r#"[build-system]
+requires = ["maturin>=1.0.0"]
+build-backend = "maturin"
+
+[project]
+name = "{}"
+description = "{}"
+authors = [{{name = "{}", email =  "{}"}}]
+readme = "README.md"
+
+[tool.maturin]
+module-name = "{}._{}"
+binding = "pyo3"
+features = ["pyo3/extension-module"]
+
+[tool.black]
+line-length = {}
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.egg
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.nox
+  | \.tox
+  | \.venv
+  | \venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | setup.py
+)/
+'''
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
+
+[tool.coverage.report]
+exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
+
+[tool.ruff]
+select = ["E", "F", "UP", "I001", "T201", "T203"]
+ignore = ["E501"]
+line-length = {}
+target-version = "py{}"
+fix = true
+"#,
+            project_info.source_dir.replace('_', "-"),
+            project_info.project_description,
+            project_info.creator,
+            project_info.creator_email,
+            project_info.source_dir,
+            project_info.source_dir,
+            project_info.max_line_length,
+            project_info.source_dir,
+            project_info.max_line_length,
+            pyupgrade_version,
+        );
+
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_pyo3_dev_requirements_application_file() {
+        let expected = r#"black==23.7.0
+mypy==1.5.1
+pre-commit==3.3.3
+pytest==7.4.2
+pytest-cov==4.1.0
+ruff==0.0.287
+maturin==1.2.3
+"#;
+
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/requirements-dev.txt"));
+        save_pyo3_dev_requirements(project_slug, true, false, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_pyo3_dev_requirements_lib_file() {
+        let expected = r#"black>=23.7.0
+mypy>=1.5.1
+pre-commit>=3.3.3
+pytest>=7.4.2
+pytest-cov>=4.1.0
+ruff>=0.0.287
+maturin>=1.2.3
+"#;
+
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/requirements-dev.txt"));
+        save_pyo3_dev_requirements(project_slug, false, false, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_pyo3_justfile() {
+        let source_dir = "my_src";
+        let expected = format!(
+            r#"@develop:
+  maturin develop
+
+@install: && develop
+  python -m pip install -r requirements-dev.txt
+
+@lint:
+  echo cargo check
+  just --justfile {{{{justfile()}}}} check
+  echo cargo clippy
+  just --justfile {{{{justfile()}}}} clippy
+  echo cargo fmt
+  just --justfile {{{{justfile()}}}} fmt
+  echo mypy
+  just --justfile {{{{justfile()}}}} mypy
+  echo black
+  just --justfile {{{{justfile()}}}} black
+  echo ruff
+  just --justfile {{{{justfile()}}}} ruff
+
+@check:
+  cargo check
+
+@clippy:
+  cargo clippy
+
+@fmt:
+  cargo fmt
+
+@black:
+  black {source_dir} tests
+
+@mypy:
+  mypy .
+
+@ruff:
+  ruff check . --fix
+
+@test:
+  pytest
+"#
+        );
+
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(project_slug)).unwrap();
+        let expected_file = base.join(format!("{project_slug}/justfile"));
+        save_pyo3_justfile(project_slug, source_dir, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 

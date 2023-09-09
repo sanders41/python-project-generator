@@ -272,6 +272,14 @@ pub fn generate_license(
     }
 }
 
+pub fn license_str(license: &LicenseType) -> &str {
+    match license {
+        LicenseType::Mit => "MIT",
+        LicenseType::Apache2 => "Apache-2.0",
+        LicenseType::NoLicense => "NoLicense",
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -507,5 +515,20 @@ SOFTWARE.
         let content = std::fs::read_to_string(expected_file).unwrap();
 
         assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_license_str_mit() {
+        assert_eq!(license_str(&LicenseType::Mit), "MIT");
+    }
+
+    #[test]
+    fn test_license_str_apache() {
+        assert_eq!(license_str(&LicenseType::Apache2), "Apache-2.0");
+    }
+
+    #[test]
+    fn test_license_str_no_license() {
+        assert_eq!(license_str(&LicenseType::NoLicense), "NoLicense");
     }
 }
