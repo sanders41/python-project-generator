@@ -46,12 +46,11 @@ jobs:
       uses: Swatinem/rust-cache@v2.6.2
     - name: Run cargo test
       run: cargo test --locked
-  python-test:
+  pure-python-test:
     strategy:
       fail-fast: false
       matrix:
         project_type: ["application", "lib"]
-        use_pyo3: ["1", "2"]
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
@@ -80,7 +79,7 @@ jobs:
     - name: Build package
       run: cargo build --release
     - name: Run creation
-      run: ./scripts/ci_run.sh ${{ matrix.project_type }} ${{ matrix.use_pyo3 }}
+      run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
     - name: Cache poetry venv
       uses: actions/cache@v3
       id: poetry-cache
@@ -101,3 +100,40 @@ jobs:
     - name: Test with pytest
       working-directory: my-project
       run: poetry run pytest
+  pyo3-python-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        project_type: ["application", "lib"]
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2.6.2
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+        cache: "pip"
+    - name: Build package
+      run: cargo build --release
+    - name: Run creation
+      run: ./scripts/ci_run.sh ${{ matrix.project_type }} 1
+    - name: Install Dependencies
+      working-directory: my-project
+      run: |
+        pip install -U pip
+        pip install -r requirements-dev.txt
+        pip install -e .
+        maturin build --out dist
+        pip install --no-index --find-links=dist/ my-project
+    - name: Pre-commit install
+      working-directory: my-project
+      run: pre-commit install
+    - name: Test with pytest
+      working-directory: my-project
+      run: pytest
