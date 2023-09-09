@@ -16,7 +16,7 @@ use crate::package_version::{
 };
 use crate::project_info::ProjectInfo;
 use crate::python_files::generate_python_files;
-use crate::rust_files::save_lib_file;
+use crate::rust_files::{save_cargo_toml_file, save_lib_file};
 
 fn create_directories(
     project_slug: &str,
@@ -724,6 +724,22 @@ pub fn generate_project(project_info: &ProjectInfo) {
         if save_lib_file(
             &project_info.project_slug,
             &project_info.source_dir,
+            &project_info.project_root_dir,
+        )
+        .is_err()
+        {
+            let error_message = "Error creating Rust lib.rs file";
+            println!("\n{}", error_message.red());
+            std::process::exit(1);
+        }
+
+        if save_cargo_toml_file(
+            &project_info.project_slug,
+            &project_info.source_dir,
+            &project_info.project_description,
+            &project_info.license,
+            &project_info.min_python_version,
+            project_info.download_latest_packages,
             &project_info.project_root_dir,
         )
         .is_err()

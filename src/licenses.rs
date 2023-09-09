@@ -272,6 +272,14 @@ pub fn generate_license(
     }
 }
 
+pub fn license_str(license: &LicenseType) -> &str {
+    match license {
+        LicenseType::Mit => "MIT",
+        LicenseType::Apache2 => "Apache-2.0",
+        LicenseType::NoLicense => "NoLicense",
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -508,14 +516,19 @@ SOFTWARE.
 
         assert_eq!(content, expected);
     }
-}
 
-pub fn license_str(license: &LicenseType) -> &str {
-    let license_text = match license {
-        LicenseType::Mit => "MIT",
-        LicenseType::Apache2 => "Apache-2.0",
-        LicenseType::NoLicense => "NoLicense",
-    };
+    #[test]
+    fn test_license_str_mit() {
+        assert_eq!(license_str(&LicenseType::Mit), "MIT");
+    }
 
-    license_text
+    #[test]
+    fn test_license_str_apache() {
+        assert_eq!(license_str(&LicenseType::Apache2), "Apache-2.0");
+    }
+
+    #[test]
+    fn test_license_str_no_license() {
+        assert_eq!(license_str(&LicenseType::NoLicense), "NoLicense");
+    }
 }
