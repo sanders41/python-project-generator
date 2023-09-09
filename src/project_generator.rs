@@ -547,7 +547,7 @@ fn create_pyo3_justfile(source_dir: &str) -> String {
   maturin develop
 
 @install: && develop
-  pip install -r requirements-dev.txt
+  python -m pip install -r requirements-dev.txt
 
 @lint:
   echo cargo check

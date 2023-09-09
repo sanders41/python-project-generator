@@ -1536,7 +1536,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
-          python-version: "{python_version}" 
+          python-version: "{python_version}"
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
