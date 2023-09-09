@@ -90,8 +90,8 @@ pub fn save_cargo_toml_file(
     project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
     let file_path = match project_root_dir {
-        Some(root) => format!("{}/{project_slug}/src/Cargo.toml", root.display()),
-        None => format!("{project_slug}/src/Cargo.toml"),
+        Some(root) => format!("{}/{project_slug}/Cargo.toml", root.display()),
+        None => format!("{project_slug}/Cargo.toml"),
     };
     let content = create_cargo_toml_file(
         project_slug,
@@ -171,8 +171,8 @@ pyo3 = {{ version = "0.19.2", features = ["extension-module", "abi3-py38"] }}
         );
 
         let base = tempdir().unwrap().path().to_path_buf();
-        create_dir_all(base.join("test-project/src")).unwrap();
-        let expected_file = base.join("test-project/src/Cargo.toml");
+        create_dir_all(base.join("test-project")).unwrap();
+        let expected_file = base.join("test-project/Cargo.toml");
         save_cargo_toml_file(
             project_slug,
             source_dir,
