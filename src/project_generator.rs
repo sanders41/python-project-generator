@@ -707,6 +707,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
         &project_info.project_slug,
         &project_info.source_dir,
         &project_info.version,
+        project_info.use_pyo3,
         &project_info.project_root_dir,
     );
 

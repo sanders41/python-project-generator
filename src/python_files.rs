@@ -77,25 +77,66 @@ fn save_main_test_file(
     Ok(())
 }
 
-fn create_project_init_file(source_dir: &str) -> String {
-    format!(
-        r#"from {source_dir}._version import VERSION
+fn create_project_init_file(source_dir: &str, use_pyo3: bool) -> String {
+    if use_pyo3 {
+        let v_ascii: u8 = 118;
+        if let Some(first_char) = source_dir.chars().next() {
+            if (first_char as u8) < v_ascii {
+                format!(
+                    r#"from {source_dir}._{source_dir} import sum_as_string
+from {source_dir}._version import VERSION
+
+__version__ = VERSION
+
+
+__all__ = ["sum_as_string"]
+"#
+                )
+            } else {
+                format!(
+                    r#"from {source_dir}._version import VERSION
+from {source_dir}._{source_dir} import sum_as_string
+
+__version__ = VERSION
+
+
+__all__ = ["sum_as_string"]
+"#
+                )
+            }
+        } else {
+            format!(
+                r#"from {source_dir}._{source_dir} import sum_as_string
+r#"from {source_dir}._version import VERSION
+
+__version__ = VERSION
+
+
+__all__ = ["sum_as_string"]
+"#
+            )
+        }
+    } else {
+        format!(
+            r#"from {source_dir}._version import VERSION
 
 __version__ = VERSION
 "#
-    )
+        )
+    }
 }
 
 fn save_project_init_file(
     project_slug: &str,
     source_dir: &str,
+    use_pyo3: bool,
     project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
     let file_path = match project_root_dir {
         Some(root) => format!("{}/{project_slug}/{source_dir}/__init__.py", root.display()),
         None => format!("{project_slug}/{source_dir}/__init__.py"),
     };
-    let content = create_project_init_file(source_dir);
+    let content = create_project_init_file(source_dir, use_pyo3);
 
     save_file_with_content(&file_path, &content)?;
 
@@ -168,9 +209,10 @@ pub fn generate_python_files(
     project_slug: &str,
     source_dir: &str,
     version: &str,
+    use_pyo3: bool,
     project_root_dir: &Option<PathBuf>,
 ) {
-    if save_project_init_file(project_slug, source_dir, project_root_dir).is_err() {
+    if save_project_init_file(project_slug, source_dir, use_pyo3, project_root_dir).is_err() {
         let error_message = "Error creating __init__.py file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
@@ -227,7 +269,63 @@ __version__ = VERSION
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/src"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/src/__init__.py"));
-        save_project_init_file(project_slug, "src", &Some(base)).unwrap();
+        save_project_init_file(project_slug, "src", false, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_project_init_file_pyo3_first() {
+        let source_dir = "my_project";
+        let expected = format!(
+            r#"from {source_dir}._{source_dir} import sum_as_string
+from {source_dir}._version import VERSION
+
+__version__ = VERSION
+
+
+__all__ = ["sum_as_string"]
+"#
+        )
+        .to_string();
+
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(format!("{project_slug}/{source_dir}"))).unwrap();
+        let expected_file = base.join(format!("{project_slug}/{source_dir}/__init__.py"));
+        save_project_init_file(project_slug, source_dir, true, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_project_init_file_pyo3_last() {
+        let source_dir = "z_my_project";
+        let expected = format!(
+            r#"from {source_dir}._version import VERSION
+from {source_dir}._{source_dir} import sum_as_string
+
+__version__ = VERSION
+
+
+__all__ = ["sum_as_string"]
+"#
+        )
+        .to_string();
+
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(format!("{project_slug}/{source_dir}"))).unwrap();
+        let expected_file = base.join(format!("{project_slug}/{source_dir}/__init__.py"));
+        save_project_init_file(project_slug, source_dir, true, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
