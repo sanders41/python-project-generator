@@ -77,6 +77,36 @@ fn save_main_test_file(
     Ok(())
 }
 
+fn create_pyo3_test_file(source_dir: &str) -> String {
+    format!(
+        r#"from {source_dir} import sum_as_string
+
+
+def test_sum_as_string():
+    assert sum_as_string(2, 4) == "6"
+"#
+    )
+}
+
+fn save_pyo3_test_file(
+    project_slug: &str,
+    source_dir: &str,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
+    let file_path = match project_root_dir {
+        Some(root) => format!(
+            "{}/{project_slug}/tests/test_{source_dir}.py",
+            root.display()
+        ),
+        None => format!("{project_slug}/tests/test_{source_dir}.py"),
+    };
+    let content = create_pyo3_test_file(source_dir);
+
+    save_file_with_content(&file_path, &content)?;
+
+    Ok(())
+}
+
 fn create_project_init_file(source_dir: &str, use_pyo3: bool) -> String {
     if use_pyo3 {
         let v_ascii: u8 = 118;
@@ -190,7 +220,30 @@ fn save_version_file(
     Ok(())
 }
 
-fn create_version_test_file(source_dir: &str) -> String {
+fn create_version_test_file(source_dir: &str, use_pyo3: bool) -> String {
+    let version_test: String;
+    if use_pyo3 {
+        version_test = format!(
+            r#"def test_versions_match():
+    cargo = Path().absolute() / "Cargo.toml"
+    with open(cargo, "rb") as f:
+        data = tomllib.load(f)
+        cargo_version = data["package"]["version"]
+
+    assert VERSION == cargo_version"#
+        );
+    } else {
+        version_test = format!(
+            r#"def test_versions_match():
+    pyproject = Path().absolute() / "pyproject.toml"
+    with open(pyproject, "rb") as f:
+        data = tomllib.load(f)
+        pyproject_version = data["tool"]["poetry"]["version"]
+
+    assert VERSION == pyproject_version"#
+        );
+    }
+
     format!(
         r#"import sys
 from pathlib import Path
@@ -203,13 +256,7 @@ else:
     import tomllib
 
 
-def test_versions_match():
-    pyproject = Path().absolute() / "pyproject.toml"
-    with open(pyproject, "rb") as f:
-        data = tomllib.load(f)
-        pyproject_version = data["tool"]["poetry"]["version"]
-
-    assert VERSION == pyproject_version
+{version_test}
 "#
     )
 }
@@ -217,13 +264,14 @@ def test_versions_match():
 fn save_version_test_file(
     project_slug: &str,
     source_dir: &str,
+    use_pyo3: bool,
     project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
     let file_path = match project_root_dir {
         Some(root) => format!("{}/{project_slug}/tests/test_version.py", root.display()),
         None => format!("{project_slug}/tests/test_version.py"),
     };
-    let content = create_version_test_file(source_dir);
+    let content = create_version_test_file(source_dir, use_pyo3);
 
     save_file_with_content(&file_path, &content)?;
 
@@ -270,16 +318,24 @@ pub fn generate_python_files(
         std::process::exit(1);
     }
 
-    if save_version_test_file(project_slug, source_dir, project_root_dir).is_err() {
+    if save_version_test_file(project_slug, source_dir, use_pyo3, project_root_dir).is_err() {
         let error_message = "Error creating version test file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
     }
 
-    if use_pyo3 && save_pyi_file(project_slug, source_dir, project_root_dir).is_err() {
-        let error_message = "Error creating pyi file";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+    if use_pyo3 {
+        if save_pyi_file(project_slug, source_dir, project_root_dir).is_err() {
+            let error_message = "Error creating pyi file";
+            println!("\n{}", error_message.red());
+            std::process::exit(1);
+        }
+
+        if save_pyo3_test_file(project_slug, source_dir, project_root_dir).is_err() {
+            let error_message = "Error creating pyo3 test file";
+            println!("\n{}", error_message.red());
+            std::process::exit(1);
+        }
     }
 }
 
@@ -429,6 +485,31 @@ def test_main():
     }
 
     #[test]
+    fn test_save_pyo3_test_file() {
+        let project_slug = "test-project";
+        let source_dir = "test_project";
+        let expected = format!(
+            r#"from {source_dir} import sum_as_string
+
+
+def test_sum_as_string():
+    assert sum_as_string(2, 4) == "6"
+"#
+        );
+
+        let base = tempdir().unwrap().path().to_path_buf();
+        create_dir_all(base.join(format!("{project_slug}/tests"))).unwrap();
+        let expected_file = base.join(format!("{project_slug}/tests/test_{source_dir}.py"));
+        save_pyo3_test_file(project_slug, source_dir, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
     fn test_save_pyi_file() {
         let expected = r#"from __future__ import annotations
 
@@ -492,7 +573,43 @@ def test_versions_match():
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/tests"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/tests/test_version.py"));
-        save_version_test_file(project_slug, "src", &Some(base)).unwrap();
+        save_version_test_file(project_slug, "src", false, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_version_test_file_pyo3() {
+        let expected = r#"import sys
+from pathlib import Path
+
+from src._version import VERSION
+
+if sys.version_info < (3, 11):
+    import tomli as tomllib
+else:
+    import tomllib
+
+
+def test_versions_match():
+    cargo = Path().absolute() / "Cargo.toml"
+    with open(cargo, "rb") as f:
+        data = tomllib.load(f)
+        cargo_version = data["package"]["version"]
+
+    assert VERSION == cargo_version
+"#
+        .to_string();
+
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(format!("{project_slug}/tests"))).unwrap();
+        let expected_file = base.join(format!("{project_slug}/tests/test_version.py"));
+        save_version_test_file(project_slug, "src", true, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
