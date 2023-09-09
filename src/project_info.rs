@@ -133,12 +133,8 @@ pub fn is_valid_python_version(version: &str) -> bool {
     true
 }
 
-fn copyright_year_prompt(license: &LicenseType) -> String {
+fn copyright_year_prompt(license: &LicenseType, default: Option<String>) -> String {
     let prompt_text = "Copyright Year".to_string();
-    let mut default: Option<String> = None;
-    if let Ok(now) = OffsetDateTime::now_local() {
-        default = Some(now.year().to_string());
-    };
     let prompt = Prompt {
         prompt_text,
         default,
@@ -169,7 +165,7 @@ fn copyright_year_prompt(license: &LicenseType) -> String {
     input
 }
 
-pub fn get_project_info() -> ProjectInfo {
+pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
     let config = match Config::load_config() {
         Ok(c) => c,
         Err(_) => Config::new(),
@@ -180,11 +176,15 @@ pub fn get_project_info() -> ProjectInfo {
     };
     let project_name = project_name_prompt.show_prompt();
     let project_slug_default = project_name.replace(' ', "-").to_lowercase();
-    let project_slug_prompt = Prompt {
-        prompt_text: "Project Slug".to_string(),
-        default: Some(project_slug_default),
+    let project_slug = if use_defaults {
+        project_slug_default
+    } else {
+        let project_slug_prompt = Prompt {
+            prompt_text: "Project Slug".to_string(),
+            default: Some(project_slug_default),
+        };
+        project_slug_prompt.show_prompt()
     };
-    let project_slug = project_slug_prompt.show_prompt();
 
     if Path::new(&project_slug).exists() {
         let error_message = format!("The {project_slug} directory already exists");
@@ -193,84 +193,211 @@ pub fn get_project_info() -> ProjectInfo {
     }
 
     let source_dir_default = project_name.replace(' ', "_").to_lowercase();
-    let source_dir_prompt = Prompt {
-        prompt_text: "Source Directory".to_string(),
-        default: Some(source_dir_default),
+    let source_dir = if use_defaults {
+        source_dir_default
+    } else {
+        let source_dir_prompt = Prompt {
+            prompt_text: "Source Directory".to_string(),
+            default: Some(source_dir_default),
+        };
+        source_dir_prompt.show_prompt()
     };
-    let source_dir = source_dir_prompt.show_prompt();
+
     let project_description_prompt = Prompt {
         prompt_text: "Project Description".to_string(),
         default: None,
     };
     let project_description = project_description_prompt.show_prompt();
-    let creator_prompt = Prompt {
-        prompt_text: "Creator".to_string(),
-        default: config.creator,
-    };
-    let creator = creator_prompt.show_prompt();
-    let email_prompt = Prompt {
-        prompt_text: "Creator Email".to_string(),
-        default: config.creator_email,
-    };
-    let creator_email = email_prompt.show_prompt();
-    let license = license_prompt(config.license);
 
-    let copyright_year: Option<String>;
-    if let LicenseType::Mit = license {
-        copyright_year = Some(copyright_year_prompt(&license));
+    let creator = if use_defaults {
+        if let Some(creator) = config.creator {
+            creator
+        } else {
+            let creator_prompt = Prompt {
+                prompt_text: "Creator".to_string(),
+                default: config.creator,
+            };
+            creator_prompt.show_prompt()
+        }
     } else {
-        copyright_year = None;
+        let creator_prompt = Prompt {
+            prompt_text: "Creator".to_string(),
+            default: config.creator,
+        };
+        creator_prompt.show_prompt()
+    };
+
+    let creator_email = if use_defaults {
+        if let Some(creator_email) = config.creator_email {
+            creator_email
+        } else {
+            let creator_email_prompt = Prompt {
+                prompt_text: "Creator Email".to_string(),
+                default: config.creator_email,
+            };
+            creator_email_prompt.show_prompt()
+        }
+    } else {
+        let creator_email_prompt = Prompt {
+            prompt_text: "Creator Email".to_string(),
+            default: config.creator_email,
+        };
+        creator_email_prompt.show_prompt()
+    };
+
+    let license = if use_defaults {
+        if let Some(l) = config.license {
+            l
+        } else {
+            LicenseType::Mit
+        }
+    } else {
+        license_prompt(config.license)
+    };
+
+    let mut copyright_year: Option<String> = None;
+    if let LicenseType::Mit = license {
+        if let Ok(now) = OffsetDateTime::now_local() {
+            if use_defaults {
+                copyright_year = Some(now.year().to_string());
+            } else {
+                copyright_year = Some(copyright_year_prompt(&license, None));
+            }
+        }
     }
 
-    let version_prompt = Prompt {
-        prompt_text: "Version".to_string(),
-        default: Some("0.1.0".to_string()),
+    let default_version = "0.1.0".to_string();
+    let version = if use_defaults {
+        default_version
+    } else {
+        let version_prompt = Prompt {
+            prompt_text: "Version".to_string(),
+            default: Some(default_version),
+        };
+
+        version_prompt.show_prompt()
     };
-    let version = version_prompt.show_prompt();
 
     let python_version_default = match config.python_version {
         Some(python) => python,
         None => "3.11".to_string(),
     };
-    let python_version = python_version_prompt(python_version_default);
+    let python_version = if use_defaults {
+        python_version_default
+    } else {
+        python_version_prompt(python_version_default)
+    };
 
     let min_python_version_default = match config.min_python_version {
         Some(python) => python,
         None => "3.8".to_string(),
     };
-    let min_python_version = python_min_version_prompt(min_python_version_default);
+    let min_python_version = if use_defaults {
+        min_python_version_default
+    } else {
+        python_min_version_prompt(min_python_version_default)
+    };
 
     let github_actions_python_test_version_default =
         match config.github_actions_python_test_versions {
-            Some(versions) => versions.join(", "),
-            None => "3.8, 3.9, 3.10, 3.11".to_string(),
+            Some(versions) => versions,
+            None => vec![
+                "3.8".to_string(),
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string(),
+            ],
         };
-    let github_actions_python_test_versions =
-        github_actions_python_test_versions_prompt(github_actions_python_test_version_default);
+    let github_actions_python_test_versions = if use_defaults {
+        github_actions_python_test_version_default
+    } else {
+        github_actions_python_test_versions_prompt(github_actions_python_test_version_default)
+    };
 
-    let use_pyo3 = boolean_prompt(
-        "Use pyo3\n  1 - Yes\n  2 - No\n  Choose from[1, 2]".to_string(),
-        config.use_pyo3,
-    );
-    let is_application = is_application_prompt(config.is_application);
-    let max_line_length = max_line_length_prompt(config.max_line_length);
+    let use_pyo3 = if use_defaults {
+        if let Some(c) = config.use_pyo3 {
+            c
+        } else {
+            false
+        }
+    } else {
+        boolean_prompt(
+            "Use pyo3\n  1 - Yes\n  2 - No\n  Choose from[1, 2]".to_string(),
+            config.use_pyo3,
+        )
+    };
 
-    let use_dependabot = boolean_prompt(
-        "Use Dependabot\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
-        config.use_dependabot,
-    );
-    let use_continuous_deployment = boolean_prompt(
-        "Use Continuous Deployment\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
-        config.use_continuous_deployment,
-    );
-    let use_release_drafter = boolean_prompt(
-        "Use Release Drafter\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
-        config.use_release_drafter,
-    );
-    let use_multi_os_ci = boolean_prompt(
-        "Use Multi OS CI\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
-        config.use_multi_os_ci,
-    );
+    let is_application = if use_defaults {
+        if let Some(app) = config.is_application {
+            app
+        } else {
+            true
+        }
+    } else {
+        is_application_prompt(config.is_application)
+    };
+
+    let max_line_length = if use_defaults {
+        if let Some(max) = config.max_line_length {
+            max
+        } else {
+            100
+        }
+    } else {
+        max_line_length_prompt(config.max_line_length)
+    };
+
+    let use_dependabot = if use_defaults {
+        if let Some(dependabot) = config.use_dependabot {
+            dependabot
+        } else {
+            true
+        }
+    } else {
+        boolean_prompt(
+            "Use Dependabot\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+            config.use_dependabot,
+        )
+    };
+
+    let use_continuous_deployment = if use_defaults {
+        if let Some(deploy) = config.use_continuous_deployment {
+            deploy
+        } else {
+            true
+        }
+    } else {
+        boolean_prompt(
+            "Use Continuous Deployment\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+            config.use_continuous_deployment,
+        )
+    };
+
+    let use_release_drafter = if use_defaults {
+        if let Some(drafter) = config.use_release_drafter {
+            drafter
+        } else {
+            true
+        }
+    } else {
+        boolean_prompt(
+            "Use Release Drafter\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+            config.use_release_drafter,
+        )
+    };
+
+    let use_multi_os_ci = if use_defaults {
+        if let Some(multi_os) = config.use_multi_os_ci {
+            multi_os
+        } else {
+            true
+        }
+    } else {
+        boolean_prompt(
+            "Use Multi OS CI\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+            config.use_multi_os_ci,
+        )
+    };
 
     ProjectInfo {
         project_name,
@@ -297,10 +424,11 @@ pub fn get_project_info() -> ProjectInfo {
     }
 }
 
-fn github_actions_python_test_versions_prompt(default: String) -> Vec<String> {
+fn github_actions_python_test_versions_prompt(default: Vec<String>) -> Vec<String> {
+    let default_str = default.join(", ");
     let prompt = Prompt {
         prompt_text: "Python Versions for Github Actions Testing".to_string(),
-        default: Some(default),
+        default: Some(default_str),
     };
     let input = prompt.show_prompt();
     let mut versions: Vec<String> = Vec::new();

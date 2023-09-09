@@ -38,8 +38,9 @@ fn main() {
     match args.command {
         Command::Create {
             skip_download_latest_packages,
+            default,
         } => {
-            let mut project_info = get_project_info();
+            let mut project_info = get_project_info(default);
             project_info.download_latest_packages = !skip_download_latest_packages;
 
             let create_result: Result<()>;
