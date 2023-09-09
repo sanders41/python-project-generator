@@ -118,7 +118,6 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "3.11"
-        cache: "pip"
     - name: Build package
       run: cargo build --release
     - name: Run creation
