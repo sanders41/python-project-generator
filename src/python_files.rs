@@ -143,6 +143,32 @@ fn save_project_init_file(
     Ok(())
 }
 
+fn create_pyi_file() -> String {
+    r#"from __future__ import annotations
+
+def sum_as_string(a: int, b: int) -> str: ..."#
+        .to_string()
+}
+
+pub fn save_pyi_file(
+    project_slug: &str,
+    source_dir: &str,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
+    let file_path = match project_root_dir {
+        Some(root) => format!(
+            "{}/{project_slug}/{source_dir}/_{source_dir}.pyi",
+            root.display()
+        ),
+        None => format!("{project_slug}/{source_dir}/_{source_dir}.pyi"),
+    };
+    let content = create_pyi_file();
+
+    save_file_with_content(&file_path, &content)?;
+
+    Ok(())
+}
+
 fn create_version_file(version: &str) -> String {
     format!("VERSION = \"{version}\"\n")
 }
@@ -246,6 +272,12 @@ pub fn generate_python_files(
 
     if save_version_test_file(project_slug, source_dir, project_root_dir).is_err() {
         let error_message = "Error creating version test file";
+        println!("\n{}", error_message.red());
+        std::process::exit(1);
+    }
+
+    if use_pyo3 && save_pyi_file(project_slug, source_dir, project_root_dir).is_err() {
+        let error_message = "Error creating pyi file";
         println!("\n{}", error_message.red());
         std::process::exit(1);
     }
@@ -388,6 +420,26 @@ def test_main():
         create_dir_all(base.join(format!("{project_slug}/tests"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/tests/test_main.py"));
         save_main_test_file(project_slug, "src", &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_pyi_file() {
+        let expected = r#"from __future__ import annotations
+
+def sum_as_string(a: int, b: int) -> str: ..."#
+            .to_string();
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        let source_dir = "test_project";
+        create_dir_all(base.join(format!("{project_slug}/{source_dir}"))).unwrap();
+        let expected_file = base.join(format!("{project_slug}/{source_dir}/_{source_dir}.pyi"));
+        save_pyi_file(project_slug, source_dir, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
