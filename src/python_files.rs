@@ -176,8 +176,9 @@ fn save_project_init_file(
 fn create_pyi_file() -> String {
     r#"from __future__ import annotations
 
-def sum_as_string(a: int, b: int) -> str: ..."#
-        .to_string()
+def sum_as_string(a: int, b: int) -> str: ...
+"#
+    .to_string()
 }
 
 pub fn save_pyi_file(
@@ -508,8 +509,9 @@ def test_sum_as_string():
     fn test_save_pyi_file() {
         let expected = r#"from __future__ import annotations
 
-def sum_as_string(a: int, b: int) -> str: ..."#
-            .to_string();
+def sum_as_string(a: int, b: int) -> str: ...
+"#
+        .to_string();
         let base = tempdir().unwrap().path().to_path_buf();
         let project_slug = "test-project";
         let source_dir = "test_project";

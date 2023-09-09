@@ -2109,7 +2109,7 @@ maturin>=1.2.3
   maturin develop
 
 @install: && develop
-  pip install -r requirements-dev.txt
+  python -m pip install -r requirements-dev.txt
 
 @lint:
   echo cargo check
