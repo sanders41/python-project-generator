@@ -816,7 +816,12 @@ pub fn generate_project(project_info: &ProjectInfo) {
     }
 
     if project_info.use_dependabot
-        && save_dependabot_file(&project_info.project_slug, &project_info.project_root_dir).is_err()
+        && save_dependabot_file(
+            &project_info.project_slug,
+            project_info.use_pyo3,
+            &project_info.project_root_dir,
+        )
+        .is_err()
     {
         let error_message = "Error creating dependabot file";
         println!("\n{}", error_message.red());

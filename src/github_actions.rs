@@ -541,10 +541,10 @@ pub fn save_ci_testing_multi_os_file(
 fn create_dependabot_file() -> String {
     r#"version: 2
 updates:
-  - package-ecosystem: "pip"
+  - package-ecosystem: pip
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: daily
     labels:
     - skip-changelog
     - dependencies
@@ -559,12 +559,48 @@ updates:
     .to_string()
 }
 
-pub fn save_dependabot_file(project_slug: &str, project_root_dir: &Option<PathBuf>) -> Result<()> {
+fn create_dependabot_file_pyo3() -> String {
+    r#"version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: daily
+    labels:
+    - skip-changelog
+    - dependencies
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: daily
+    labels:
+    - skip-changelog
+    - dependencies
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: daily
+    labels:
+    - skip-changelog
+    - dependencies
+"#
+    .to_string()
+}
+
+pub fn save_dependabot_file(
+    project_slug: &str,
+    use_pyo3: bool,
+    project_root_dir: &Option<PathBuf>,
+) -> Result<()> {
     let file_path = match project_root_dir {
         Some(root) => format!("{}/{project_slug}/.github/dependabot.yml", root.display()),
         None => format!("{project_slug}/.github/dependabot.yml"),
     };
-    let content = create_dependabot_file();
+    let content = if use_pyo3 {
+        create_dependabot_file_pyo3()
+    } else {
+        create_dependabot_file()
+    };
 
     save_file_with_content(&file_path, &content)?;
 
@@ -1362,10 +1398,10 @@ jobs:
     fn test_save_dependabot_file() {
         let expected = r#"version: 2
 updates:
-  - package-ecosystem: "pip"
+  - package-ecosystem: pip
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: daily
     labels:
     - skip-changelog
     - dependencies
@@ -1383,7 +1419,48 @@ updates:
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/.github"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/.github/dependabot.yml"));
-        save_dependabot_file(project_slug, &Some(base)).unwrap();
+        save_dependabot_file(project_slug, false, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_dependabot_file_pyo3() {
+        let expected = r#"version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: daily
+    labels:
+    - skip-changelog
+    - dependencies
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: daily
+    labels:
+    - skip-changelog
+    - dependencies
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: daily
+    labels:
+    - skip-changelog
+    - dependencies
+"#
+        .to_string();
+
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(format!("{project_slug}/.github"))).unwrap();
+        let expected_file = base.join(format!("{project_slug}/.github/dependabot.yml"));
+        save_dependabot_file(project_slug, true, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
