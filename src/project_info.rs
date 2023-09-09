@@ -261,7 +261,10 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
             if use_defaults {
                 copyright_year = Some(now.year().to_string());
             } else {
-                copyright_year = Some(copyright_year_prompt(&license, None));
+                copyright_year = Some(copyright_year_prompt(
+                    &license,
+                    Some(now.year().to_string()),
+                ));
             }
         }
     }
