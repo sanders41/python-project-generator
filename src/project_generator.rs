@@ -772,7 +772,14 @@ pub fn generate_project(project_info: &ProjectInfo) {
         }
     }
 
-    if save_pypi_publish_file(&project_info.project_slug, &project_info.project_root_dir).is_err() {
+    if save_pypi_publish_file(
+        &project_info.project_slug,
+        &project_info.python_version,
+        project_info.use_pyo3,
+        &project_info.project_root_dir,
+    )
+    .is_err()
+    {
         let error_message = "Error creating PYPI publish file";
         println!("\n{}", error_message.red());
         std::process::exit(1);

@@ -571,8 +571,9 @@ pub fn save_dependabot_file(project_slug: &str, project_root_dir: &Option<PathBu
     Ok(())
 }
 
-fn create_pypi_publish_file() -> String {
-    r#"name: PyPi Publish
+fn create_pypi_publish_file(python_version: &str) -> String {
+    format!(
+        r#"name: PyPi Publish
 on:
   release:
     types:
@@ -585,7 +586,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: "{{ cookiecutter.python_version }}"
+        python-version: "{python_version}"
     - name: Install Poetry
       run: |
         pip install pipx
@@ -595,15 +596,125 @@ jobs:
         poetry install
     - name: Add pypi token to Poetry
       run: |
-        poetry config pypi-token.pypi {{ "${{ secrets.PYPI_API_KEY }}" }}
+        poetry config pypi-token.pypi {{{{ "${{{{ secrets.PYPI_API_KEY }}}}" }}}}
     - name: Publish package
       run: poetry publish --build
 "#
-    .to_string()
+    )
+}
+
+fn create_pypi_publish_file_pyo3(python_version: &str) -> String {
+    format!(
+        r#"name: PyPi Publish
+on:
+  release:
+    types:
+    - published
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86_64, x86, aarch64, armv7, s390x, ppc64le]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "{python_version}" 
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{{{ matrix.target }}}}
+          args: --release --out dist --find-interpreter
+          sccache: 'true'
+          manylinux: auto
+      - name: Upload wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        target: [x64, x86]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "{python_version}"
+          architecture: ${{{{ matrix.target }}}}
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{{{ matrix.target }}}}
+          args: --release --out dist --find-interpreter
+          sccache: 'true'
+      - name: Upload wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist
+  macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target: [x86_64, aarch64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "{python_version}"
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{{{ matrix.target }}}}
+          args: --release --out dist --find-interpreter
+          sccache: 'true'
+      - name: Upload wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist
+  sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+      - name: Upload sdist
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [linux, windows, macos, sdist]
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheels
+      - name: Publish to PyPI
+        uses: PyO3/maturin-action@v1
+        env:
+          MATURIN_PYPI_TOKEN: ${{{{ secrets.PYPI_API_TOKEN }}}}
+        with:
+          command: upload
+          args: --skip-existing *
+"#
+    )
 }
 
 pub fn save_pypi_publish_file(
     project_slug: &str,
+    python_version: &str,
+    use_pyo3: bool,
     project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
     let file_path = match project_root_dir {
@@ -613,7 +724,11 @@ pub fn save_pypi_publish_file(
         ),
         None => format!("{project_slug}/.github/workflows/pypi_publish.yml"),
     };
-    let content = create_pypi_publish_file();
+    let content = if use_pyo3 {
+        create_pypi_publish_file_pyo3(python_version)
+    } else {
+        create_pypi_publish_file(python_version)
+    };
 
     save_file_with_content(&file_path, &content)?;
 
@@ -1279,7 +1394,9 @@ updates:
 
     #[test]
     fn test_save_pypi_publish_file() {
-        let expected = r#"name: PyPi Publish
+        let python_version = "3.11";
+        let expected = format!(
+            r#"name: PyPi Publish
 on:
   release:
     types:
@@ -1292,7 +1409,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: "{{ cookiecutter.python_version }}"
+        python-version: "{python_version}"
     - name: Install Poetry
       run: |
         pip install pipx
@@ -1302,17 +1419,139 @@ jobs:
         poetry install
     - name: Add pypi token to Poetry
       run: |
-        poetry config pypi-token.pypi {{ "${{ secrets.PYPI_API_KEY }}" }}
+        poetry config pypi-token.pypi {{{{ "${{{{ secrets.PYPI_API_KEY }}}}" }}}}
     - name: Publish package
       run: poetry publish --build
 "#
-        .to_string();
+        );
 
         let base = tempdir().unwrap().path().to_path_buf();
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/.github/workflows/pypi_publish.yml"));
-        save_pypi_publish_file(project_slug, &Some(base)).unwrap();
+        save_pypi_publish_file(project_slug, python_version, false, &Some(base)).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_pypi_publish_file_pyo3() {
+        let python_version = "3.11";
+        let expected = format!(
+            r#"name: PyPi Publish
+on:
+  release:
+    types:
+    - published
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86_64, x86, aarch64, armv7, s390x, ppc64le]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "{python_version}" 
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{{{ matrix.target }}}}
+          args: --release --out dist --find-interpreter
+          sccache: 'true'
+          manylinux: auto
+      - name: Upload wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        target: [x64, x86]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "{python_version}"
+          architecture: ${{{{ matrix.target }}}}
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{{{ matrix.target }}}}
+          args: --release --out dist --find-interpreter
+          sccache: 'true'
+      - name: Upload wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist
+  macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target: [x86_64, aarch64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "{python_version}"
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{{{ matrix.target }}}}
+          args: --release --out dist --find-interpreter
+          sccache: 'true'
+      - name: Upload wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist
+  sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+      - name: Upload sdist
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [linux, windows, macos, sdist]
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheels
+      - name: Publish to PyPI
+        uses: PyO3/maturin-action@v1
+        env:
+          MATURIN_PYPI_TOKEN: ${{{{ secrets.PYPI_API_TOKEN }}}}
+        with:
+          command: upload
+          args: --skip-existing *
+"#
+        );
+
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
+        let expected_file = base.join(format!("{project_slug}/.github/workflows/pypi_publish.yml"));
+        save_pypi_publish_file(project_slug, python_version, true, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
