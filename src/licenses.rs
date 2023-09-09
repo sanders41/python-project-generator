@@ -509,3 +509,13 @@ SOFTWARE.
         assert_eq!(content, expected);
     }
 }
+
+pub fn license_str(license: &LicenseType) -> &str {
+    let license_text = match license {
+        LicenseType::Mit => "MIT",
+        LicenseType::Apache2 => "Apache-2.0",
+        LicenseType::NoLicense => "NoLicense",
+    };
+
+    license_text
+}

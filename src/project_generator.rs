@@ -10,12 +10,12 @@ use crate::github_actions::{
     save_ci_testing_linux_only_file, save_ci_testing_multi_os_file, save_dependabot_file,
     save_pypi_publish_file, save_release_drafter_file,
 };
-use crate::licenses::generate_license;
-use crate::project_info::{LicenseType, ProjectInfo};
-use crate::python_files::generate_python_files;
-use crate::python_package_version::{
+use crate::licenses::{generate_license, license_str};
+use crate::package_version::{
     LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackageVersion,
 };
+use crate::project_info::ProjectInfo;
+use crate::python_files::generate_python_files;
 use crate::rust_files::save_lib_file;
 
 fn create_directories(
@@ -383,12 +383,7 @@ fn build_latest_dev_dependencies(
 
 fn create_pyproject_toml(project_info: &ProjectInfo) -> String {
     let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
-    let license_text = match &project_info.license {
-        LicenseType::Mit => "MIT",
-        LicenseType::Apache2 => "Apache-2.0",
-        LicenseType::NoLicense => "NoLicense",
-    };
-
+    let license_text = license_str(&project_info.license);
     let mut pyproject = match &project_info.use_pyo3 {
         true => r#"[build-system]
 requires = ["maturin>=1.0.0"]

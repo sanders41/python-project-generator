@@ -3,10 +3,10 @@ mod config;
 mod file_manager;
 mod github_actions;
 mod licenses;
+mod package_version;
 mod project_generator;
 mod project_info;
 mod python_files;
-mod python_package_version;
 mod rust_files;
 
 use std::process::exit;
