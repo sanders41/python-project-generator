@@ -784,6 +784,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
             &project_info.source_dir,
             &project_info.min_python_version,
             &project_info.github_actions_python_test_versions,
+            project_info.use_multi_os_ci,
             &project_info.project_root_dir,
         )
         .is_err()
@@ -797,6 +798,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
         &project_info.source_dir,
         &project_info.min_python_version,
         &project_info.github_actions_python_test_versions,
+        project_info.use_pyo3,
         &project_info.project_root_dir,
     )
     .is_err()

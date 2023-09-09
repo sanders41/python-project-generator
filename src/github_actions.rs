@@ -4,16 +4,20 @@ use anyhow::Result;
 
 use crate::file_manager::save_file_with_content;
 
+fn build_actions_python_test_versions(github_action_python_test_versions: &[String]) -> String {
+    github_action_python_test_versions
+        .iter()
+        .map(|x| format!(r#""{x}""#))
+        .collect::<Vec<String>>()
+        .join(", ")
+}
+
 fn create_ci_testing_linux_only_file(
     source_dir: &str,
     min_python_version: &str,
     github_action_python_test_versions: &[String],
 ) -> String {
-    let python_versions = github_action_python_test_versions
-        .iter()
-        .map(|x| format!(r#""{x}""#))
-        .collect::<Vec<String>>()
-        .join(", ");
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
 
     format!(
         r#"name: Testing
@@ -37,6 +41,7 @@ jobs:
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install Poetry
       run: |
+        pip install -U pip
         pip install pipx
         pipx install poetry
     - name: Configure poetry
@@ -64,7 +69,6 @@ jobs:
     - name: mypy check
       run: |
         poetry run mypy .
-
   testing:
     strategy:
       fail-fast: false
@@ -82,6 +86,135 @@ jobs:
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install Poetry
       run: |
+        pip install -U pip
+        pip install pipx
+        pipx install poetry
+    - name: Configure poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+    - name: Cache poetry venv
+      uses: actions/cache@v3
+      id: poetry-cache
+      with:
+        path: .venv
+        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
+    - name: Ensure cache is healthy
+      if: steps.poetry-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: timeout 10s poetry run pip --version || rm -rf .venv
+    - name: Install Dependencies
+      run: poetry install
+    - name: Test with pytest
+      run: |
+        poetry run pytest
+"#
+    )
+}
+
+fn create_ci_testing_linux_only_file_pyo3(
+    source_dir: &str,
+    min_python_version: &str,
+    github_action_python_test_versions: &[String],
+) -> String {
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+
+    format!(
+        r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: "-D warnings"
+jobs:
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2.6.2
+    - name: Run cargo clippy
+      run: cargo clippy --all-targets -- --deny warnings
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2.6.2
+    - name: Run cargo fmt
+      run: cargo fmt --all -- --check
+  python-linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "{min_python_version}"
+    - name: Get full Python version
+      id: full-python-version
+      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+    - name: Install Poetry
+      run: |
+        pip install -U pip
+        pip install pipx
+        pipx install poetry
+    - name: Configure poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+    - name: Cache poetry venv
+      uses: actions/cache@v3
+      id: poetry-cache
+      with:
+        path: .venv
+        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
+    - name: Ensure cache is healthy
+      if: steps.poetry-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: timeout 10s poetry run pip --version || rm -rf .venv
+    - name: Install Dependencies
+      run: poetry install
+    - name: Black check
+      run: |
+        poetry run black {source_dir} tests --check
+    - name: Lint with ruff
+      run: |
+        poetry run ruff check .
+    - name: mypy check
+      run: |
+        poetry run mypy .
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+    - name: Get full Python version
+      id: full-python-version
+      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+    - name: Install Poetry
+      run: |
+        pip install -U pip
         pip install pipx
         pipx install poetry
     - name: Configure poetry
@@ -112,6 +245,7 @@ pub fn save_ci_testing_linux_only_file(
     source_dir: &str,
     min_python_version: &str,
     github_action_python_test_versions: &[String],
+    use_pyo3: bool,
     project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
     let file_path = match project_root_dir {
@@ -121,11 +255,19 @@ pub fn save_ci_testing_linux_only_file(
         ),
         None => format!("{project_slug}/.github/workflows/testing.yml"),
     };
-    let content = create_ci_testing_linux_only_file(
-        source_dir,
-        min_python_version,
-        github_action_python_test_versions,
-    );
+    let content = if use_pyo3 {
+        create_ci_testing_linux_only_file_pyo3(
+            source_dir,
+            min_python_version,
+            github_action_python_test_versions,
+        )
+    } else {
+        create_ci_testing_linux_only_file(
+            source_dir,
+            min_python_version,
+            github_action_python_test_versions,
+        )
+    };
 
     save_file_with_content(&file_path, &content)?;
 
@@ -137,11 +279,7 @@ fn create_ci_testing_multi_os_file(
     min_python_version: &str,
     github_action_python_test_versions: &[String],
 ) -> String {
-    let python_versions = github_action_python_test_versions
-        .iter()
-        .map(|x| format!(r#""{x}""#))
-        .collect::<Vec<String>>()
-        .join(", ");
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
 
     format!(
         r#"name: Testing
@@ -165,6 +303,7 @@ jobs:
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install Poetry
       run: |
+        pip install -U pip
         pip install pipx
         pipx install poetry
     - name: Configure poetry
@@ -192,7 +331,6 @@ jobs:
     - name: mypy check
       run: |
         poetry run mypy .
-
   testing:
     strategy:
       fail-fast: false
@@ -211,6 +349,136 @@ jobs:
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install Poetry
       run: |
+        pip install -U pip
+        pip install pipx
+        pipx install poetry
+    - name: Configure poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+    - name: Cache poetry venv
+      uses: actions/cache@v3
+      id: poetry-cache
+      with:
+        path: .venv
+        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
+    - name: Ensure cache is healthy
+      if: steps.poetry-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: timeout 10s poetry run pip --version || rm -rf .venv
+    - name: Install Dependencies
+      run: poetry install
+    - name: Test with pytest
+      run: |
+        poetry run pytest
+"#
+    )
+}
+
+fn create_ci_testing_multi_os_file_pyo3(
+    source_dir: &str,
+    min_python_version: &str,
+    github_action_python_test_versions: &[String],
+) -> String {
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+
+    format!(
+        r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: "-D warnings"
+jobs:
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2.6.2
+    - name: Run cargo clippy
+      run: cargo clippy --all-targets -- --deny warnings
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2.6.2
+    - name: Run cargo fmt
+      run: cargo fmt --all -- --check
+  python-linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "{min_python_version}"
+    - name: Get full Python version
+      id: full-python-version
+      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+    - name: Install Poetry
+      run: |
+        pip install -U pip
+        pip install pipx
+        pipx install poetry
+    - name: Configure poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+    - name: Cache poetry venv
+      uses: actions/cache@v3
+      id: poetry-cache
+      with:
+        path: .venv
+        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
+    - name: Ensure cache is healthy
+      if: steps.poetry-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: timeout 10s poetry run pip --version || rm -rf .venv
+    - name: Install Dependencies
+      run: poetry install
+    - name: Black check
+      run: |
+        poetry run black {source_dir} tests --check
+    - name: Lint with ruff
+      run: |
+        poetry run ruff check .
+    - name: mypy check
+      run: |
+        poetry run mypy .
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{{{ matrix.os }}}}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+    - name: Get full Python version
+      id: full-python-version
+      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+    - name: Install Poetry
+      run: |
+        pip install -U pip
         pip install pipx
         pipx install poetry
     - name: Configure poetry
@@ -241,6 +509,7 @@ pub fn save_ci_testing_multi_os_file(
     source_dir: &str,
     min_python_version: &str,
     github_action_python_test_versions: &[String],
+    use_pyo3: bool,
     project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
     let file_path = match project_root_dir {
@@ -250,11 +519,19 @@ pub fn save_ci_testing_multi_os_file(
         ),
         None => format!("{project_slug}/.github/workflows/testing.yml"),
     };
-    let content = create_ci_testing_multi_os_file(
-        source_dir,
-        min_python_version,
-        github_action_python_test_versions,
-    );
+    let content = if use_pyo3 {
+        create_ci_testing_multi_os_file_pyo3(
+            source_dir,
+            min_python_version,
+            github_action_python_test_versions,
+        )
+    } else {
+        create_ci_testing_multi_os_file(
+            source_dir,
+            min_python_version,
+            github_action_python_test_versions,
+        )
+    };
 
     save_file_with_content(&file_path, &content)?;
 
@@ -422,6 +699,19 @@ mod tests {
     use tempfile::tempdir;
 
     #[test]
+    fn test_build_github_actions_test_versions() {
+        assert_eq!(
+            build_actions_python_test_versions(&[
+                "3.8".to_string(),
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string()
+            ]),
+            r#""3.8", "3.9", "3.10", "3.11""#.to_string()
+        );
+    }
+
+    #[test]
     fn test_save_ci_testing_linux_only_file() {
         let expected = r#"name: Testing
 
@@ -444,6 +734,7 @@ jobs:
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install Poetry
       run: |
+        pip install -U pip
         pip install pipx
         pipx install poetry
     - name: Configure poetry
@@ -471,7 +762,6 @@ jobs:
     - name: mypy check
       run: |
         poetry run mypy .
-
   testing:
     strategy:
       fail-fast: false
@@ -489,6 +779,7 @@ jobs:
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install Poetry
       run: |
+        pip install -U pip
         pip install pipx
         pipx install poetry
     - name: Configure poetry
@@ -526,6 +817,153 @@ jobs:
                 "3.10".to_string(),
                 "3.11".to_string(),
             ],
+            false,
+            &Some(base),
+        )
+        .unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_ci_testing_linux_only_file_pyo3() {
+        let expected = r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: "-D warnings"
+jobs:
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2.6.2
+    - name: Run cargo clippy
+      run: cargo clippy --all-targets -- --deny warnings
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2.6.2
+    - name: Run cargo fmt
+      run: cargo fmt --all -- --check
+  python-linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.8"
+    - name: Get full Python version
+      id: full-python-version
+      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+    - name: Install Poetry
+      run: |
+        pip install -U pip
+        pip install pipx
+        pipx install poetry
+    - name: Configure poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+    - name: Cache poetry venv
+      uses: actions/cache@v3
+      id: poetry-cache
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+    - name: Ensure cache is healthy
+      if: steps.poetry-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: timeout 10s poetry run pip --version || rm -rf .venv
+    - name: Install Dependencies
+      run: poetry install
+    - name: Black check
+      run: |
+        poetry run black src tests --check
+    - name: Lint with ruff
+      run: |
+        poetry run ruff check .
+    - name: mypy check
+      run: |
+        poetry run mypy .
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Get full Python version
+      id: full-python-version
+      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+    - name: Install Poetry
+      run: |
+        pip install -U pip
+        pip install pipx
+        pipx install poetry
+    - name: Configure poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+    - name: Cache poetry venv
+      uses: actions/cache@v3
+      id: poetry-cache
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+    - name: Ensure cache is healthy
+      if: steps.poetry-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: timeout 10s poetry run pip --version || rm -rf .venv
+    - name: Install Dependencies
+      run: poetry install
+    - name: Test with pytest
+      run: |
+        poetry run pytest
+"#.to_string();
+
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
+        let expected_file = base.join(format!("{project_slug}/.github/workflows/testing.yml"));
+        save_ci_testing_linux_only_file(
+            project_slug,
+            "src",
+            "3.8",
+            &[
+                "3.8".to_string(),
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string(),
+            ],
+            true,
             &Some(base),
         )
         .unwrap();
@@ -561,6 +999,7 @@ jobs:
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install Poetry
       run: |
+        pip install -U pip
         pip install pipx
         pipx install poetry
     - name: Configure poetry
@@ -588,7 +1027,6 @@ jobs:
     - name: mypy check
       run: |
         poetry run mypy .
-
   testing:
     strategy:
       fail-fast: false
@@ -607,6 +1045,7 @@ jobs:
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install Poetry
       run: |
+        pip install -U pip
         pip install pipx
         pipx install poetry
     - name: Configure poetry
@@ -644,6 +1083,155 @@ jobs:
                 "3.10".to_string(),
                 "3.11".to_string(),
             ],
+            false,
+            &Some(base),
+        )
+        .unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_ci_testing_multi_os_file_pyo3() {
+        let expected =
+            r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: "-D warnings"
+jobs:
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2.6.2
+    - name: Run cargo clippy
+      run: cargo clippy --all-targets -- --deny warnings
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2.6.2
+    - name: Run cargo fmt
+      run: cargo fmt --all -- --check
+  python-linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.8"
+    - name: Get full Python version
+      id: full-python-version
+      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+    - name: Install Poetry
+      run: |
+        pip install -U pip
+        pip install pipx
+        pipx install poetry
+    - name: Configure poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+    - name: Cache poetry venv
+      uses: actions/cache@v3
+      id: poetry-cache
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+    - name: Ensure cache is healthy
+      if: steps.poetry-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: timeout 10s poetry run pip --version || rm -rf .venv
+    - name: Install Dependencies
+      run: poetry install
+    - name: Black check
+      run: |
+        poetry run black src tests --check
+    - name: Lint with ruff
+      run: |
+        poetry run ruff check .
+    - name: mypy check
+      run: |
+        poetry run mypy .
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Get full Python version
+      id: full-python-version
+      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+    - name: Install Poetry
+      run: |
+        pip install -U pip
+        pip install pipx
+        pipx install poetry
+    - name: Configure poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+    - name: Cache poetry venv
+      uses: actions/cache@v3
+      id: poetry-cache
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+    - name: Ensure cache is healthy
+      if: steps.poetry-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: timeout 10s poetry run pip --version || rm -rf .venv
+    - name: Install Dependencies
+      run: poetry install
+    - name: Test with pytest
+      run: |
+        poetry run pytest
+"#.to_string();
+
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
+        let expected_file = base.join(format!("{project_slug}/.github/workflows/testing.yml"));
+        save_ci_testing_multi_os_file(
+            project_slug,
+            "src",
+            "3.8",
+            &[
+                "3.8".to_string(),
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string(),
+            ],
+            true,
             &Some(base),
         )
         .unwrap();
