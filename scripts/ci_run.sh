@@ -15,6 +15,17 @@ gha_versions=""
 application=""
 use_pyo3="2"
 
+# Check for user provided pyo3 input
+if [ $# -gt 1 ]; then
+  echo "HI"
+  if [ $2 -lt 1 ] || [ $2 -gt 2 ]; then
+    echo "Invalid use_pyo3 value"
+    exit 1
+  else
+    use_pyo3=$2
+  fi
+fi
+
 # Check for user provided application input
 if [ $# -gt 0 ]; then
   if [ $1 = "application" ]; then

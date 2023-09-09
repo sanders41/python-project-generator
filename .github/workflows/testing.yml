@@ -51,6 +51,7 @@ jobs:
       fail-fast: false
       matrix:
         project_type: ["application", "lib"]
+        use_pyo3: ["1", "2"]
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
@@ -79,7 +80,7 @@ jobs:
     - name: Build package
       run: cargo build --release
     - name: Run creation
-      run: ./scripts/ci_run.sh ${{ matrix.project_type }}
+      run: ./scripts/ci_run.sh ${{ matrix.project_type }} ${{ matrix.use_pyo3 }}
     - name: Cache poetry venv
       uses: actions/cache@v3
       id: poetry-cache
