@@ -112,8 +112,6 @@ fn create_project_init_file(source_dir: &str, project_manager: &ProjectManager) 
         ProjectManager::Maturin => {
             let v_ascii: u8 = 118;
             if let Some(first_char) = source_dir.chars().next() {
-                println!("{}", first_char);
-                println!("{}, {}", first_char as u8, v_ascii);
                 if (first_char as u8) < v_ascii {
                     format!(
                         r#"from {source_dir}._{source_dir} import sum_as_string
