@@ -80,8 +80,7 @@ jobs:
       run: cargo build --release
     - name: Run creation
       run: |
-        ./scripts/ci_run.sh ${{ matrix.project_type }} 2
-        ls my-project
+        ./scripts/ci_run.sh ${{ matrix.project_type }} 1
     - name: Cache poetry venv
       uses: actions/cache@v3
       id: poetry-cache
@@ -123,7 +122,7 @@ jobs:
     - name: Build package
       run: cargo build --release
     - name: Run creation
-      run: ./scripts/ci_run.sh ${{ matrix.project_type }} 1
+      run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
     - name: Install Dependencies
       working-directory: my-project
       run: |
