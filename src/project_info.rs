@@ -15,6 +15,12 @@ pub enum LicenseType {
     NoLicense,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum)]
+pub enum ProjectManager {
+    Maturin,
+    Poetry,
+}
+
 struct Prompt {
     prompt_text: String,
     default: Option<String>,
@@ -64,7 +70,7 @@ pub struct ProjectInfo {
     pub version: String,
     pub python_version: String,
     pub min_python_version: String,
-    pub use_pyo3: bool,
+    pub project_manager: ProjectManager,
     pub is_application: bool,
     pub github_actions_python_test_versions: Vec<String>,
     pub max_line_length: u8,
@@ -107,6 +113,31 @@ fn is_application_prompt(default: Option<bool>) -> Result<bool> {
     let value = boolean_prompt(prompt_text, default)?;
 
     Ok(value)
+}
+
+fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectManager> {
+    let default_str = match default {
+        Some(d) => match d {
+            Poetry => "poetry".to_string(),
+            Maturin => "maturin".to_string(),
+        },
+        None => "poetry".to_string(),
+    };
+    let prompt_text =
+        "Project Manager\n  1 - Poetry\n  2 - Maturin\n  Choose from[1, 2]".to_string();
+    let prompt = Prompt {
+        prompt_text,
+        default: Some(default_str),
+    };
+    let input = prompt.show_prompt()?;
+
+    if input == "poetry" || input.is_empty() {
+        Ok(ProjectManager::Poetry)
+    } else if input == "maturin" {
+        Ok(ProjectManager::Maturin)
+    } else {
+        bail!("Invalid selection");
+    }
 }
 
 pub fn is_valid_python_version(version: &str) -> bool {
@@ -307,18 +338,15 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         github_actions_python_test_versions_prompt(github_actions_python_test_version_default)?
     };
 
-    let use_pyo3 = if use_defaults {
-        if let Some(c) = config.use_pyo3 {
-            c
+    let project_manager = if use_defaults {
+        if let Some(manager) = config.project_manager {
+            manager
         } else {
-            false
+            ProjectManager::Poetry
         }
     } else {
-        let default = config.use_pyo3.unwrap_or(false);
-        boolean_prompt(
-            "Use pyo3\n  1 - Yes\n  2 - No\n  Choose from[1, 2]".to_string(),
-            Some(default),
-        )?
+        let default = config.project_manager.unwrap_or(ProjectManager::Poetry);
+        project_manager_prompt(Some(default))?
     };
 
     let is_application = if use_defaults {
@@ -405,7 +433,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         version,
         python_version,
         min_python_version,
-        use_pyo3,
+        project_manager,
         is_application,
         github_actions_python_test_versions,
         max_line_length,

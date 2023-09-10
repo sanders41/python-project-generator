@@ -14,14 +14,14 @@ use crate::licenses::{generate_license, license_str};
 use crate::package_version::{
     LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackageVersion,
 };
-use crate::project_info::ProjectInfo;
+use crate::project_info::{ProjectInfo, ProjectManager};
 use crate::python_files::generate_python_files;
 use crate::rust_files::{save_cargo_toml_file, save_lib_file};
 
 fn create_directories(
     project_slug: &str,
     source_dir: &str,
-    use_pyo3: bool,
+    project_manager: &ProjectManager,
     project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
     let base = match project_root_dir {
@@ -37,7 +37,7 @@ fn create_directories(
     let test_dir = format!("{base}/tests");
     create_dir_all(test_dir)?;
 
-    if use_pyo3 {
+    if let ProjectManager::Maturin = project_manager {
         let rust_src = format!("{base}/src");
         create_dir_all(rust_src)?;
     }
@@ -45,7 +45,7 @@ fn create_directories(
     Ok(())
 }
 
-fn create_gitigngore_file(use_pyo3: bool) -> String {
+fn create_gitigngore_file(project_manager: &ProjectManager) -> String {
     let mut gitignore = r#"
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -187,7 +187,7 @@ dmypy.json
 "#
     .to_string();
 
-    if use_pyo3 {
+    if let ProjectManager::Maturin = project_manager {
         gitignore.push_str(
             r#"
 # Rust
@@ -201,14 +201,14 @@ dmypy.json
 
 fn save_gitigngore_file(
     project_slug: &str,
-    use_pyo3: bool,
+    project_manager: &ProjectManager,
     project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
     let file_path = match project_root_dir {
         Some(root) => format!("{}/{project_slug}/.gitignore", root.display()),
         None => format!("{project_slug}/.gitignore"),
     };
-    let content = create_gitigngore_file(use_pyo3);
+    let content = create_gitigngore_file(project_manager);
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
@@ -314,7 +314,7 @@ fn save_pre_commit_file(
 fn build_latest_dev_dependencies(
     is_application: bool,
     download_latest_packages: bool,
-    use_pyo3: bool,
+    project_manager: &ProjectManager,
 ) -> String {
     let mut version_string = String::new();
     let mut packages = vec![
@@ -344,7 +344,7 @@ fn build_latest_dev_dependencies(
         },
     ];
 
-    if use_pyo3 {
+    if let ProjectManager::Maturin = project_manager {
         packages.push(PythonPackageVersion {
             name: "maturin".to_string(),
             version: "1.2.3".to_string(),
@@ -365,7 +365,7 @@ fn build_latest_dev_dependencies(
             println!("\n{}", error_message.yellow());
         }
 
-        if use_pyo3 {
+        if let ProjectManager::Maturin = project_manager {
             if is_application {
                 version_string.push_str(&format!("{}=={}\n", package.name, package.version));
             } else {
@@ -389,7 +389,7 @@ fn build_latest_dev_dependencies(
         }
     }
 
-    if use_pyo3 {
+    if let ProjectManager::Maturin = project_manager {
         version_string
     } else {
         version_string.trim().to_string()
@@ -399,8 +399,8 @@ fn build_latest_dev_dependencies(
 fn create_pyproject_toml(project_info: &ProjectInfo) -> String {
     let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
     let license_text = license_str(&project_info.license);
-    let mut pyproject = match &project_info.use_pyo3 {
-        true => r#"[build-system]
+    let mut pyproject = match &project_info.project_manager {
+        Maturin => r#"[build-system]
 requires = ["maturin>=1.0.0"]
 build-backend = "maturin"
 
@@ -420,7 +420,7 @@ features = ["pyo3/extension-module"]
 
 "#
         .to_string(),
-        false => r#"[tool.poetry]
+        Poetry => r#"[tool.poetry]
 name = "{{ project_name }}"
 version = "{{ version }}"
 description = "{{ project_description }}"
@@ -500,7 +500,7 @@ fix = true
         creator_email => project_info.creator_email,
         license => license_text,
         min_python_version => project_info.min_python_version,
-        dev_dependencies => build_latest_dev_dependencies(project_info.is_application, project_info.download_latest_packages, project_info.use_pyo3),
+        dev_dependencies => build_latest_dev_dependencies(project_info.is_application, project_info.download_latest_packages, &project_info.project_manager),
         max_line_length => project_info.max_line_length,
         source_dir => project_info.source_dir,
         is_application => project_info.is_application,
@@ -633,7 +633,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
     if create_directories(
         &project_info.project_slug,
         &project_info.source_dir,
-        project_info.use_pyo3,
+        &project_info.project_manager,
         &project_info.project_root_dir,
     )
     .is_err()
@@ -643,7 +643,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
 
     if save_gitigngore_file(
         &project_info.project_slug,
-        project_info.use_pyo3,
+        &project_info.project_manager,
         &project_info.project_root_dir,
     )
     .is_err()
@@ -697,7 +697,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
         &project_info.project_slug,
         &project_info.source_dir,
         &project_info.version,
-        project_info.use_pyo3,
+        &project_info.project_manager,
         &project_info.project_root_dir,
     )?;
 
@@ -705,7 +705,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
         bail!("Error creating pyproject.toml file");
     }
 
-    if project_info.use_pyo3 {
+    if &project_info.project_manager {
         if save_pyo3_dev_requirements(
             &project_info.project_slug,
             project_info.is_application,
@@ -755,7 +755,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
     if save_pypi_publish_file(
         &project_info.project_slug,
         &project_info.python_version,
-        project_info.use_pyo3,
+        &project_info.project_manager,
         &project_info.project_root_dir,
     )
     .is_err()
@@ -781,7 +781,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
         &project_info.source_dir,
         &project_info.min_python_version,
         &project_info.github_actions_python_test_versions,
-        project_info.use_pyo3,
+        &project_info.project_manager,
         &project_info.project_root_dir,
     )
     .is_err()
@@ -792,7 +792,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
     if project_info.use_dependabot
         && save_dependabot_file(
             &project_info.project_slug,
-            project_info.use_pyo3,
+            &project_info.project_manager,
             &project_info.project_root_dir,
         )
         .is_err()
@@ -1195,7 +1195,7 @@ dmypy.json
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
-            use_pyo3: false,
+            project_manager: ProjectManager::Poetry,
             is_application: true,
             github_actions_python_test_versions: vec![
                 "3.8".to_string(),
@@ -1320,7 +1320,7 @@ fix = true
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
-            use_pyo3: false,
+            project_manager: ProjectManager::Poetry,
             is_application: true,
             github_actions_python_test_versions: vec![
                 "3.8".to_string(),
@@ -1445,7 +1445,7 @@ fix = true
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
-            use_pyo3: false,
+            project_manager: ProjectManager::Poetry,
             is_application: true,
             github_actions_python_test_versions: vec![
                 "3.8".to_string(),
@@ -1569,7 +1569,7 @@ fix = true
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
-            use_pyo3: false,
+            project_manager: ProjectManager::Poetry,
             is_application: false,
             github_actions_python_test_versions: vec![
                 "3.8".to_string(),
@@ -1694,7 +1694,7 @@ fix = true
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
-            use_pyo3: true,
+            project_manager: ProjectManager::Maturin,
             is_application: false,
             github_actions_python_test_versions: vec![
                 "3.8".to_string(),
@@ -1811,7 +1811,7 @@ fix = true
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
-            use_pyo3: true,
+            project_manager: ProjectManager::Maturin,
             is_application: false,
             github_actions_python_test_versions: vec![
                 "3.8".to_string(),
@@ -1928,7 +1928,7 @@ fix = true
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
-            use_pyo3: true,
+            project_manager: ProjectManager::Maturin,
             is_application: false,
             github_actions_python_test_versions: vec![
                 "3.8".to_string(),
