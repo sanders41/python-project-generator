@@ -314,10 +314,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
             false
         }
     } else {
-        let default = match config.use_pyo3 {
-            Some(c) => c,
-            None => false,
-        };
+        let default = config.use_pyo3.unwrap_or(false);
         boolean_prompt(
             "Use pyo3\n  1 - Yes\n  2 - No\n  Choose from[1, 2]".to_string(),
             Some(default),
