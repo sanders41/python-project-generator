@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 
 use crate::file_manager::save_file_with_content;
+use crate::project_info::ProjectManager;
 
 fn build_actions_python_test_versions(github_action_python_test_versions: &[String]) -> String {
     github_action_python_test_versions
@@ -245,7 +246,7 @@ pub fn save_ci_testing_linux_only_file(
     source_dir: &str,
     min_python_version: &str,
     github_action_python_test_versions: &[String],
-    use_pyo3: bool,
+    project_manager: &ProjectManager,
     project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
     let file_path = match project_root_dir {
@@ -255,18 +256,17 @@ pub fn save_ci_testing_linux_only_file(
         ),
         None => format!("{project_slug}/.github/workflows/testing.yml"),
     };
-    let content = if use_pyo3 {
-        create_ci_testing_linux_only_file_pyo3(
+    let content = match project_manager {
+        ProjectManager::Maturin => create_ci_testing_linux_only_file_pyo3(
             source_dir,
             min_python_version,
             github_action_python_test_versions,
-        )
-    } else {
-        create_ci_testing_linux_only_file(
+        ),
+        ProjectManager::Poetry => create_ci_testing_linux_only_file(
             source_dir,
             min_python_version,
             github_action_python_test_versions,
-        )
+        ),
     };
 
     save_file_with_content(&file_path, &content)?;
@@ -509,7 +509,7 @@ pub fn save_ci_testing_multi_os_file(
     source_dir: &str,
     min_python_version: &str,
     github_action_python_test_versions: &[String],
-    use_pyo3: bool,
+    project_manager: &ProjectManager,
     project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
     let file_path = match project_root_dir {
@@ -519,18 +519,17 @@ pub fn save_ci_testing_multi_os_file(
         ),
         None => format!("{project_slug}/.github/workflows/testing.yml"),
     };
-    let content = if use_pyo3 {
-        create_ci_testing_multi_os_file_pyo3(
+    let content = match project_manager {
+        ProjectManager::Maturin => create_ci_testing_multi_os_file_pyo3(
             source_dir,
             min_python_version,
             github_action_python_test_versions,
-        )
-    } else {
-        create_ci_testing_multi_os_file(
+        ),
+        ProjectManager::Poetry => create_ci_testing_multi_os_file(
             source_dir,
             min_python_version,
             github_action_python_test_versions,
-        )
+        ),
     };
 
     save_file_with_content(&file_path, &content)?;
@@ -589,17 +588,16 @@ updates:
 
 pub fn save_dependabot_file(
     project_slug: &str,
-    use_pyo3: bool,
+    project_manager: &ProjectManager,
     project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
     let file_path = match project_root_dir {
         Some(root) => format!("{}/{project_slug}/.github/dependabot.yml", root.display()),
         None => format!("{project_slug}/.github/dependabot.yml"),
     };
-    let content = if use_pyo3 {
-        create_dependabot_file_pyo3()
-    } else {
-        create_dependabot_file()
+    let content = match project_manager {
+        ProjectManager::Maturin => create_dependabot_file_pyo3(),
+        ProjectManager::Poetry => create_dependabot_file(),
     };
 
     save_file_with_content(&file_path, &content)?;
@@ -750,7 +748,7 @@ jobs:
 pub fn save_pypi_publish_file(
     project_slug: &str,
     python_version: &str,
-    use_pyo3: bool,
+    project_manager: &ProjectManager,
     project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
     let file_path = match project_root_dir {
@@ -760,10 +758,9 @@ pub fn save_pypi_publish_file(
         ),
         None => format!("{project_slug}/.github/workflows/pypi_publish.yml"),
     };
-    let content = if use_pyo3 {
-        create_pypi_publish_file_pyo3(python_version)
-    } else {
-        create_pypi_publish_file(python_version)
+    let content = match project_manager {
+        ProjectManager::Maturin => create_pypi_publish_file_pyo3(python_version),
+        ProjectManager::Poetry => create_pypi_publish_file(python_version),
     };
 
     save_file_with_content(&file_path, &content)?;
@@ -968,7 +965,7 @@ jobs:
                 "3.10".to_string(),
                 "3.11".to_string(),
             ],
-            false,
+            &ProjectManager::Poetry,
             &Some(base),
         )
         .unwrap();
@@ -1114,7 +1111,7 @@ jobs:
                 "3.10".to_string(),
                 "3.11".to_string(),
             ],
-            true,
+            &ProjectManager::Maturin,
             &Some(base),
         )
         .unwrap();
@@ -1234,7 +1231,7 @@ jobs:
                 "3.10".to_string(),
                 "3.11".to_string(),
             ],
-            false,
+            &ProjectManager::Poetry,
             &Some(base),
         )
         .unwrap();
@@ -1382,7 +1379,7 @@ jobs:
                 "3.10".to_string(),
                 "3.11".to_string(),
             ],
-            true,
+            &ProjectManager::Maturin,
             &Some(base),
         )
         .unwrap();
@@ -1419,7 +1416,7 @@ updates:
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/.github"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/.github/dependabot.yml"));
-        save_dependabot_file(project_slug, false, &Some(base)).unwrap();
+        save_dependabot_file(project_slug, &ProjectManager::Poetry, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -1460,7 +1457,7 @@ updates:
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/.github"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/.github/dependabot.yml"));
-        save_dependabot_file(project_slug, true, &Some(base)).unwrap();
+        save_dependabot_file(project_slug, &ProjectManager::Maturin, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -1506,7 +1503,13 @@ jobs:
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/.github/workflows/pypi_publish.yml"));
-        save_pypi_publish_file(project_slug, python_version, false, &Some(base)).unwrap();
+        save_pypi_publish_file(
+            project_slug,
+            python_version,
+            &ProjectManager::Poetry,
+            &Some(base),
+        )
+        .unwrap();
 
         assert!(expected_file.is_file());
 
@@ -1628,7 +1631,13 @@ jobs:
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/.github/workflows/pypi_publish.yml"));
-        save_pypi_publish_file(project_slug, python_version, true, &Some(base)).unwrap();
+        save_pypi_publish_file(
+            project_slug,
+            python_version,
+            &ProjectManager::Maturin,
+            &Some(base),
+        )
+        .unwrap();
 
         assert!(expected_file.is_file());
 

@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use anyhow::{bail, Result};
 
 use crate::file_manager::{save_empty_src_file, save_file_with_content};
+use crate::project_info::ProjectManager;
 
 fn create_dunder_main_file(source_dir: &str) -> String {
     format!(
@@ -106,13 +107,14 @@ fn save_pyo3_test_file(
     Ok(())
 }
 
-fn create_project_init_file(source_dir: &str, use_pyo3: bool) -> String {
-    if use_pyo3 {
-        let v_ascii: u8 = 118;
-        if let Some(first_char) = source_dir.chars().next() {
-            if (first_char as u8) < v_ascii {
-                format!(
-                    r#"from {source_dir}._{source_dir} import sum_as_string
+fn create_project_init_file(source_dir: &str, project_manager: &ProjectManager) -> String {
+    match project_manager {
+        ProjectManager::Maturin => {
+            let v_ascii: u8 = 118;
+            if let Some(first_char) = source_dir.chars().next() {
+                if (first_char as u8) < v_ascii {
+                    format!(
+                        r#"from {source_dir}._{source_dir} import sum_as_string
 from {source_dir}._version import VERSION
 
 __version__ = VERSION
@@ -120,11 +122,23 @@ __version__ = VERSION
 
 __all__ = ["sum_as_string"]
 "#
-                )
+                    )
+                } else {
+                    format!(
+                        r#"from {source_dir}._version import VERSION
+from {source_dir}._{source_dir} import sum_as_string
+
+__version__ = VERSION
+
+
+__all__ = ["sum_as_string"]
+"#
+                    )
+                }
             } else {
                 format!(
-                    r#"from {source_dir}._version import VERSION
-from {source_dir}._{source_dir} import sum_as_string
+                    r#"from {source_dir}._{source_dir} import sum_as_string
+r#"from {source_dir}._version import VERSION
 
 __version__ = VERSION
 
@@ -133,39 +147,29 @@ __all__ = ["sum_as_string"]
 "#
                 )
             }
-        } else {
+        }
+        ProjectManager::Poetry => {
             format!(
-                r#"from {source_dir}._{source_dir} import sum_as_string
-r#"from {source_dir}._version import VERSION
+                r#"from {source_dir}._version import VERSION
 
 __version__ = VERSION
-
-
-__all__ = ["sum_as_string"]
 "#
             )
         }
-    } else {
-        format!(
-            r#"from {source_dir}._version import VERSION
-
-__version__ = VERSION
-"#
-        )
     }
 }
 
 fn save_project_init_file(
     project_slug: &str,
     source_dir: &str,
-    use_pyo3: bool,
+    project_manager: &ProjectManager,
     project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
     let file_path = match project_root_dir {
         Some(root) => format!("{}/{project_slug}/{source_dir}/__init__.py", root.display()),
         None => format!("{project_slug}/{source_dir}/__init__.py"),
     };
-    let content = create_project_init_file(source_dir, use_pyo3);
+    let content = create_project_init_file(source_dir, project_manager);
 
     save_file_with_content(&file_path, &content)?;
 
@@ -220,23 +224,26 @@ fn save_version_file(
     Ok(())
 }
 
-fn create_version_test_file(source_dir: &str, use_pyo3: bool) -> String {
-    let version_test: &str = if use_pyo3 {
-        r#"def test_versions_match():
+fn create_version_test_file(source_dir: &str, project_manager: &ProjectManager) -> String {
+    let version_test: &str = match project_manager {
+        ProjectManager::Maturin => {
+            r#"def test_versions_match():
     cargo = Path().absolute() / "Cargo.toml"
     with open(cargo, "rb") as f:
         data = tomllib.load(f)
         cargo_version = data["package"]["version"]
 
     assert VERSION == cargo_version"#
-    } else {
-        r#"def test_versions_match():
+        }
+        ProjectManager::Poetry => {
+            r#"def test_versions_match():
     pyproject = Path().absolute() / "pyproject.toml"
     with open(pyproject, "rb") as f:
         data = tomllib.load(f)
         pyproject_version = data["tool"]["poetry"]["version"]
 
     assert VERSION == pyproject_version"#
+        }
     };
 
     format!(
@@ -259,14 +266,14 @@ else:
 fn save_version_test_file(
     project_slug: &str,
     source_dir: &str,
-    use_pyo3: bool,
+    project_manager: &ProjectManager,
     project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
     let file_path = match project_root_dir {
         Some(root) => format!("{}/{project_slug}/tests/test_version.py", root.display()),
         None => format!("{project_slug}/tests/test_version.py"),
     };
-    let content = create_version_test_file(source_dir, use_pyo3);
+    let content = create_version_test_file(source_dir, project_manager);
 
     save_file_with_content(&file_path, &content)?;
 
@@ -278,10 +285,11 @@ pub fn generate_python_files(
     project_slug: &str,
     source_dir: &str,
     version: &str,
-    use_pyo3: bool,
+    project_manager: &ProjectManager,
     project_root_dir: &Option<PathBuf>,
 ) -> Result<()> {
-    if save_project_init_file(project_slug, source_dir, use_pyo3, project_root_dir).is_err() {
+    if save_project_init_file(project_slug, source_dir, project_manager, project_root_dir).is_err()
+    {
         bail!("Error creating __init__.py file");
     }
 
@@ -303,11 +311,12 @@ pub fn generate_python_files(
         bail!("Error creating version file");
     }
 
-    if save_version_test_file(project_slug, source_dir, use_pyo3, project_root_dir).is_err() {
+    if save_version_test_file(project_slug, source_dir, project_manager, project_root_dir).is_err()
+    {
         bail!("Error creating version test file")
     }
 
-    if use_pyo3 {
+    if let ProjectManager::Maturin = project_manager {
         if save_pyi_file(project_slug, source_dir, project_root_dir).is_err() {
             bail!("Error creating pyi file");
         }
@@ -338,7 +347,7 @@ __version__ = VERSION
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/src"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/src/__init__.py"));
-        save_project_init_file(project_slug, "src", false, &Some(base)).unwrap();
+        save_project_init_file(project_slug, "src", &ProjectManager::Poetry, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -366,7 +375,13 @@ __all__ = ["sum_as_string"]
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/{source_dir}"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/{source_dir}/__init__.py"));
-        save_project_init_file(project_slug, source_dir, true, &Some(base)).unwrap();
+        save_project_init_file(
+            project_slug,
+            source_dir,
+            &ProjectManager::Maturin,
+            &Some(base),
+        )
+        .unwrap();
 
         assert!(expected_file.is_file());
 
@@ -394,7 +409,13 @@ __all__ = ["sum_as_string"]
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/{source_dir}"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/{source_dir}/__init__.py"));
-        save_project_init_file(project_slug, source_dir, true, &Some(base)).unwrap();
+        save_project_init_file(
+            project_slug,
+            source_dir,
+            &ProjectManager::Maturin,
+            &Some(base),
+        )
+        .unwrap();
 
         assert!(expected_file.is_file());
 
@@ -555,7 +576,7 @@ def test_versions_match():
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/tests"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/tests/test_version.py"));
-        save_version_test_file(project_slug, "src", false, &Some(base)).unwrap();
+        save_version_test_file(project_slug, "src", &ProjectManager::Poetry, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -591,7 +612,7 @@ def test_versions_match():
         let project_slug = "test-project";
         create_dir_all(base.join(format!("{project_slug}/tests"))).unwrap();
         let expected_file = base.join(format!("{project_slug}/tests/test_version.py"));
-        save_version_test_file(project_slug, "src", true, &Some(base)).unwrap();
+        save_version_test_file(project_slug, "src", &ProjectManager::Maturin, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 

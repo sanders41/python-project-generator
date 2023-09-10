@@ -114,20 +114,12 @@ fn main() {
                     exit(1);
                 }
             }
-            Param::UsePyo3 { value } => match value {
-                BooleanChoice::True => {
-                    if let Err(e) = Config::save_use_pyo3(true) {
-                        print_error(e);
-                        exit(1);
-                    }
+            Param::ProjectManager { value } => {
+                if let Err(e) = Config::save_project_manager(value) {
+                    print_error(e);
+                    exit(1);
                 }
-                BooleanChoice::False => {
-                    if let Err(e) = Config::save_use_pyo3(false) {
-                        print_error(e);
-                        exit(1);
-                    }
-                }
-            },
+            }
             Param::ApplicationOrLibrary { value } => match value {
                 ApplicationOrLib::Application => {
                     if let Err(e) = Config::save_is_application(true) {

@@ -13,16 +13,15 @@ python_version=""
 min_python_version=""
 gha_versions=""
 application=""
-use_pyo3="2"
+project_manager="1"
 
-# Check for user provided pyo3 input
+# Check for user provided project manager input
 if [ $# -gt 1 ]; then
-  echo "HI"
   if [ $2 -lt 1 ] || [ $2 -gt 2 ]; then
-    echo "Invalid use_pyo3 value"
+    echo "Invalid project_manager value"
     exit 1
   else
-    use_pyo3=$2
+    project_manager=$2
   fi
 fi
 
@@ -57,7 +56,7 @@ $version
 $python_version
 $min_python_version
 $gha_versions
-$use_pyo3
+$project_manager
 $application
 $max_line_length
 $use_dependabot

@@ -5,7 +5,7 @@ use anyhow::{bail, Result};
 use colored::*;
 use serde::{Deserialize, Serialize};
 
-use crate::project_info::{is_valid_python_version, LicenseType};
+use crate::project_info::{is_valid_python_version, LicenseType, ProjectManager};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
@@ -14,7 +14,7 @@ pub struct Config {
     pub license: Option<LicenseType>,
     pub python_version: Option<String>,
     pub min_python_version: Option<String>,
-    pub use_pyo3: Option<bool>,
+    pub project_manager: Option<ProjectManager>,
     pub is_application: Option<bool>,
     pub github_actions_python_test_versions: Option<Vec<String>>,
     pub max_line_length: Option<u8>,
@@ -33,7 +33,7 @@ impl Config {
             license: None,
             python_version: None,
             min_python_version: None,
-            use_pyo3: None,
+            project_manager: None,
             is_application: None,
             github_actions_python_test_versions: None,
             max_line_length: None,
@@ -156,9 +156,9 @@ impl Config {
         Ok(())
     }
 
-    pub fn save_use_pyo3(value: bool) -> Result<()> {
+    pub fn save_project_manager(value: ProjectManager) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
-            config.use_pyo3 = Some(value);
+            config.project_manager = Some(value);
             if config.save().is_err() {
                 raise_error()?;
             }

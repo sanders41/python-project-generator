@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand, ValueEnum};
 
-use crate::project_info::LicenseType;
+use crate::project_info::{LicenseType, ProjectManager};
 
 #[derive(Clone, Debug, ValueEnum)]
 pub enum ApplicationOrLib {
@@ -81,10 +81,10 @@ pub enum Param {
         value: String,
     },
 
-    /// Use pyo3
-    UsePyo3 {
-        #[clap(help = "Use pyo3")]
-        value: BooleanChoice,
+    /// Save a default project manager
+    ProjectManager {
+        #[clap(help = "Default project manager")]
+        value: ProjectManager,
     },
 
     /// Save a default value for Is Application
