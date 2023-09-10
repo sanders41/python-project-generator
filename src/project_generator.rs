@@ -1,7 +1,7 @@
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use colored::*;
 use minijinja::render;
 
@@ -629,7 +629,7 @@ fn save_readme_file(
     Ok(())
 }
 
-pub fn generate_project(project_info: &ProjectInfo) {
+pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
     if create_directories(
         &project_info.project_slug,
         &project_info.source_dir,
@@ -638,9 +638,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
     )
     .is_err()
     {
-        let error_message = "Error creating project directories";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!("Error creating project directories");
     }
 
     if save_gitigngore_file(
@@ -650,9 +648,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
     )
     .is_err()
     {
-        let error_message = "Error creating .gitignore file";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!("Error creating .gitignore file");
     }
 
     if save_pre_commit_file(
@@ -663,9 +659,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
     )
     .is_err()
     {
-        let error_message = "Error creating .gitignore file";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!("Error creating .gitignore file");
     }
 
     if save_readme_file(
@@ -676,9 +670,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
     )
     .is_err()
     {
-        let error_message = "Error creating README.md file";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!("Error creating README.md file");
     }
 
     generate_license(
@@ -687,7 +679,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
         &project_info.project_slug,
         &project_info.creator,
         &project_info.project_root_dir,
-    );
+    )?;
 
     if save_empty_src_file(
         &project_info.project_slug,
@@ -697,9 +689,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
     )
     .is_err()
     {
-        let error_message = "Error creating py.typed file";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!("Error creating py.typed file");
     }
 
     generate_python_files(
@@ -709,12 +699,10 @@ pub fn generate_project(project_info: &ProjectInfo) {
         &project_info.version,
         project_info.use_pyo3,
         &project_info.project_root_dir,
-    );
+    )?;
 
     if save_pyproject_toml_file(project_info).is_err() {
-        let error_message = "Error creating pyproject.toml file";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!("Error creating pyproject.toml file");
     }
 
     if project_info.use_pyo3 {
@@ -726,9 +714,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
         )
         .is_err()
         {
-            let error_message = "Error creating requirements-dev.txt file";
-            println!("\n{}", error_message.red());
-            std::process::exit(1);
+            bail!("Error creating requirements-dev.txt file");
         }
 
         if save_pyo3_justfile(
@@ -738,9 +724,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
         )
         .is_err()
         {
-            let error_message = "Error creating justfile";
-            println!("\n{}", error_message.red());
-            std::process::exit(1);
+            bail!("Error creating justfile");
         }
 
         if save_lib_file(
@@ -750,9 +734,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
         )
         .is_err()
         {
-            let error_message = "Error creating Rust lib.rs file";
-            println!("\n{}", error_message.red());
-            std::process::exit(1);
+            bail!("Error creating Rust lib.rs file");
         }
 
         if save_cargo_toml_file(
@@ -766,9 +748,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
         )
         .is_err()
         {
-            let error_message = "Error creating Rust lib.rs file";
-            println!("\n{}", error_message.red());
-            std::process::exit(1);
+            bail!("Error creating Rust lib.rs file");
         }
     }
 
@@ -780,9 +760,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
     )
     .is_err()
     {
-        let error_message = "Error creating PYPI publish file";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!("Error creating PYPI publish file");
     }
 
     if project_info.use_multi_os_ci {
@@ -796,9 +774,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
         )
         .is_err()
         {
-            let error_message = "Error creating CI teesting file";
-            println!("\n{}", error_message.red());
-            std::process::exit(1);
+            bail!("Error creating CI teesting file");
         }
     } else if save_ci_testing_linux_only_file(
         &project_info.project_slug,
@@ -810,9 +786,7 @@ pub fn generate_project(project_info: &ProjectInfo) {
     )
     .is_err()
     {
-        let error_message = "Error creating CI teesting file";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!("Error creating CI teesting file");
     }
 
     if project_info.use_dependabot
@@ -823,19 +797,17 @@ pub fn generate_project(project_info: &ProjectInfo) {
         )
         .is_err()
     {
-        let error_message = "Error creating dependabot file";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!("Error creating dependabot file");
     }
 
     if project_info.use_release_drafter
         && save_release_drafter_file(&project_info.project_slug, &project_info.project_root_dir)
             .is_err()
     {
-        let error_message = "Error creating release drafter file";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!("Error creating release drafter file");
     }
+
+    Ok(())
 }
 
 #[cfg(test)]

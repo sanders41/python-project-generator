@@ -1,8 +1,8 @@
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+use anyhow::{bail, Result};
 use clap::ValueEnum;
-use colored::*;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
@@ -21,11 +21,11 @@ struct Prompt {
 }
 
 trait PromptInput {
-    fn show_prompt(&self) -> String;
+    fn show_prompt(&self) -> Result<String>;
 }
 
 impl PromptInput for Prompt {
-    fn show_prompt(&self) -> String {
+    fn show_prompt(&self) -> Result<String> {
         let mut input = String::new();
 
         if let Some(d) = &self.default {
@@ -41,15 +41,13 @@ impl PromptInput for Prompt {
 
         if input.trim() == "" {
             if let Some(d) = &self.default {
-                return d.to_string();
+                return Ok(d.to_string());
             } else {
-                let error_message = format!(r#"A "{}" value is required"#, self.prompt_text);
-                println!("\n{}", error_message.red());
-                std::process::exit(1);
+                bail!(format!(r#"A "{}" value is required"#, self.prompt_text));
             }
         }
 
-        input.trim().to_string()
+        Ok(input.trim().to_string())
     }
 }
 
@@ -78,7 +76,7 @@ pub struct ProjectInfo {
     pub project_root_dir: Option<PathBuf>,
 }
 
-fn boolean_prompt(prompt_text: String, default: Option<bool>) -> bool {
+fn boolean_prompt(prompt_text: String, default: Option<bool>) -> Result<bool> {
     let default_str = match default {
         Some(d) => match d {
             true => "1".to_string(),
@@ -91,24 +89,24 @@ fn boolean_prompt(prompt_text: String, default: Option<bool>) -> bool {
         prompt_text,
         default: Some(default_str),
     };
-    let input = prompt.show_prompt();
+    let input = prompt.show_prompt()?;
 
     if input == "1" || input.is_empty() {
-        true
+        Ok(true)
     } else if input == "2" {
-        false
+        Ok(false)
     } else {
-        let error_message = "Invalid selection";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!("Invalid selection");
     }
 }
 
-fn is_application_prompt(default: Option<bool>) -> bool {
+fn is_application_prompt(default: Option<bool>) -> Result<bool> {
     let prompt_text =
         "Application or Library\n  1 - Application\n  2 - Library\n  Choose from [1, 2]"
             .to_string();
-    boolean_prompt(prompt_text, default)
+    let value = boolean_prompt(prompt_text, default)?;
+
+    Ok(value)
 }
 
 pub fn is_valid_python_version(version: &str) -> bool {
@@ -133,39 +131,36 @@ pub fn is_valid_python_version(version: &str) -> bool {
     true
 }
 
-fn copyright_year_prompt(license: &LicenseType, default: Option<String>) -> String {
+fn copyright_year_prompt(license: &LicenseType, default: Option<String>) -> Result<String> {
     let prompt_text = "Copyright Year".to_string();
     let prompt = Prompt {
         prompt_text,
         default,
     };
-    let input = prompt.show_prompt();
+    let input = prompt.show_prompt()?;
 
     if input.is_empty() {
-        let error_message = format!("A copyright year is required for {:?} license", license);
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!(format!(
+            "A copyright year is required for {:?} license",
+            license
+        ));
     } else {
         match input.parse::<i32>() {
             Ok(y) => {
                 if !(1000..=9999).contains(&y) {
-                    let error_message = format!("{y} is not a valid year");
-                    println!("\n{}", error_message.red());
-                    std::process::exit(1);
+                    bail!(format!("{y} is not a valid year"));
                 }
             }
             _ => {
-                let error_message = format!("{input} is not a valid year");
-                println!("\n{}", error_message.red());
-                std::process::exit(1);
+                bail!(format!("{input} is not a valid year"));
             }
         };
     }
 
-    input
+    Ok(input)
 }
 
-pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
+pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     let config = match Config::load_config() {
         Ok(c) => c,
         Err(_) => Config::new(),
@@ -174,7 +169,7 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
         prompt_text: "Project Name".to_string(),
         default: None,
     };
-    let project_name = project_name_prompt.show_prompt();
+    let project_name = project_name_prompt.show_prompt()?;
     let project_slug_default = project_name.replace(' ', "-").to_lowercase();
     let project_slug = if use_defaults {
         project_slug_default
@@ -183,13 +178,11 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
             prompt_text: "Project Slug".to_string(),
             default: Some(project_slug_default),
         };
-        project_slug_prompt.show_prompt()
+        project_slug_prompt.show_prompt()?
     };
 
     if Path::new(&project_slug).exists() {
-        let error_message = format!("The {project_slug} directory already exists");
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!(format!("The {project_slug} directory already exists"));
     }
 
     let source_dir_default = project_name.replace(' ', "_").to_lowercase();
@@ -200,14 +193,14 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
             prompt_text: "Source Directory".to_string(),
             default: Some(source_dir_default),
         };
-        source_dir_prompt.show_prompt()
+        source_dir_prompt.show_prompt()?
     };
 
     let project_description_prompt = Prompt {
         prompt_text: "Project Description".to_string(),
         default: None,
     };
-    let project_description = project_description_prompt.show_prompt();
+    let project_description = project_description_prompt.show_prompt()?;
 
     let creator = if use_defaults {
         if let Some(creator) = config.creator {
@@ -217,14 +210,14 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
                 prompt_text: "Creator".to_string(),
                 default: config.creator,
             };
-            creator_prompt.show_prompt()
+            creator_prompt.show_prompt()?
         }
     } else {
         let creator_prompt = Prompt {
             prompt_text: "Creator".to_string(),
             default: config.creator,
         };
-        creator_prompt.show_prompt()
+        creator_prompt.show_prompt()?
     };
 
     let creator_email = if use_defaults {
@@ -235,14 +228,14 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
                 prompt_text: "Creator Email".to_string(),
                 default: config.creator_email,
             };
-            creator_email_prompt.show_prompt()
+            creator_email_prompt.show_prompt()?
         }
     } else {
         let creator_email_prompt = Prompt {
             prompt_text: "Creator Email".to_string(),
             default: config.creator_email,
         };
-        creator_email_prompt.show_prompt()
+        creator_email_prompt.show_prompt()?
     };
 
     let license = if use_defaults {
@@ -252,7 +245,7 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
             LicenseType::Mit
         }
     } else {
-        license_prompt(config.license)
+        license_prompt(config.license)?
     };
 
     let mut copyright_year: Option<String> = None;
@@ -261,10 +254,8 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
             if use_defaults {
                 copyright_year = Some(now.year().to_string());
             } else {
-                copyright_year = Some(copyright_year_prompt(
-                    &license,
-                    Some(now.year().to_string()),
-                ));
+                let result = copyright_year_prompt(&license, Some(now.year().to_string()))?;
+                copyright_year = Some(result);
             }
         }
     }
@@ -277,8 +268,7 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
             prompt_text: "Version".to_string(),
             default: Some(default_version),
         };
-
-        version_prompt.show_prompt()
+        version_prompt.show_prompt()?
     };
 
     let python_version_default = match config.python_version {
@@ -288,7 +278,7 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
     let python_version = if use_defaults {
         python_version_default
     } else {
-        python_version_prompt(python_version_default)
+        python_version_prompt(python_version_default)?
     };
 
     let min_python_version_default = match config.min_python_version {
@@ -298,7 +288,7 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
     let min_python_version = if use_defaults {
         min_python_version_default
     } else {
-        python_min_version_prompt(min_python_version_default)
+        python_min_version_prompt(min_python_version_default)?
     };
 
     let github_actions_python_test_version_default =
@@ -314,7 +304,7 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
     let github_actions_python_test_versions = if use_defaults {
         github_actions_python_test_version_default
     } else {
-        github_actions_python_test_versions_prompt(github_actions_python_test_version_default)
+        github_actions_python_test_versions_prompt(github_actions_python_test_version_default)?
     };
 
     let use_pyo3 = if use_defaults {
@@ -327,7 +317,7 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
         boolean_prompt(
             "Use pyo3\n  1 - Yes\n  2 - No\n  Choose from[1, 2]".to_string(),
             config.use_pyo3,
-        )
+        )?
     };
 
     let is_application = if use_defaults {
@@ -337,7 +327,7 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
             true
         }
     } else {
-        is_application_prompt(config.is_application)
+        is_application_prompt(config.is_application)?
     };
 
     let max_line_length = if use_defaults {
@@ -347,7 +337,7 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
             100
         }
     } else {
-        max_line_length_prompt(config.max_line_length)
+        max_line_length_prompt(config.max_line_length)?
     };
 
     let use_dependabot = if use_defaults {
@@ -360,7 +350,7 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
         boolean_prompt(
             "Use Dependabot\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
             config.use_dependabot,
-        )
+        )?
     };
 
     let use_continuous_deployment = if use_defaults {
@@ -373,7 +363,7 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
         boolean_prompt(
             "Use Continuous Deployment\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
             config.use_continuous_deployment,
-        )
+        )?
     };
 
     let use_release_drafter = if use_defaults {
@@ -386,7 +376,7 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
         boolean_prompt(
             "Use Release Drafter\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
             config.use_release_drafter,
-        )
+        )?
     };
 
     let use_multi_os_ci = if use_defaults {
@@ -399,10 +389,10 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
         boolean_prompt(
             "Use Multi OS CI\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
             config.use_multi_os_ci,
-        )
+        )?
     };
 
-    ProjectInfo {
+    Ok(ProjectInfo {
         project_name,
         project_slug,
         source_dir,
@@ -424,34 +414,32 @@ pub fn get_project_info(use_defaults: bool) -> ProjectInfo {
         use_multi_os_ci,
         download_latest_packages: false,
         project_root_dir: None,
-    }
+    })
 }
 
-fn github_actions_python_test_versions_prompt(default: Vec<String>) -> Vec<String> {
+fn github_actions_python_test_versions_prompt(default: Vec<String>) -> Result<Vec<String>> {
     let default_str = default.join(", ");
     let prompt = Prompt {
         prompt_text: "Python Versions for Github Actions Testing".to_string(),
         default: Some(default_str),
     };
-    let input = prompt.show_prompt();
+    let input = prompt.show_prompt()?;
     let mut versions: Vec<String> = Vec::new();
 
     let version_check = input.replace(' ', "");
 
     for version in version_check.split(',') {
         if !is_valid_python_version(version) {
-            let error_message = format!("{} is not a valid Python Version", version);
-            println!("\n{}", error_message.red());
-            std::process::exit(1);
+            bail!(format!("{} is not a valid Python Version", version));
         }
 
         versions.push(version.to_string());
     }
 
-    versions
+    Ok(versions)
 }
 
-fn license_prompt(default: Option<LicenseType>) -> LicenseType {
+fn license_prompt(default: Option<LicenseType>) -> Result<LicenseType> {
     let default_license: Option<String> = match default {
         Some(d) => match d {
             LicenseType::Mit => Some("1".to_string()),
@@ -466,7 +454,7 @@ fn license_prompt(default: Option<LicenseType>) -> LicenseType {
                 .to_string(),
         default: default_license,
     };
-    let input = prompt.show_prompt();
+    let input = prompt.show_prompt()?;
     let license: LicenseType;
 
     if input == "1" || input.is_empty() {
@@ -476,64 +464,56 @@ fn license_prompt(default: Option<LicenseType>) -> LicenseType {
     } else if input == "3" {
         license = LicenseType::NoLicense;
     } else {
-        let error_message = "Invalid license type";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!("Invalid license type");
     }
 
-    license
+    Ok(license)
 }
 
-fn max_line_length_prompt(default: Option<u8>) -> u8 {
+fn max_line_length_prompt(default: Option<u8>) -> Result<u8> {
     let default_val = default.unwrap_or(100);
     let prompt = Prompt {
         prompt_text: "Max Line Length".to_string(),
         default: Some(default_val.to_string()),
     };
-    let input = prompt.show_prompt();
+    let input = prompt.show_prompt()?;
 
     let max_line_length: u8 = match input.parse::<u8>() {
         Ok(m) => m,
         _ => {
-            let error_message = format!("{} is not a valid line length", input);
-            println!("\n{}", error_message.red());
-            std::process::exit(1);
+            bail!(format!("{} is not a valid line length", input));
         }
     };
 
-    max_line_length
+    Ok(max_line_length)
 }
 
-fn python_min_version_prompt(default: String) -> String {
+fn python_min_version_prompt(default: String) -> Result<String> {
     let prompt = Prompt {
         prompt_text: "Minimum Python Version".to_string(),
         default: Some(default),
     };
-    let input = prompt.show_prompt();
+    let input = prompt.show_prompt()?;
 
     if !is_valid_python_version(&input) {
-        let error_message = format!("{} is not a valid Python Version", input.trim());
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!(format!("{} is not a valid Python Version", input.trim()));
     }
 
-    input.to_string()
+    Ok(input.to_string())
 }
 
-fn python_version_prompt(default: String) -> String {
+fn python_version_prompt(default: String) -> Result<String> {
     let prompt = Prompt {
         prompt_text: "Python Version".to_string(),
         default: Some(default),
     };
-    let input = prompt.show_prompt();
+    let input = prompt.show_prompt()?;
 
     if !is_valid_python_version(&input) {
-        let error_message = format!("{} is not a valid Python Version", input.trim());
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!(format!("{} is not a valid Python Version", input.trim()));
     }
 
-    input.to_string()
+    Ok(input.to_string())
 }
 
 #[cfg(test)]

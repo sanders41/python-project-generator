@@ -12,7 +12,7 @@ mod rust_files;
 use std::process::exit;
 use std::time::Duration;
 
-use anyhow::Result;
+use anyhow::{Error, Result};
 use clap::Parser;
 use cli::ApplicationOrLib;
 use colored::*;
@@ -24,13 +24,20 @@ use crate::project_generator::generate_project;
 use crate::project_info::{get_project_info, ProjectInfo};
 
 fn create(project_info: &ProjectInfo) -> Result<()> {
-    generate_project(project_info);
+    if let Err(e) = generate_project(project_info) {
+        print_error(e);
+        exit(1);
+    }
     std::process::Command::new("git")
         .args(["init", &project_info.project_slug])
         .output()
         .expect("Failed to initialize git");
 
     Ok(())
+}
+
+fn print_error(err: Error) {
+    println!("\n{}", err.to_string().red());
 }
 
 fn main() {
@@ -40,7 +47,13 @@ fn main() {
             skip_download_latest_packages,
             default,
         } => {
-            let mut project_info = get_project_info(default);
+            let mut project_info = match get_project_info(default) {
+                Ok(pi) => pi,
+                Err(e) => {
+                    print_error(e);
+                    exit(1);
+                }
+            };
             project_info.download_latest_packages = !skip_download_latest_packages;
 
             let create_result: Result<()>;
@@ -71,43 +84,146 @@ fn main() {
             };
         }
         Command::Config(config) => match config.param {
-            Param::Creator { value } => Config::save_creator(value),
-            Param::CreatorEmail { value } => Config::save_creator_email(value),
-            Param::License { value } => Config::save_license(value),
-            Param::PythonVersion { value } => Config::save_python_version(value),
-            Param::MinPythonVersion { value } => Config::save_min_python_version(value),
+            Param::Creator { value } => {
+                if let Err(e) = Config::save_creator(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+            Param::CreatorEmail { value } => {
+                if let Err(e) = Config::save_creator_email(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+            Param::License { value } => {
+                if let Err(e) = Config::save_license(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+            Param::PythonVersion { value } => {
+                if let Err(e) = Config::save_python_version(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+            Param::MinPythonVersion { value } => {
+                if let Err(e) = Config::save_min_python_version(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::UsePyo3 { value } => match value {
-                BooleanChoice::True => Config::save_use_pyo3(true),
-                BooleanChoice::False => Config::save_use_pyo3(false),
+                BooleanChoice::True => {
+                    if let Err(e) = Config::save_use_pyo3(true) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
+                BooleanChoice::False => {
+                    if let Err(e) = Config::save_use_pyo3(false) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
             },
             Param::ApplicationOrLibrary { value } => match value {
-                ApplicationOrLib::Application => Config::save_is_application(true),
-                ApplicationOrLib::Lib => Config::save_is_application(false),
+                ApplicationOrLib::Application => {
+                    if let Err(e) = Config::save_is_application(true) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
+                ApplicationOrLib::Lib => {
+                    if let Err(e) = Config::save_is_application(false) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
             },
             Param::GithubActionPythonTestVersions { value } => {
-                Config::save_github_actions_python_test_versions(value)
+                if let Err(e) = Config::save_github_actions_python_test_versions(value) {
+                    print_error(e);
+                    exit(1);
+                }
             }
-            Param::MaxLineLength { value } => Config::save_max_line_length(value),
+            Param::MaxLineLength { value } => {
+                if let Err(e) = Config::save_max_line_length(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::UseDependabot { value } => match value {
-                BooleanChoice::True => Config::save_use_dependabot(true),
-                BooleanChoice::False => Config::save_use_dependabot(false),
+                BooleanChoice::True => {
+                    if let Err(e) = Config::save_use_dependabot(true) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
+                BooleanChoice::False => {
+                    if let Err(e) = Config::save_use_dependabot(false) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
             },
             Param::UseContinuousDeployment { value } => match value {
-                BooleanChoice::True => Config::save_use_continuous_deployment(true),
-                BooleanChoice::False => Config::save_use_continuous_deployment(false),
+                BooleanChoice::True => {
+                    if let Err(e) = Config::save_use_continuous_deployment(true) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
+                BooleanChoice::False => {
+                    if let Err(e) = Config::save_use_continuous_deployment(false) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
             },
             Param::UseReleaseDrafter { value } => match value {
-                BooleanChoice::True => Config::save_use_release_drafter(true),
-                BooleanChoice::False => Config::save_use_release_drafter(false),
+                BooleanChoice::True => {
+                    if let Err(e) = Config::save_use_release_drafter(true) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
+                BooleanChoice::False => {
+                    if let Err(e) = Config::save_use_release_drafter(false) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
             },
             Param::UseMultiOsCi { value } => match value {
-                BooleanChoice::True => Config::save_use_multi_os_ci(true),
-                BooleanChoice::False => Config::save_use_multi_os_ci(false),
+                BooleanChoice::True => {
+                    if let Err(e) = Config::save_use_multi_os_ci(true) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
+                BooleanChoice::False => {
+                    if let Err(e) = Config::save_use_multi_os_ci(false) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
             },
 
             Param::DownloadLatestPackages { value } => match value {
-                BooleanChoice::True => Config::save_download_latest_packages(true),
-                BooleanChoice::False => Config::save_download_latest_packages(false),
+                BooleanChoice::True => {
+                    if let Err(e) = Config::save_download_latest_packages(true) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
+                BooleanChoice::False => {
+                    if let Err(e) = Config::save_download_latest_packages(false) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
             },
             Param::Reset => {
                 if Config::reset().is_err() {

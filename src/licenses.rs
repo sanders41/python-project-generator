@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 
-use anyhow::Result;
-use colored::*;
+use anyhow::{bail, Result};
 
 use crate::file_manager::save_file_with_content;
 use crate::project_info::LicenseType;
@@ -246,30 +245,26 @@ pub fn generate_license(
     project_slug: &str,
     creator: &str,
     project_root_dir: &Option<PathBuf>,
-) {
+) -> Result<()> {
     match license {
         LicenseType::Mit => {
             if let Some(year) = copywright_year {
                 if save_mit_license(project_slug, year, creator, project_root_dir).is_err() {
-                    let error_message = "Error creating MIT license file";
-                    println!("\n{}", error_message.red());
-                    std::process::exit(1);
+                    bail!("Error creating MIT license file");
                 };
             } else {
-                let error_message = "Error creating MIT license file: copywright year missing";
-                println!("\n{}", error_message.red());
-                std::process::exit(1);
+                bail!("Error creating MIT license file: copywright year missing");
             }
         }
         LicenseType::Apache2 => {
             if save_apache_license(project_slug, project_root_dir).is_err() {
-                let error_message = "Error creating Apache2 license file";
-                println!("\n{}", error_message.red());
-                std::process::exit(1);
+                bail!("Error creating Apache2 license file");
             };
         }
         _ => (),
     }
+
+    Ok(())
 }
 
 pub fn license_str(license: &LicenseType) -> &str {
