@@ -118,8 +118,8 @@ fn is_application_prompt(default: Option<bool>) -> Result<bool> {
 fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectManager> {
     let default_str = match default {
         Some(d) => match d {
-            Poetry => "poetry".to_string(),
-            Maturin => "maturin".to_string(),
+            ProjectManager::Maturin => "2".to_string(),
+            ProjectManager::Poetry => "1".to_string(),
         },
         None => "poetry".to_string(),
     };
@@ -131,9 +131,9 @@ fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectMana
     };
     let input = prompt.show_prompt()?;
 
-    if input == "poetry" || input.is_empty() {
+    if input == "1" || input.is_empty() {
         Ok(ProjectManager::Poetry)
-    } else if input == "maturin" {
+    } else if input == "2" {
         Ok(ProjectManager::Maturin)
     } else {
         bail!("Invalid selection");

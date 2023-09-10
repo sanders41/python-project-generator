@@ -400,7 +400,7 @@ fn create_pyproject_toml(project_info: &ProjectInfo) -> String {
     let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
     let license_text = license_str(&project_info.license);
     let mut pyproject = match &project_info.project_manager {
-        Maturin => r#"[build-system]
+        ProjectManager::Maturin => r#"[build-system]
 requires = ["maturin>=1.0.0"]
 build-backend = "maturin"
 
@@ -420,7 +420,7 @@ features = ["pyo3/extension-module"]
 
 "#
         .to_string(),
-        Poetry => r#"[tool.poetry]
+        ProjectManager::Poetry => r#"[tool.poetry]
 name = "{{ project_name }}"
 version = "{{ version }}"
 description = "{{ project_description }}"
@@ -534,7 +534,11 @@ fn save_pyo3_dev_requirements(
         Some(root) => format!("{}/{project_slug}/requirements-dev.txt", root.display()),
         None => format!("{project_slug}/requirements-dev.txt"),
     };
-    let content = build_latest_dev_dependencies(is_application, download_latest_packages, true);
+    let content = build_latest_dev_dependencies(
+        is_application,
+        download_latest_packages,
+        &ProjectManager::Maturin,
+    );
 
     save_file_with_content(&file_path, &content)?;
 
@@ -705,7 +709,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
         bail!("Error creating pyproject.toml file");
     }
 
-    if &project_info.project_manager {
+    if let ProjectManager::Maturin = &project_info.project_manager {
         if save_pyo3_dev_requirements(
             &project_info.project_slug,
             project_info.is_application,
@@ -769,7 +773,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
             &project_info.source_dir,
             &project_info.min_python_version,
             &project_info.github_actions_python_test_versions,
-            project_info.use_multi_os_ci,
+            &project_info.project_manager,
             &project_info.project_root_dir,
         )
         .is_err()
@@ -963,7 +967,7 @@ dmypy.json
         let project_slug = "test-project";
         create_dir_all(base.join(project_slug)).unwrap();
         let expected_file = base.join(format!("{project_slug}/.gitignore"));
-        save_gitigngore_file(project_slug, false, &Some(base)).unwrap();
+        save_gitigngore_file(project_slug, &ProjectManager::Poetry, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -1122,7 +1126,7 @@ dmypy.json
         let project_slug = "test-project";
         create_dir_all(base.join(project_slug)).unwrap();
         let expected_file = base.join(format!("{project_slug}/.gitignore"));
-        save_gitigngore_file(project_slug, true, &Some(base)).unwrap();
+        save_gitigngore_file(project_slug, &ProjectManager::Maturin, &Some(base)).unwrap();
 
         assert!(expected_file.is_file());
 
