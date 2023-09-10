@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 
-use anyhow::Result;
-use colored::*;
+use anyhow::{bail, Result};
 
 use crate::file_manager::{save_empty_src_file, save_file_with_content};
 
@@ -281,58 +280,44 @@ pub fn generate_python_files(
     version: &str,
     use_pyo3: bool,
     project_root_dir: &Option<PathBuf>,
-) {
+) -> Result<()> {
     if save_project_init_file(project_slug, source_dir, use_pyo3, project_root_dir).is_err() {
-        let error_message = "Error creating __init__.py file";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!("Error creating __init__.py file");
     }
 
     if save_empty_src_file(project_slug, "tests", "__init__.py", project_root_dir).is_err() {
-        let error_message = "Error creating test __init__.py file";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!("Error creating test __init__.py file");
     }
 
     if *is_application {
         if save_main_files(project_slug, source_dir, project_root_dir).is_err() {
-            let error_message = "Error creating main files";
-            println!("\n{}", error_message.red());
-            std::process::exit(1);
+            bail!("Error creating main files");
         }
 
         if save_main_test_file(project_slug, source_dir, project_root_dir).is_err() {
-            let error_message = "Error creating main test file";
-            println!("\n{}", error_message.red());
-            std::process::exit(1);
+            bail!("Error creating main test file");
         }
     }
 
     if save_version_file(project_slug, source_dir, version, project_root_dir).is_err() {
-        let error_message = "Error creating version file";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!("Error creating version file");
     }
 
     if save_version_test_file(project_slug, source_dir, use_pyo3, project_root_dir).is_err() {
-        let error_message = "Error creating version test file";
-        println!("\n{}", error_message.red());
-        std::process::exit(1);
+        bail!("Error creating version test file")
     }
 
     if use_pyo3 {
         if save_pyi_file(project_slug, source_dir, project_root_dir).is_err() {
-            let error_message = "Error creating pyi file";
-            println!("\n{}", error_message.red());
-            std::process::exit(1);
+            bail!("Error creating pyi file");
         }
 
         if save_pyo3_test_file(project_slug, source_dir, project_root_dir).is_err() {
-            let error_message = "Error creating pyo3 test file";
-            println!("\n{}", error_message.red());
-            std::process::exit(1);
+            bail!("Error creating pyo3 test file");
         }
     }
+
+    Ok(())
 }
 
 #[cfg(test)]

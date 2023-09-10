@@ -1,8 +1,7 @@
 use std::fs::{create_dir_all, read_to_string, File};
 use std::path::PathBuf;
-use std::process::exit;
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use colored::*;
 use serde::{Deserialize, Serialize};
 
@@ -80,100 +79,110 @@ impl Config {
                         serde_json::to_writer(config_file, &self)?;
                     }
                     None => {
-                        let message = "Unable to save config file.";
-                        println!("{}", message.red());
-                        exit(1);
+                        bail!("Unable to save config file.");
                     }
                 }
             }
             None => {
-                let message = "Unable to save config file.";
-                println!("{}", message.red());
-                exit(1);
+                bail!("Unable to save config file.");
             }
         }
 
         Ok(())
     }
 
-    pub fn save_creator(value: String) {
+    pub fn save_creator(value: String) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.creator = Some(value);
             if config.save().is_err() {
-                print_config_save_error_and_exit();
+                raise_error()?;
             };
         } else {
-            print_config_save_error_and_exit();
+            raise_error()?;
         }
+
+        Ok(())
     }
 
-    pub fn save_creator_email(value: String) {
+    pub fn save_creator_email(value: String) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.creator_email = Some(value);
             if config.save().is_err() {
-                print_config_save_error_and_exit();
+                raise_error()?;
             };
         } else {
-            print_config_save_error_and_exit();
+            raise_error()?;
         }
+
+        Ok(())
     }
 
-    pub fn save_license(value: LicenseType) {
+    pub fn save_license(value: LicenseType) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.license = Some(value);
             if config.save().is_err() {
-                print_config_save_error_and_exit();
+                raise_error()?;
             };
         } else {
-            print_config_save_error_and_exit();
+            raise_error()?;
         }
+
+        Ok(())
     }
 
-    pub fn save_python_version(value: String) {
+    pub fn save_python_version(value: String) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.python_version = Some(value);
             if config.save().is_err() {
-                print_config_save_error_and_exit();
+                raise_error()?;
             };
         } else {
-            print_config_save_error_and_exit();
+            raise_error()?;
         }
+
+        Ok(())
     }
 
-    pub fn save_min_python_version(value: String) {
+    pub fn save_min_python_version(value: String) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.min_python_version = Some(value);
             if config.save().is_err() {
-                print_config_save_error_and_exit();
+                raise_error()?;
             };
         } else {
-            print_config_save_error_and_exit();
+            raise_error()?;
         }
+
+        Ok(())
     }
 
-    pub fn save_use_pyo3(value: bool) {
+    pub fn save_use_pyo3(value: bool) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.use_pyo3 = Some(value);
             if config.save().is_err() {
-                print_config_save_error_and_exit();
+                raise_error()?;
             }
         } else {
-            print_config_save_error_and_exit();
+            raise_error()?;
         }
+
+        Ok(())
     }
 
-    pub fn save_is_application(value: bool) {
+    pub fn save_is_application(value: bool) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.is_application = Some(value);
             if config.save().is_err() {
-                print_config_save_error_and_exit();
+                raise_error()?;
             };
         } else {
-            print_config_save_error_and_exit();
+            raise_error()?;
         }
+
+        Ok(())
     }
 
-    pub fn save_github_actions_python_test_versions(value: String) {
+    pub fn save_github_actions_python_test_versions(value: String) -> Result<()> {
         let versions = value
             .replace(' ', "")
             .split(',')
@@ -182,86 +191,98 @@ impl Config {
 
         for version in &versions {
             if !is_valid_python_version(&version.replace('"', "")) {
-                let error_message = format!("{} is not a valid Python Version", version);
-                println!("\n{}", error_message.red());
-                std::process::exit(1);
+                bail!(format!("{} is not a valid Python Version", version));
             }
         }
 
         if let Ok(mut config) = Config::load_config() {
             config.github_actions_python_test_versions = Some(versions);
             if config.save().is_err() {
-                print_config_save_error_and_exit();
+                raise_error()?;
             };
         } else {
-            print_config_save_error_and_exit();
+            raise_error()?;
         }
+
+        Ok(())
     }
 
-    pub fn save_max_line_length(value: u8) {
+    pub fn save_max_line_length(value: u8) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.max_line_length = Some(value);
             if config.save().is_err() {
-                print_config_save_error_and_exit();
+                raise_error()?;
             };
         } else {
-            print_config_save_error_and_exit();
+            raise_error()?;
         }
+
+        Ok(())
     }
 
-    pub fn save_use_dependabot(value: bool) {
+    pub fn save_use_dependabot(value: bool) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.use_dependabot = Some(value);
             if config.save().is_err() {
-                print_config_save_error_and_exit();
+                raise_error()?;
             };
         } else {
-            print_config_save_error_and_exit();
+            raise_error()?;
         }
+
+        Ok(())
     }
 
-    pub fn save_use_continuous_deployment(value: bool) {
+    pub fn save_use_continuous_deployment(value: bool) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.use_continuous_deployment = Some(value);
             if config.save().is_err() {
-                print_config_save_error_and_exit();
+                raise_error()?;
             };
         } else {
-            print_config_save_error_and_exit();
+            raise_error()?;
         }
+
+        Ok(())
     }
 
-    pub fn save_use_release_drafter(value: bool) {
+    pub fn save_use_release_drafter(value: bool) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.use_release_drafter = Some(value);
             if config.save().is_err() {
-                print_config_save_error_and_exit();
+                raise_error()?;
             };
         } else {
-            print_config_save_error_and_exit();
+            raise_error()?;
         }
+
+        Ok(())
     }
 
-    pub fn save_use_multi_os_ci(value: bool) {
+    pub fn save_use_multi_os_ci(value: bool) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.use_multi_os_ci = Some(value);
             if config.save().is_err() {
-                print_config_save_error_and_exit();
+                raise_error()?;
             };
         } else {
-            print_config_save_error_and_exit();
+            raise_error()?;
         }
+
+        Ok(())
     }
 
-    pub fn save_download_latest_packages(value: bool) {
+    pub fn save_download_latest_packages(value: bool) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.download_latest_packages = Some(value);
             if config.save().is_err() {
-                print_config_save_error_and_exit();
+                raise_error()?;
             };
         } else {
-            print_config_save_error_and_exit();
+            raise_error()?;
         }
+
+        Ok(())
     }
 
     pub fn show() {
@@ -397,10 +418,8 @@ fn config_file_path() -> Option<PathBuf> {
     None
 }
 
-fn print_config_save_error_and_exit() {
-    let message = "Error saving config";
-    println!("{}", message.red());
-    exit(1);
+fn raise_error() -> Result<()> {
+    bail!("Error saving config")
 }
 
 #[cfg(test)]
