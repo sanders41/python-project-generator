@@ -81,7 +81,7 @@ jobs:
     - name: Run creation
       run: |
         ./scripts/ci_run.sh ${{ matrix.project_type }} 2
-        ls
+        ls my-project
     - name: Cache poetry venv
       uses: actions/cache@v3
       id: poetry-cache
