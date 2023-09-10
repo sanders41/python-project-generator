@@ -13,11 +13,11 @@ python_version=""
 min_python_version=""
 gha_versions=""
 application=""
-project_manager="Poetry"
+project_manager="1"
 
 # Check for user provided project manager input
 if [ $# -gt 1 ]; then
-  if [ $2 != "poetry" ] || [ $2 != "maturin" ]; then
+  if [ $2 -lt 1 ] || [ $2 -gt 2 ]; then
     echo "Invalid project_manager value"
     exit 1
   else
