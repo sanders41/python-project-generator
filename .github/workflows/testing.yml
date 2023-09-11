@@ -9,7 +9,7 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   RUSTFLAGS: "-D warnings"
-  WORKING_DIR: "my_project"
+  WORKING_DIR: "my-project"
   MIN_PYTHON_VERSION: "3.8"
 jobs:
   clippy:
