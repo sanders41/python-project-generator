@@ -226,7 +226,7 @@ fn build_latest_pre_commit_dependencies(
         PreCommitHookVersion {
             id: PreCommitHook::Black,
             repo: "https://github.com/psf/black".to_string(),
-            rev: "23.7.0".to_string(),
+            rev: "23.9.1".to_string(),
         },
         PreCommitHookVersion {
             id: PreCommitHook::MyPy,
@@ -320,7 +320,7 @@ fn build_latest_dev_dependencies(
     let mut packages = vec![
         PythonPackageVersion {
             name: "black".to_string(),
-            version: "23.7.0".to_string(),
+            version: "23.9.1".to_string(),
         },
         PythonPackageVersion {
             name: "mypy".to_string(),
@@ -328,7 +328,7 @@ fn build_latest_dev_dependencies(
         },
         PythonPackageVersion {
             name: "pre-commit".to_string(),
-            version: "3.3.3".to_string(),
+            version: "3.4.0".to_string(),
         },
         PythonPackageVersion {
             name: "pytest".to_string(),
