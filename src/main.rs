@@ -9,6 +9,8 @@ mod project_info;
 mod python_files;
 mod rust_files;
 
+use std::fs::remove_dir_all;
+use std::path::Path;
 use std::process::exit;
 use std::time::Duration;
 
@@ -24,10 +26,7 @@ use crate::project_generator::generate_project;
 use crate::project_info::{get_project_info, ProjectInfo};
 
 fn create(project_info: &ProjectInfo) -> Result<()> {
-    if let Err(e) = generate_project(project_info) {
-        print_error(e);
-        exit(1);
-    }
+    generate_project(project_info)?;
     std::process::Command::new("git")
         .args(["init", &project_info.project_slug])
         .output()
@@ -38,6 +37,20 @@ fn create(project_info: &ProjectInfo) -> Result<()> {
 
 fn print_error(err: Error) {
     println!("\n{}", err.to_string().red());
+}
+
+fn delete_slug(project_info: &ProjectInfo) -> Result<()> {
+    let base = match &project_info.project_root_dir {
+        Some(root) => format!("{}/{}", root.display(), project_info.project_slug),
+        None => project_info.project_slug.to_string(),
+    };
+    let dir = Path::new(&base);
+
+    if dir.exists() {
+        remove_dir_all(dir)?;
+    }
+
+    Ok(())
 }
 
 fn main() {
@@ -76,10 +89,12 @@ fn main() {
                     );
                     println!("{}", success_message.green());
                 }
-                Err(_) => {
-                    let error_message =
-                        "\nAn Error occurred creating the project. Please try again.".to_string();
-                    println!("{}", error_message.red());
+                Err(e) => {
+                    print_error(e);
+                    if let Err(e) = delete_slug(&project_info) {
+                        print_error(e);
+                    };
+                    exit(1);
                 }
             };
         }
