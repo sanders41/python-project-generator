@@ -1,5 +1,4 @@
 use std::fs::create_dir_all;
-use std::path::PathBuf;
 
 use anyhow::{bail, Result};
 use colored::*;
@@ -18,27 +17,19 @@ use crate::project_info::{ProjectInfo, ProjectManager};
 use crate::python_files::generate_python_files;
 use crate::rust_files::{save_cargo_toml_file, save_lib_file};
 
-fn create_directories(
-    project_slug: &str,
-    source_dir: &str,
-    project_manager: &ProjectManager,
-    project_root_dir: &Option<PathBuf>,
-) -> Result<()> {
-    let base = match project_root_dir {
-        Some(root) => format!("{}/{}", root.display(), project_slug),
-        None => project_slug.to_string(),
-    };
-    let src = format!("{base}/{source_dir}");
+fn create_directories(project_info: &ProjectInfo) -> Result<()> {
+    let base = project_info.base_dir();
+    let src = base.join(&project_info.source_dir);
     create_dir_all(src)?;
 
-    let github_dir = format!("{base}/.github/workflows");
+    let github_dir = base.join(".github/workflows");
     create_dir_all(github_dir)?;
 
-    let test_dir = format!("{base}/tests");
+    let test_dir = base.join("tests");
     create_dir_all(test_dir)?;
 
-    if let ProjectManager::Maturin = project_manager {
-        let rust_src = format!("{base}/src");
+    if let ProjectManager::Maturin = &project_info.project_manager {
+        let rust_src = base.join("src");
         create_dir_all(rust_src)?;
     }
 
@@ -199,16 +190,9 @@ dmypy.json
     gitignore
 }
 
-fn save_gitigngore_file(
-    project_slug: &str,
-    project_manager: &ProjectManager,
-    project_root_dir: &Option<PathBuf>,
-) -> Result<()> {
-    let file_path = match project_root_dir {
-        Some(root) => format!("{}/{project_slug}/.gitignore", root.display()),
-        None => format!("{project_slug}/.gitignore"),
-    };
-    let content = create_gitigngore_file(project_manager);
+fn save_gitigngore_file(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info.base_dir().join(".gitignore");
+    let content = create_gitigngore_file(&project_info.project_manager);
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
@@ -295,17 +279,12 @@ fn create_pre_commit_file(max_line_length: &u8, download_latest_packages: bool) 
     pre_commit_str
 }
 
-fn save_pre_commit_file(
-    project_slug: &str,
-    max_line_length: &u8,
-    download_latest_packages: bool,
-    project_root_dir: &Option<PathBuf>,
-) -> Result<()> {
-    let file_path = match project_root_dir {
-        Some(root) => format!("{}/{project_slug}/.pre-commit-config.yaml", root.display()),
-        None => format!("{project_slug}/.pre-commit-config.yaml"),
-    };
-    let content = create_pre_commit_file(max_line_length, download_latest_packages);
+fn save_pre_commit_file(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info.base_dir().join(".pre-commit-config.yaml");
+    let content = create_pre_commit_file(
+        &project_info.max_line_length,
+        project_info.download_latest_packages,
+    );
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
@@ -509,14 +488,7 @@ fix = true
 }
 
 fn save_pyproject_toml_file(project_info: &ProjectInfo) -> Result<()> {
-    let file_path = match &project_info.project_root_dir {
-        Some(root) => format!(
-            "{}/{}/pyproject.toml",
-            root.display(),
-            project_info.project_slug
-        ),
-        None => format!("{}/pyproject.toml", project_info.project_slug),
-    };
+    let file_path = project_info.base_dir().join("pyproject.toml");
     let content = create_pyproject_toml(project_info);
 
     save_file_with_content(&file_path, &content)?;
@@ -524,19 +496,11 @@ fn save_pyproject_toml_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn save_pyo3_dev_requirements(
-    project_slug: &str,
-    is_application: bool,
-    download_latest_packages: bool,
-    project_root_dir: &Option<PathBuf>,
-) -> Result<()> {
-    let file_path = match project_root_dir {
-        Some(root) => format!("{}/{project_slug}/requirements-dev.txt", root.display()),
-        None => format!("{project_slug}/requirements-dev.txt"),
-    };
+fn save_pyo3_dev_requirements(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info.base_dir().join("requirements-dev.txt");
     let content = build_latest_dev_dependencies(
-        is_application,
-        download_latest_packages,
+        project_info.is_application,
+        project_info.download_latest_packages,
         &ProjectManager::Maturin,
     );
 
@@ -592,16 +556,9 @@ fn create_pyo3_justfile(source_dir: &str) -> String {
     )
 }
 
-fn save_pyo3_justfile(
-    project_slug: &str,
-    source_dir: &str,
-    project_root_dir: &Option<PathBuf>,
-) -> Result<()> {
-    let file_path = match project_root_dir {
-        Some(root) => format!("{}/{project_slug}/justfile", root.display()),
-        None => format!("{project_slug}/justfile"),
-    };
-    let content = create_pyo3_justfile(source_dir);
+fn save_pyo3_justfile(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info.base_dir().join("justfile");
+    let content = create_pyo3_justfile(&project_info.source_dir);
 
     save_file_with_content(&file_path, &content)?;
 
@@ -617,197 +574,81 @@ fn create_readme_file(project_name: &str, project_description: &str) -> String {
     )
 }
 
-fn save_readme_file(
-    project_slug: &str,
-    project_name: &str,
-    project_description: &str,
-    project_root_dir: &Option<PathBuf>,
-) -> Result<()> {
-    let file_path = match project_root_dir {
-        Some(root) => format!("{}/{project_slug}/README.md", root.display()),
-        None => format!("{project_slug}/README.md"),
-    };
-    let content = create_readme_file(project_name, project_description);
+fn save_readme_file(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info.base_dir().join("README.md");
+    let content = create_readme_file(
+        &project_info.project_name,
+        &project_info.project_description,
+    );
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
 }
 
 pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
-    if create_directories(
-        &project_info.project_slug,
-        &project_info.source_dir,
-        &project_info.project_manager,
-        &project_info.project_root_dir,
-    )
-    .is_err()
-    {
+    if create_directories(project_info).is_err() {
         bail!("Error creating project directories");
     }
 
-    if save_gitigngore_file(
-        &project_info.project_slug,
-        &project_info.project_manager,
-        &project_info.project_root_dir,
-    )
-    .is_err()
-    {
+    if save_gitigngore_file(project_info).is_err() {
         bail!("Error creating .gitignore file");
     }
 
-    if save_pre_commit_file(
-        &project_info.project_slug,
-        &project_info.max_line_length,
-        project_info.download_latest_packages,
-        &project_info.project_root_dir,
-    )
-    .is_err()
-    {
+    if save_pre_commit_file(project_info).is_err() {
         bail!("Error creating .gitignore file");
     }
 
-    if save_readme_file(
-        &project_info.project_slug,
-        &project_info.project_name,
-        &project_info.project_description,
-        &project_info.project_root_dir,
-    )
-    .is_err()
-    {
+    if save_readme_file(project_info).is_err() {
         bail!("Error creating README.md file");
     }
 
-    generate_license(
-        &project_info.license,
-        &project_info.copyright_year,
-        &project_info.project_slug,
-        &project_info.creator,
-        &project_info.project_root_dir,
-    )?;
+    generate_license(project_info)?;
 
-    if save_empty_src_file(
-        &project_info.project_slug,
-        &project_info.source_dir,
-        "py.typed",
-        &project_info.project_root_dir,
-    )
-    .is_err()
-    {
+    if save_empty_src_file(project_info, "py.typed").is_err() {
         bail!("Error creating py.typed file");
     }
 
-    generate_python_files(
-        &project_info.is_application,
-        &project_info.project_slug,
-        &project_info.source_dir,
-        &project_info.version,
-        &project_info.project_manager,
-        &project_info.project_root_dir,
-    )?;
+    generate_python_files(project_info)?;
 
     if save_pyproject_toml_file(project_info).is_err() {
         bail!("Error creating pyproject.toml file");
     }
 
     if let ProjectManager::Maturin = &project_info.project_manager {
-        if save_pyo3_dev_requirements(
-            &project_info.project_slug,
-            project_info.is_application,
-            project_info.download_latest_packages,
-            &project_info.project_root_dir,
-        )
-        .is_err()
-        {
+        if save_pyo3_dev_requirements(project_info).is_err() {
             bail!("Error creating requirements-dev.txt file");
         }
 
-        if save_pyo3_justfile(
-            &project_info.project_slug,
-            &project_info.source_dir,
-            &project_info.project_root_dir,
-        )
-        .is_err()
-        {
+        if save_pyo3_justfile(project_info).is_err() {
             bail!("Error creating justfile");
         }
 
-        if save_lib_file(
-            &project_info.project_slug,
-            &project_info.source_dir,
-            &project_info.project_root_dir,
-        )
-        .is_err()
-        {
+        if save_lib_file(project_info).is_err() {
             bail!("Error creating Rust lib.rs file");
         }
 
-        if save_cargo_toml_file(
-            &project_info.project_slug,
-            &project_info.source_dir,
-            &project_info.project_description,
-            &project_info.license,
-            &project_info.min_python_version,
-            project_info.download_latest_packages,
-            &project_info.project_root_dir,
-        )
-        .is_err()
-        {
+        if save_cargo_toml_file(project_info).is_err() {
             bail!("Error creating Rust lib.rs file");
         }
     }
 
-    if save_pypi_publish_file(
-        &project_info.project_slug,
-        &project_info.python_version,
-        &project_info.project_manager,
-        &project_info.project_root_dir,
-    )
-    .is_err()
-    {
+    if save_pypi_publish_file(project_info).is_err() {
         bail!("Error creating PYPI publish file");
     }
 
     if project_info.use_multi_os_ci {
-        if save_ci_testing_multi_os_file(
-            &project_info.project_slug,
-            &project_info.source_dir,
-            &project_info.min_python_version,
-            &project_info.github_actions_python_test_versions,
-            &project_info.project_manager,
-            &project_info.project_root_dir,
-        )
-        .is_err()
-        {
+        if save_ci_testing_multi_os_file(project_info).is_err() {
             bail!("Error creating CI teesting file");
         }
-    } else if save_ci_testing_linux_only_file(
-        &project_info.project_slug,
-        &project_info.source_dir,
-        &project_info.min_python_version,
-        &project_info.github_actions_python_test_versions,
-        &project_info.project_manager,
-        &project_info.project_root_dir,
-    )
-    .is_err()
-    {
+    } else if save_ci_testing_linux_only_file(project_info).is_err() {
         bail!("Error creating CI teesting file");
     }
 
-    if project_info.use_dependabot
-        && save_dependabot_file(
-            &project_info.project_slug,
-            &project_info.project_manager,
-            &project_info.project_root_dir,
-        )
-        .is_err()
-    {
+    if project_info.use_dependabot && save_dependabot_file(project_info).is_err() {
         bail!("Error creating dependabot file");
     }
 
-    if project_info.use_release_drafter
-        && save_release_drafter_file(&project_info.project_slug, &project_info.project_root_dir)
-            .is_err()
-    {
+    if project_info.use_release_drafter && save_release_drafter_file(project_info).is_err() {
         bail!("Error creating release drafter file");
     }
 
@@ -819,6 +660,37 @@ mod tests {
     use super::*;
     use crate::project_info::{LicenseType, ProjectInfo};
     use tempfile::tempdir;
+
+    fn project_info_dummy() -> ProjectInfo {
+        ProjectInfo {
+            project_name: "My project".to_string(),
+            project_slug: "my-project".to_string(),
+            source_dir: "my_project".to_string(),
+            project_description: "This is a test".to_string(),
+            creator: "Arthur Dent".to_string(),
+            creator_email: "authur@heartofgold.com".to_string(),
+            license: LicenseType::Mit,
+            copyright_year: Some("2023".to_string()),
+            version: "0.1.0".to_string(),
+            python_version: "3.11".to_string(),
+            min_python_version: "3.8".to_string(),
+            project_manager: ProjectManager::Poetry,
+            is_application: true,
+            github_actions_python_test_versions: vec![
+                "3.8".to_string(),
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string(),
+            ],
+            max_line_length: 100,
+            use_dependabot: true,
+            use_continuous_deployment: true,
+            use_release_drafter: true,
+            use_multi_os_ci: true,
+            download_latest_packages: false,
+            project_root_dir: Some(tempdir().unwrap().path().to_path_buf()),
+        }
+    }
 
     #[test]
     fn test_save_gitigngore_file() {
@@ -963,11 +835,12 @@ dmypy.json
 "#
         .to_string();
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(project_slug)).unwrap();
-        let expected_file = base.join(format!("{project_slug}/.gitignore"));
-        save_gitigngore_file(project_slug, &ProjectManager::Poetry, &Some(base)).unwrap();
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join(".gitignore");
+        save_gitigngore_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -1122,11 +995,12 @@ dmypy.json
 "#
         .to_string();
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(project_slug)).unwrap();
-        let expected_file = base.join(format!("{project_slug}/.gitignore"));
-        save_gitigngore_file(project_slug, &ProjectManager::Maturin, &Some(base)).unwrap();
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join(".gitignore");
+        save_gitigngore_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -1167,11 +1041,11 @@ dmypy.json
 "#
         );
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(project_slug)).unwrap();
-        let expected_file = base.join(format!("{project_slug}/.pre-commit-config.yaml"));
-        save_pre_commit_file(project_slug, &max_line_length, false, &Some(base)).unwrap();
+        let project_info = project_info_dummy();
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join(".pre-commit-config.yaml");
+        save_pre_commit_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -1182,39 +1056,13 @@ dmypy.json
 
     #[test]
     fn test_save_pyproject_toml_file_mit_application() {
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(project_slug)).unwrap();
-        let expected_file = base.join(format!("{project_slug}/pyproject.toml"));
-
-        let project_info = ProjectInfo {
-            project_name: "My project".to_string(),
-            project_slug: project_slug.to_string(),
-            source_dir: "my_project".to_string(),
-            project_description: "This is a test".to_string(),
-            creator: "Arthur Dent".to_string(),
-            creator_email: "authur@heartofgold.com".to_string(),
-            license: LicenseType::Mit,
-            copyright_year: Some("2023".to_string()),
-            version: "0.1.0".to_string(),
-            python_version: "3.11".to_string(),
-            min_python_version: "3.8".to_string(),
-            project_manager: ProjectManager::Poetry,
-            is_application: true,
-            github_actions_python_test_versions: vec![
-                "3.8".to_string(),
-                "3.9".to_string(),
-                "3.10".to_string(),
-                "3.11".to_string(),
-            ],
-            max_line_length: 100,
-            use_dependabot: true,
-            use_continuous_deployment: true,
-            use_release_drafter: true,
-            use_multi_os_ci: true,
-            download_latest_packages: false,
-            project_root_dir: Some(base),
-        };
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::Mit;
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
             r#"[tool.poetry]
@@ -1307,39 +1155,13 @@ fix = true
 
     #[test]
     fn test_save_pyproject_toml_file_apache_application() {
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(project_slug)).unwrap();
-        let expected_file = base.join(format!("{project_slug}/pyproject.toml"));
-
-        let project_info = ProjectInfo {
-            project_name: "My project".to_string(),
-            project_slug: project_slug.to_string(),
-            source_dir: "my_project".to_string(),
-            project_description: "This is a test".to_string(),
-            creator: "Arthur Dent".to_string(),
-            creator_email: "authur@heartofgold.com".to_string(),
-            license: LicenseType::Apache2,
-            copyright_year: Some("2023".to_string()),
-            version: "0.1.0".to_string(),
-            python_version: "3.11".to_string(),
-            min_python_version: "3.8".to_string(),
-            project_manager: ProjectManager::Poetry,
-            is_application: true,
-            github_actions_python_test_versions: vec![
-                "3.8".to_string(),
-                "3.9".to_string(),
-                "3.10".to_string(),
-                "3.11".to_string(),
-            ],
-            max_line_length: 100,
-            use_dependabot: true,
-            use_continuous_deployment: true,
-            use_release_drafter: true,
-            use_multi_os_ci: true,
-            download_latest_packages: false,
-            project_root_dir: Some(base),
-        };
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::Apache2;
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
             r#"[tool.poetry]
@@ -1432,39 +1254,13 @@ fix = true
 
     #[test]
     fn test_save_pyproject_toml_file_no_license_application() {
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(project_slug)).unwrap();
-        let expected_file = base.join(format!("{project_slug}/pyproject.toml"));
-
-        let project_info = ProjectInfo {
-            project_name: "My project".to_string(),
-            project_slug: project_slug.to_string(),
-            source_dir: "my_project".to_string(),
-            project_description: "This is a test".to_string(),
-            creator: "Arthur Dent".to_string(),
-            creator_email: "authur@heartofgold.com".to_string(),
-            license: LicenseType::NoLicense,
-            copyright_year: Some("2023".to_string()),
-            version: "0.1.0".to_string(),
-            python_version: "3.11".to_string(),
-            min_python_version: "3.8".to_string(),
-            project_manager: ProjectManager::Poetry,
-            is_application: true,
-            github_actions_python_test_versions: vec![
-                "3.8".to_string(),
-                "3.9".to_string(),
-                "3.10".to_string(),
-                "3.11".to_string(),
-            ],
-            max_line_length: 100,
-            use_dependabot: true,
-            use_continuous_deployment: true,
-            use_release_drafter: true,
-            use_multi_os_ci: true,
-            download_latest_packages: false,
-            project_root_dir: Some(base),
-        };
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::NoLicense;
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
             r#"[tool.poetry]
@@ -1556,39 +1352,13 @@ fix = true
 
     #[test]
     fn test_create_pyproject_toml_mit_lib() {
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(project_slug)).unwrap();
-        let expected_file = base.join(format!("{project_slug}/pyproject.toml"));
-
-        let project_info = ProjectInfo {
-            project_name: "My project".to_string(),
-            project_slug: project_slug.to_string(),
-            source_dir: "my_project".to_string(),
-            project_description: "This is a test".to_string(),
-            creator: "Arthur Dent".to_string(),
-            creator_email: "authur@heartofgold.com".to_string(),
-            license: LicenseType::Mit,
-            copyright_year: Some("2023".to_string()),
-            version: "0.1.0".to_string(),
-            python_version: "3.11".to_string(),
-            min_python_version: "3.8".to_string(),
-            project_manager: ProjectManager::Poetry,
-            is_application: false,
-            github_actions_python_test_versions: vec![
-                "3.8".to_string(),
-                "3.9".to_string(),
-                "3.10".to_string(),
-                "3.11".to_string(),
-            ],
-            max_line_length: 100,
-            use_dependabot: true,
-            use_continuous_deployment: true,
-            use_release_drafter: true,
-            use_multi_os_ci: true,
-            download_latest_packages: false,
-            project_root_dir: Some(base),
-        };
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::Mit;
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.is_application = false;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
             r#"[tool.poetry]
@@ -1681,39 +1451,13 @@ fix = true
 
     #[test]
     fn test_save_pyproject_toml_file_mit_pyo3() {
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(project_slug)).unwrap();
-        let expected_file = base.join(format!("{project_slug}/pyproject.toml"));
-
-        let project_info = ProjectInfo {
-            project_name: "My project".to_string(),
-            project_slug: project_slug.to_string(),
-            source_dir: "my_project".to_string(),
-            project_description: "This is a test".to_string(),
-            creator: "Arthur Dent".to_string(),
-            creator_email: "authur@heartofgold.com".to_string(),
-            license: LicenseType::Mit,
-            copyright_year: Some("2023".to_string()),
-            version: "0.1.0".to_string(),
-            python_version: "3.11".to_string(),
-            min_python_version: "3.8".to_string(),
-            project_manager: ProjectManager::Maturin,
-            is_application: false,
-            github_actions_python_test_versions: vec![
-                "3.8".to_string(),
-                "3.9".to_string(),
-                "3.10".to_string(),
-                "3.11".to_string(),
-            ],
-            max_line_length: 100,
-            use_dependabot: true,
-            use_continuous_deployment: true,
-            use_release_drafter: true,
-            use_multi_os_ci: true,
-            download_latest_packages: false,
-            project_root_dir: Some(base),
-        };
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::Mit;
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
             r#"[build-system]
@@ -1798,39 +1542,13 @@ fix = true
 
     #[test]
     fn test_save_pyproject_toml_file_apache_pyo3() {
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(project_slug)).unwrap();
-        let expected_file = base.join(format!("{project_slug}/pyproject.toml"));
-
-        let project_info = ProjectInfo {
-            project_name: "My project".to_string(),
-            project_slug: project_slug.to_string(),
-            source_dir: "my_project".to_string(),
-            project_description: "This is a test".to_string(),
-            creator: "Arthur Dent".to_string(),
-            creator_email: "authur@heartofgold.com".to_string(),
-            license: LicenseType::Apache2,
-            copyright_year: Some("2023".to_string()),
-            version: "0.1.0".to_string(),
-            python_version: "3.11".to_string(),
-            min_python_version: "3.8".to_string(),
-            project_manager: ProjectManager::Maturin,
-            is_application: false,
-            github_actions_python_test_versions: vec![
-                "3.8".to_string(),
-                "3.9".to_string(),
-                "3.10".to_string(),
-                "3.11".to_string(),
-            ],
-            max_line_length: 100,
-            use_dependabot: true,
-            use_continuous_deployment: true,
-            use_release_drafter: true,
-            use_multi_os_ci: true,
-            download_latest_packages: false,
-            project_root_dir: Some(base),
-        };
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::Apache2;
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
             r#"[build-system]
@@ -1915,39 +1633,13 @@ fix = true
 
     #[test]
     fn test_save_pyproject_toml_file_no_license_pyo3() {
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(project_slug)).unwrap();
-        let expected_file = base.join(format!("{project_slug}/pyproject.toml"));
-
-        let project_info = ProjectInfo {
-            project_name: "My project".to_string(),
-            project_slug: project_slug.to_string(),
-            source_dir: "my_project".to_string(),
-            project_description: "This is a test".to_string(),
-            creator: "Arthur Dent".to_string(),
-            creator_email: "authur@heartofgold.com".to_string(),
-            license: LicenseType::NoLicense,
-            copyright_year: Some("2023".to_string()),
-            version: "0.1.0".to_string(),
-            python_version: "3.11".to_string(),
-            min_python_version: "3.8".to_string(),
-            project_manager: ProjectManager::Maturin,
-            is_application: false,
-            github_actions_python_test_versions: vec![
-                "3.8".to_string(),
-                "3.9".to_string(),
-                "3.10".to_string(),
-                "3.11".to_string(),
-            ],
-            max_line_length: 100,
-            use_dependabot: true,
-            use_continuous_deployment: true,
-            use_release_drafter: true,
-            use_multi_os_ci: true,
-            download_latest_packages: false,
-            project_root_dir: Some(base),
-        };
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::NoLicense;
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
             r#"[build-system]
@@ -2040,11 +1732,13 @@ ruff==0.0.287
 maturin==1.2.3
 "#;
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(project_slug)).unwrap();
-        let expected_file = base.join(format!("{project_slug}/requirements-dev.txt"));
-        save_pyo3_dev_requirements(project_slug, true, false, &Some(base)).unwrap();
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("requirements-dev.txt");
+        save_pyo3_dev_requirements(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -2064,11 +1758,13 @@ ruff>=0.0.287
 maturin>=1.2.3
 "#;
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(project_slug)).unwrap();
-        let expected_file = base.join(format!("{project_slug}/requirements-dev.txt"));
-        save_pyo3_dev_requirements(project_slug, false, false, &Some(base)).unwrap();
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.is_application = false;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("requirements-dev.txt");
+        save_pyo3_dev_requirements(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -2079,7 +1775,12 @@ maturin>=1.2.3
 
     #[test]
     fn test_save_pyo3_justfile() {
-        let source_dir = "my_src";
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.is_application = false;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("justfile");
         let expected = format!(
             r#"@develop:
   maturin develop
@@ -2111,7 +1812,7 @@ maturin>=1.2.3
   cargo fmt --all -- --check
 
 @black:
-  black {source_dir} tests
+  black {} tests
 
 @mypy:
   mypy .
@@ -2121,14 +1822,11 @@ maturin>=1.2.3
 
 @test:
   pytest
-"#
+"#,
+            &project_info.source_dir
         );
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(project_slug)).unwrap();
-        let expected_file = base.join(format!("{project_slug}/justfile"));
-        save_pyo3_justfile(project_slug, source_dir, &Some(base)).unwrap();
+        save_pyo3_justfile(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -2139,20 +1837,19 @@ maturin>=1.2.3
 
     #[test]
     fn test_save_readme_file() {
-        let project_name = "My Project";
-        let project_description = "Some test project";
+        let project_info = project_info_dummy();
         let expected = format!(
-            r#"# {project_name}
+            r#"# {}
 
-{project_description}
-"#
+{}
+"#,
+            &project_info.project_name, &project_info.project_description
         );
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(project_slug)).unwrap();
-        let expected_file = base.join(format!("{project_slug}/README.md"));
-        save_readme_file(project_slug, project_name, project_description, &Some(base)).unwrap();
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("README.md");
+        save_readme_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 

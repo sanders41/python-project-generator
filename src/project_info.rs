@@ -82,6 +82,15 @@ pub struct ProjectInfo {
     pub project_root_dir: Option<PathBuf>,
 }
 
+impl ProjectInfo {
+    pub fn base_dir(&self) -> PathBuf {
+        match &self.project_root_dir {
+            Some(root) => PathBuf::from(&format!("{}/{}", root.display(), self.project_slug)),
+            None => PathBuf::from(&self.project_slug),
+        }
+    }
+}
+
 fn boolean_prompt(prompt_text: String, default: Option<bool>) -> Result<bool> {
     let default_str = match default {
         Some(d) => match d {
