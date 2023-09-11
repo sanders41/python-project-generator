@@ -1,6 +1,8 @@
+use std::fs::File;
+
 use anyhow::{bail, Result};
 
-use crate::file_manager::{save_empty_src_file, save_file_with_content};
+use crate::file_manager::save_file_with_content;
 use crate::project_info::{ProjectInfo, ProjectManager};
 
 fn create_dunder_main_file(source_dir: &str) -> String {
@@ -135,6 +137,13 @@ __version__ = VERSION
     }
 }
 
+fn save_test_init_file(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info.base_dir().join("tests/__init__.py");
+    File::create(file_path)?;
+
+    Ok(())
+}
+
 fn save_project_init_file(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info
         .base_dir()
@@ -234,8 +243,8 @@ pub fn generate_python_files(project_info: &ProjectInfo) -> Result<()> {
         bail!("Error creating __init__.py file");
     }
 
-    if save_empty_src_file(project_info, "__init__.py").is_err() {
-        bail!("Error creating test __init__.py file");
+    if save_test_init_file(&project_info).is_err() {
+        bail!("Error creating __init__.py file");
     }
 
     if project_info.is_application {
