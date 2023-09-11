@@ -1,9 +1,7 @@
-use std::path::PathBuf;
-
 use anyhow::{bail, Result};
 
 use crate::file_manager::save_file_with_content;
-use crate::project_info::LicenseType;
+use crate::project_info::{LicenseType, ProjectInfo};
 
 fn create_apache_license() -> String {
     r#"                               Apache License
@@ -184,11 +182,8 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
     .to_string()
 }
 
-fn save_apache_license(project_slug: &str, project_root_dir: &Option<PathBuf>) -> Result<()> {
-    let file_path = match project_root_dir {
-        Some(root) => format!("{}/{project_slug}/LICENSE", root.display()),
-        None => format!("{project_slug}/LICENSE"),
-    };
+fn save_apache_license(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info.base_dir().join("LICENSE");
     let content = create_apache_license();
 
     save_file_with_content(&file_path, &content)?;
@@ -223,44 +218,24 @@ SOFTWARE.
     )
 }
 
-fn save_mit_license(
-    project_slug: &str,
-    copyright_year: &str,
-    creator: &str,
-    project_root_dir: &Option<PathBuf>,
-) -> Result<()> {
-    let file_path = match project_root_dir {
-        Some(root) => format!("{}/{project_slug}/LICENSE", root.display()),
-        None => format!("{project_slug}/LICENSE"),
-    };
-    let content = create_mit_license(copyright_year, creator);
-    save_file_with_content(&file_path, &content)?;
+fn save_mit_license(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info.base_dir().join("LICENSE");
+
+    match &project_info.copyright_year {
+        Some(year) => {
+            let content = create_mit_license(year, &project_info.creator);
+            save_file_with_content(&file_path, &content)?;
+        }
+        None => bail!("A copyright year is required for a MIT license"),
+    }
 
     Ok(())
 }
 
-pub fn generate_license(
-    license: &LicenseType,
-    copywright_year: &Option<String>,
-    project_slug: &str,
-    creator: &str,
-    project_root_dir: &Option<PathBuf>,
-) -> Result<()> {
-    match license {
-        LicenseType::Mit => {
-            if let Some(year) = copywright_year {
-                if save_mit_license(project_slug, year, creator, project_root_dir).is_err() {
-                    bail!("Error creating MIT license file");
-                };
-            } else {
-                bail!("Error creating MIT license file: copywright year missing");
-            }
-        }
-        LicenseType::Apache2 => {
-            if save_apache_license(project_slug, project_root_dir).is_err() {
-                bail!("Error creating Apache2 license file");
-            };
-        }
+pub fn generate_license(project_info: &ProjectInfo) -> Result<()> {
+    match project_info.license {
+        LicenseType::Mit => save_mit_license(project_info)?,
+        LicenseType::Apache2 => save_apache_license(project_info)?,
         _ => (),
     }
 
@@ -278,8 +253,40 @@ pub fn license_str(license: &LicenseType) -> &str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::project_info::ProjectManager;
     use std::fs::create_dir_all;
     use tempfile::tempdir;
+
+    fn project_info_dummy() -> ProjectInfo {
+        ProjectInfo {
+            project_name: "My project".to_string(),
+            project_slug: "my-project".to_string(),
+            source_dir: "my_project".to_string(),
+            project_description: "This is a test".to_string(),
+            creator: "Arthur Dent".to_string(),
+            creator_email: "authur@heartofgold.com".to_string(),
+            license: LicenseType::Mit,
+            copyright_year: Some("2023".to_string()),
+            version: "0.1.0".to_string(),
+            python_version: "3.11".to_string(),
+            min_python_version: "3.8".to_string(),
+            project_manager: ProjectManager::Poetry,
+            is_application: true,
+            github_actions_python_test_versions: vec![
+                "3.8".to_string(),
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string(),
+            ],
+            max_line_length: 100,
+            use_dependabot: true,
+            use_continuous_deployment: true,
+            use_release_drafter: true,
+            use_multi_os_ci: true,
+            download_latest_packages: false,
+            project_root_dir: Some(tempdir().unwrap().path().to_path_buf()),
+        }
+    }
 
     #[test]
     fn test_save_apache_license() {
@@ -460,11 +467,12 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 "#
         .to_string();
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(project_slug)).unwrap();
-        let expected_file = base.join(format!("{project_slug}/LICENSE"));
-        save_apache_license(project_slug, &Some(base)).unwrap();
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::Apache2;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("LICENSE");
+        save_apache_license(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -499,11 +507,12 @@ SOFTWARE.
 "#
         .to_string();
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(project_slug)).unwrap();
-        let expected_file = base.join(format!("{project_slug}/LICENSE"));
-        save_mit_license(project_slug, "2023", "Arthur Dent", &Some(base)).unwrap();
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::Mit;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("LICENSE");
+        save_mit_license(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 

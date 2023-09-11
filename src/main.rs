@@ -10,7 +10,6 @@ mod python_files;
 mod rust_files;
 
 use std::fs::remove_dir_all;
-use std::path::Path;
 use std::process::exit;
 use std::time::Duration;
 
@@ -40,11 +39,7 @@ fn print_error(err: Error) {
 }
 
 fn delete_slug(project_info: &ProjectInfo) -> Result<()> {
-    let base = match &project_info.project_root_dir {
-        Some(root) => format!("{}/{}", root.display(), project_info.project_slug),
-        None => project_info.project_slug.to_string(),
-    };
-    let dir = Path::new(&base);
+    let dir = &project_info.base_dir();
 
     if dir.exists() {
         remove_dir_all(dir)?;

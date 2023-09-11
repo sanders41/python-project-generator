@@ -1,9 +1,7 @@
-use std::path::PathBuf;
-
 use anyhow::Result;
 
 use crate::file_manager::save_file_with_content;
-use crate::project_info::ProjectManager;
+use crate::project_info::{ProjectInfo, ProjectManager};
 
 fn build_actions_python_test_versions(github_action_python_test_versions: &[String]) -> String {
     github_action_python_test_versions
@@ -241,31 +239,20 @@ jobs:
     )
 }
 
-pub fn save_ci_testing_linux_only_file(
-    project_slug: &str,
-    source_dir: &str,
-    min_python_version: &str,
-    github_action_python_test_versions: &[String],
-    project_manager: &ProjectManager,
-    project_root_dir: &Option<PathBuf>,
-) -> Result<()> {
-    let file_path = match project_root_dir {
-        Some(root) => format!(
-            "{}/{project_slug}/.github/workflows/testing.yml",
-            root.display()
-        ),
-        None => format!("{project_slug}/.github/workflows/testing.yml"),
-    };
-    let content = match project_manager {
+pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info
+        .base_dir()
+        .join(".github/workflows/testing.yml");
+    let content = match &project_info.project_manager {
         ProjectManager::Maturin => create_ci_testing_linux_only_file_pyo3(
-            source_dir,
-            min_python_version,
-            github_action_python_test_versions,
+            &project_info.source_dir,
+            &project_info.min_python_version,
+            &project_info.github_actions_python_test_versions,
         ),
         ProjectManager::Poetry => create_ci_testing_linux_only_file(
-            source_dir,
-            min_python_version,
-            github_action_python_test_versions,
+            &project_info.source_dir,
+            &project_info.min_python_version,
+            &project_info.github_actions_python_test_versions,
         ),
     };
 
@@ -504,31 +491,20 @@ jobs:
     )
 }
 
-pub fn save_ci_testing_multi_os_file(
-    project_slug: &str,
-    source_dir: &str,
-    min_python_version: &str,
-    github_action_python_test_versions: &[String],
-    project_manager: &ProjectManager,
-    project_root_dir: &Option<PathBuf>,
-) -> Result<()> {
-    let file_path = match project_root_dir {
-        Some(root) => format!(
-            "{}/{project_slug}/.github/workflows/testing.yml",
-            root.display()
-        ),
-        None => format!("{project_slug}/.github/workflows/testing.yml"),
-    };
-    let content = match project_manager {
+pub fn save_ci_testing_multi_os_file(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info
+        .base_dir()
+        .join(".github/workflows/testing.yml");
+    let content = match &project_info.project_manager {
         ProjectManager::Maturin => create_ci_testing_multi_os_file_pyo3(
-            source_dir,
-            min_python_version,
-            github_action_python_test_versions,
+            &project_info.source_dir,
+            &project_info.min_python_version,
+            &project_info.github_actions_python_test_versions,
         ),
         ProjectManager::Poetry => create_ci_testing_multi_os_file(
-            source_dir,
-            min_python_version,
-            github_action_python_test_versions,
+            &project_info.source_dir,
+            &project_info.min_python_version,
+            &project_info.github_actions_python_test_versions,
         ),
     };
 
@@ -586,16 +562,9 @@ updates:
     .to_string()
 }
 
-pub fn save_dependabot_file(
-    project_slug: &str,
-    project_manager: &ProjectManager,
-    project_root_dir: &Option<PathBuf>,
-) -> Result<()> {
-    let file_path = match project_root_dir {
-        Some(root) => format!("{}/{project_slug}/.github/dependabot.yml", root.display()),
-        None => format!("{project_slug}/.github/dependabot.yml"),
-    };
-    let content = match project_manager {
+pub fn save_dependabot_file(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info.base_dir().join(".github/dependabot.yml");
+    let content = match &project_info.project_manager {
         ProjectManager::Maturin => create_dependabot_file_pyo3(),
         ProjectManager::Poetry => create_dependabot_file(),
     };
@@ -745,22 +714,13 @@ jobs:
     )
 }
 
-pub fn save_pypi_publish_file(
-    project_slug: &str,
-    python_version: &str,
-    project_manager: &ProjectManager,
-    project_root_dir: &Option<PathBuf>,
-) -> Result<()> {
-    let file_path = match project_root_dir {
-        Some(root) => format!(
-            "{}/{project_slug}/.github/workflows/pypi_publish.yml",
-            root.display()
-        ),
-        None => format!("{project_slug}/.github/workflows/pypi_publish.yml"),
-    };
-    let content = match project_manager {
-        ProjectManager::Maturin => create_pypi_publish_file_pyo3(python_version),
-        ProjectManager::Poetry => create_pypi_publish_file(python_version),
+pub fn save_pypi_publish_file(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info
+        .base_dir()
+        .join(".github/workflows/pypi_publish.yml");
+    let content = match &project_info.project_manager {
+        ProjectManager::Maturin => create_pypi_publish_file_pyo3(&project_info.python_version),
+        ProjectManager::Poetry => create_pypi_publish_file(&project_info.python_version),
     };
 
     save_file_with_content(&file_path, &content)?;
@@ -819,20 +779,14 @@ template: |
     .to_string()
 }
 
-pub fn save_release_drafter_file(
-    project_slug: &str,
-    project_root_dir: &Option<PathBuf>,
-) -> Result<()> {
-    let base = match project_root_dir {
-        Some(root) => format!("{}/{project_slug}/.github", root.display()),
-        None => format!("{project_slug}/.github"),
-    };
-    let template_file_path = format!("{base}/release_drafter_template.yml");
+pub fn save_release_drafter_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = project_info.base_dir().join(".github");
+    let template_file_path = base.join("release_drafter_template.yml");
     let template_content = create_release_drafter_template_file();
 
     save_file_with_content(&template_file_path, &template_content)?;
 
-    let file_path = format!("{base}/workflows/release_drafter.yml");
+    let file_path = base.join("workflows/release_drafter.yml");
     let content = create_release_drafter_file();
 
     save_file_with_content(&file_path, &content)?;
@@ -843,8 +797,40 @@ pub fn save_release_drafter_file(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::project_info::{LicenseType, ProjectInfo, ProjectManager};
     use std::fs::create_dir_all;
     use tempfile::tempdir;
+
+    fn project_info_dummy() -> ProjectInfo {
+        ProjectInfo {
+            project_name: "My project".to_string(),
+            project_slug: "my-project".to_string(),
+            source_dir: "my_project".to_string(),
+            project_description: "This is a test".to_string(),
+            creator: "Arthur Dent".to_string(),
+            creator_email: "authur@heartofgold.com".to_string(),
+            license: LicenseType::Mit,
+            copyright_year: Some("2023".to_string()),
+            version: "0.1.0".to_string(),
+            python_version: "3.11".to_string(),
+            min_python_version: "3.8".to_string(),
+            project_manager: ProjectManager::Maturin,
+            is_application: true,
+            github_actions_python_test_versions: vec![
+                "3.8".to_string(),
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string(),
+            ],
+            max_line_length: 100,
+            use_dependabot: true,
+            use_continuous_deployment: true,
+            use_release_drafter: true,
+            use_multi_os_ci: true,
+            download_latest_packages: false,
+            project_root_dir: Some(tempdir().unwrap().path().to_path_buf()),
+        }
+    }
 
     #[test]
     fn test_build_github_actions_test_versions() {
@@ -861,7 +847,14 @@ mod tests {
 
     #[test]
     fn test_save_ci_testing_linux_only_file() {
-        let expected = r#"name: Testing
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.use_multi_os_ci = true;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        let expected = format!(
+            r#"name: Testing
 
 on:
   push:
@@ -876,7 +869,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: "3.8"
+        python-version: "{}"
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
@@ -894,7 +887,7 @@ jobs:
       id: poetry-cache
       with:
         path: .venv
-        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
     - name: Ensure cache is healthy
       if: steps.poetry-cache.outputs.cache-hit == 'true'
       shell: bash
@@ -903,7 +896,7 @@ jobs:
       run: poetry install
     - name: Black check
       run: |
-        poetry run black src tests --check
+        poetry run black {} tests --check
     - name: Lint with ruff
       run: |
         poetry run ruff check .
@@ -918,10 +911,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{{{ matrix.python-version }}}}
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
@@ -939,7 +932,7 @@ jobs:
       id: poetry-cache
       with:
         path: .venv
-        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
     - name: Ensure cache is healthy
       if: steps.poetry-cache.outputs.cache-hit == 'true'
       shell: bash
@@ -949,26 +942,11 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run pytest
-"#.to_string();
+"#,
+            &project_info.min_python_version, &project_info.source_dir
+        );
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
-        let expected_file = base.join(format!("{project_slug}/.github/workflows/testing.yml"));
-        save_ci_testing_linux_only_file(
-            project_slug,
-            "src",
-            "3.8",
-            &[
-                "3.8".to_string(),
-                "3.9".to_string(),
-                "3.10".to_string(),
-                "3.11".to_string(),
-            ],
-            &ProjectManager::Poetry,
-            &Some(base),
-        )
-        .unwrap();
+        save_ci_testing_linux_only_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -979,7 +957,13 @@ jobs:
 
     #[test]
     fn test_save_ci_testing_linux_only_file_pyo3() {
-        let expected = r#"name: Testing
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        let expected = format!(
+            r#"name: Testing
 
 on:
   push:
@@ -1022,7 +1006,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: "3.8"
+        python-version: "{}"
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
@@ -1040,7 +1024,7 @@ jobs:
       id: poetry-cache
       with:
         path: .venv
-        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
     - name: Ensure cache is healthy
       if: steps.poetry-cache.outputs.cache-hit == 'true'
       shell: bash
@@ -1049,7 +1033,7 @@ jobs:
       run: poetry install
     - name: Black check
       run: |
-        poetry run black src tests --check
+        poetry run black {} tests --check
     - name: Lint with ruff
       run: |
         poetry run ruff check .
@@ -1064,10 +1048,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{{{ matrix.python-version }}}}
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
@@ -1085,7 +1069,7 @@ jobs:
       id: poetry-cache
       with:
         path: .venv
-        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
     - name: Ensure cache is healthy
       if: steps.poetry-cache.outputs.cache-hit == 'true'
       shell: bash
@@ -1095,26 +1079,11 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run pytest
-"#.to_string();
+"#,
+            &project_info.min_python_version, &project_info.source_dir
+        );
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
-        let expected_file = base.join(format!("{project_slug}/.github/workflows/testing.yml"));
-        save_ci_testing_linux_only_file(
-            project_slug,
-            "src",
-            "3.8",
-            &[
-                "3.8".to_string(),
-                "3.9".to_string(),
-                "3.10".to_string(),
-                "3.11".to_string(),
-            ],
-            &ProjectManager::Maturin,
-            &Some(base),
-        )
-        .unwrap();
+        save_ci_testing_linux_only_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -1125,7 +1094,13 @@ jobs:
 
     #[test]
     fn test_save_ci_testing_multi_os_file() {
-        let expected =
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.use_multi_os_ci = true;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        let expected = format!(
             r#"name: Testing
 
 on:
@@ -1141,7 +1116,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: "3.8"
+        python-version: "{}"
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
@@ -1159,7 +1134,7 @@ jobs:
       id: poetry-cache
       with:
         path: .venv
-        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
     - name: Ensure cache is healthy
       if: steps.poetry-cache.outputs.cache-hit == 'true'
       shell: bash
@@ -1168,7 +1143,7 @@ jobs:
       run: poetry install
     - name: Black check
       run: |
-        poetry run black src tests --check
+        poetry run black {} tests --check
     - name: Lint with ruff
       run: |
         poetry run ruff check .
@@ -1181,13 +1156,13 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
         os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{{{ matrix.os }}}}
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{{{ matrix.python-version }}}}
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
@@ -1205,7 +1180,7 @@ jobs:
       id: poetry-cache
       with:
         path: .venv
-        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
     - name: Ensure cache is healthy
       if: steps.poetry-cache.outputs.cache-hit == 'true'
       shell: bash
@@ -1215,26 +1190,11 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run pytest
-"#.to_string();
+"#,
+            &project_info.min_python_version, &project_info.source_dir
+        );
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
-        let expected_file = base.join(format!("{project_slug}/.github/workflows/testing.yml"));
-        save_ci_testing_multi_os_file(
-            project_slug,
-            "src",
-            "3.8",
-            &[
-                "3.8".to_string(),
-                "3.9".to_string(),
-                "3.10".to_string(),
-                "3.11".to_string(),
-            ],
-            &ProjectManager::Poetry,
-            &Some(base),
-        )
-        .unwrap();
+        save_ci_testing_multi_os_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -1245,7 +1205,13 @@ jobs:
 
     #[test]
     fn test_save_ci_testing_multi_os_file_pyo3() {
-        let expected =
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.use_multi_os_ci = true;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        let expected = format!(
             r#"name: Testing
 
 on:
@@ -1289,7 +1255,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: "3.8"
+        python-version: "{}"
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
@@ -1307,7 +1273,7 @@ jobs:
       id: poetry-cache
       with:
         path: .venv
-        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
     - name: Ensure cache is healthy
       if: steps.poetry-cache.outputs.cache-hit == 'true'
       shell: bash
@@ -1316,7 +1282,7 @@ jobs:
       run: poetry install
     - name: Black check
       run: |
-        poetry run black src tests --check
+        poetry run black {} tests --check
     - name: Lint with ruff
       run: |
         poetry run ruff check .
@@ -1329,13 +1295,13 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
         os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{{{ matrix.os }}}}
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{{{ matrix.python-version }}}}
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
@@ -1353,7 +1319,7 @@ jobs:
       id: poetry-cache
       with:
         path: .venv
-        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
     - name: Ensure cache is healthy
       if: steps.poetry-cache.outputs.cache-hit == 'true'
       shell: bash
@@ -1363,26 +1329,11 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run pytest
-"#.to_string();
+"#,
+            &project_info.min_python_version, &project_info.source_dir
+        );
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
-        let expected_file = base.join(format!("{project_slug}/.github/workflows/testing.yml"));
-        save_ci_testing_multi_os_file(
-            project_slug,
-            "src",
-            "3.8",
-            &[
-                "3.8".to_string(),
-                "3.9".to_string(),
-                "3.10".to_string(),
-                "3.11".to_string(),
-            ],
-            &ProjectManager::Maturin,
-            &Some(base),
-        )
-        .unwrap();
+        save_ci_testing_multi_os_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -1412,11 +1363,13 @@ updates:
 "#
         .to_string();
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(format!("{project_slug}/.github"))).unwrap();
-        let expected_file = base.join(format!("{project_slug}/.github/dependabot.yml"));
-        save_dependabot_file(project_slug, &ProjectManager::Poetry, &Some(base)).unwrap();
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github")).unwrap();
+        let expected_file = base.join(".github/dependabot.yml");
+
+        save_dependabot_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -1453,11 +1406,13 @@ updates:
 "#
         .to_string();
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(format!("{project_slug}/.github"))).unwrap();
-        let expected_file = base.join(format!("{project_slug}/.github/dependabot.yml"));
-        save_dependabot_file(project_slug, &ProjectManager::Maturin, &Some(base)).unwrap();
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github")).unwrap();
+        let expected_file = base.join(".github/dependabot.yml");
+
+        save_dependabot_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -1468,7 +1423,11 @@ updates:
 
     #[test]
     fn test_save_pypi_publish_file() {
-        let python_version = "3.11";
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/pypi_publish.yml");
         let expected = format!(
             r#"name: PyPi Publish
 on:
@@ -1483,7 +1442,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: "{python_version}"
+        python-version: "{}"
     - name: Install Poetry
       run: |
         pip install pipx
@@ -1496,20 +1455,11 @@ jobs:
         poetry config pypi-token.pypi {{{{ "${{{{ secrets.PYPI_API_KEY }}}}" }}}}
     - name: Publish package
       run: poetry publish --build
-"#
+"#,
+            &project_info.python_version
         );
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
-        let expected_file = base.join(format!("{project_slug}/.github/workflows/pypi_publish.yml"));
-        save_pypi_publish_file(
-            project_slug,
-            python_version,
-            &ProjectManager::Poetry,
-            &Some(base),
-        )
-        .unwrap();
+        save_pypi_publish_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -1520,7 +1470,11 @@ jobs:
 
     #[test]
     fn test_save_pypi_publish_file_pyo3() {
-        let python_version = "3.11";
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/pypi_publish.yml");
         let expected = format!(
             r#"name: PyPi Publish
 on:
@@ -1539,7 +1493,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
-          python-version: "{python_version}"
+          python-version: "{}"
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -1561,7 +1515,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
-          python-version: "{python_version}"
+          python-version: "{}"
           architecture: ${{{{ matrix.target }}}}
       - name: Build wheels
         uses: PyO3/maturin-action@v1
@@ -1583,7 +1537,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
-          python-version: "{python_version}"
+          python-version: "{}"
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -1624,20 +1578,13 @@ jobs:
         with:
           command: upload
           args: --skip-existing *
-"#
+"#,
+            &project_info.python_version,
+            &project_info.python_version,
+            &project_info.python_version
         );
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
-        let expected_file = base.join(format!("{project_slug}/.github/workflows/pypi_publish.yml"));
-        save_pypi_publish_file(
-            project_slug,
-            python_version,
-            &ProjectManager::Maturin,
-            &Some(base),
-        )
-        .unwrap();
+        save_pypi_publish_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -1695,16 +1642,15 @@ template: |
 "#
         .to_string();
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        let project_slug = "test-project";
-        create_dir_all(base.join(format!("{project_slug}/.github/workflows"))).unwrap();
-        let expected_release_drafter_file = base.join(format!(
-            "{project_slug}/.github/workflows/release_drafter.yml"
-        ));
-        let expected_release_drafter_template_file = base.join(format!(
-            "{project_slug}/.github//release_drafter_template.yml"
-        ));
-        save_release_drafter_file(project_slug, &Some(base)).unwrap();
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_release_drafter_file = base.join(".github/workflows/release_drafter.yml");
+        let expected_release_drafter_template_file =
+            base.join(".github//release_drafter_template.yml");
+
+        save_release_drafter_file(&project_info).unwrap();
 
         assert!(expected_release_drafter_file.is_file());
         assert!(expected_release_drafter_template_file.is_file());

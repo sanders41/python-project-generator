@@ -1,12 +1,10 @@
-use std::path::PathBuf;
-
 use anyhow::Result;
 use colored::*;
 
 use crate::file_manager::save_file_with_content;
 use crate::licenses::license_str;
 use crate::package_version::{LatestVersion, RustPackageVersion};
-use crate::project_info::LicenseType;
+use crate::project_info::{LicenseType, ProjectInfo};
 
 fn build_latest_dependencies(min_python_version: &str, download_latest_packages: bool) -> String {
     let mut version_string = String::new();
@@ -80,26 +78,15 @@ crate-type = ["cdylib"]
     )
 }
 
-pub fn save_cargo_toml_file(
-    project_slug: &str,
-    source_dir: &str,
-    project_description: &str,
-    license_type: &LicenseType,
-    min_python_version: &str,
-    download_latest_packages: bool,
-    project_root_dir: &Option<PathBuf>,
-) -> Result<()> {
-    let file_path = match project_root_dir {
-        Some(root) => format!("{}/{project_slug}/Cargo.toml", root.display()),
-        None => format!("{project_slug}/Cargo.toml"),
-    };
+pub fn save_cargo_toml_file(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info.base_dir().join("Cargo.toml");
     let content = create_cargo_toml_file(
-        project_slug,
-        project_description,
-        source_dir,
-        license_type,
-        min_python_version,
-        download_latest_packages,
+        &project_info.project_slug,
+        &project_info.project_description,
+        &project_info.source_dir,
+        &project_info.license,
+        &project_info.min_python_version,
+        project_info.download_latest_packages,
     );
 
     save_file_with_content(&file_path, &content)?;
@@ -125,16 +112,9 @@ fn _{source_dir}(_py: Python, m: &PyModule) -> PyResult<()> {{
     )
 }
 
-pub fn save_lib_file(
-    project_slug: &str,
-    source_dir: &str,
-    project_root_dir: &Option<PathBuf>,
-) -> Result<()> {
-    let file_path = match project_root_dir {
-        Some(root) => format!("{}/{project_slug}/src/lib.rs", root.display()),
-        None => format!("{project_slug}/src/lib.rs"),
-    };
-    let content = create_lib_file(source_dir);
+pub fn save_lib_file(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info.base_dir().join("src/lib.rs");
+    let content = create_lib_file(&project_info.source_dir);
 
     save_file_with_content(&file_path, &content)?;
 
@@ -144,45 +124,67 @@ pub fn save_lib_file(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::project_info::{LicenseType, ProjectInfo, ProjectManager};
     use std::fs::create_dir_all;
     use tempfile::tempdir;
 
+    fn project_info_dummy() -> ProjectInfo {
+        ProjectInfo {
+            project_name: "My project".to_string(),
+            project_slug: "my-project".to_string(),
+            source_dir: "my_project".to_string(),
+            project_description: "This is a test".to_string(),
+            creator: "Arthur Dent".to_string(),
+            creator_email: "authur@heartofgold.com".to_string(),
+            license: LicenseType::Mit,
+            copyright_year: Some("2023".to_string()),
+            version: "0.1.0".to_string(),
+            python_version: "3.11".to_string(),
+            min_python_version: "3.8".to_string(),
+            project_manager: ProjectManager::Maturin,
+            is_application: true,
+            github_actions_python_test_versions: vec![
+                "3.8".to_string(),
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string(),
+            ],
+            max_line_length: 100,
+            use_dependabot: true,
+            use_continuous_deployment: true,
+            use_release_drafter: true,
+            use_multi_os_ci: true,
+            download_latest_packages: false,
+            project_root_dir: Some(tempdir().unwrap().path().to_path_buf()),
+        }
+    }
+
     #[test]
     fn test_save_cargo_toml_file() {
-        let project_slug = "test-project";
-        let source_dir = "test_project";
-        let project_description = "Test description";
+        let project_info = project_info_dummy();
+        let base = project_info.base_dir();
+        create_dir_all(base.join(&project_info.project_slug)).unwrap();
+        let expected_file = base.join("Cargo.toml");
         let expected = format!(
             r#"[package]
-name = "{project_slug}"
+name = "{}"
 version = "0.1.0"
-description = "{project_description}"
+description = "{}"
 edition = "2021"
 license = "MIT"
 readme = "README.md"
 
 [lib]
-name = "_{source_dir}"
+name = "_{}"
 crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = {{ version = "0.19.2", features = ["extension-module", "abi3-py38"] }}
-"#
+"#,
+            &project_info.project_slug, &project_info.project_description, &project_info.source_dir
         );
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        create_dir_all(base.join("test-project")).unwrap();
-        let expected_file = base.join("test-project/Cargo.toml");
-        save_cargo_toml_file(
-            project_slug,
-            source_dir,
-            project_description,
-            &LicenseType::Mit,
-            "3.8",
-            false,
-            &Some(base),
-        )
-        .unwrap();
+        save_cargo_toml_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -193,7 +195,10 @@ pyo3 = {{ version = "0.19.2", features = ["extension-module", "abi3-py38"] }}
 
     #[test]
     fn test_save_lib_file() {
-        let source_dir = "test_project";
+        let project_info = project_info_dummy();
+        let base = project_info.base_dir();
+        create_dir_all(base.join("src")).unwrap();
+        let expected_file = base.join("src/lib.rs");
         let expected = format!(
             r#"use pyo3::prelude::*;
 
@@ -203,18 +208,16 @@ fn sum_as_string(a: usize, b: usize) -> PyResult<String> {{
 }}
 
 #[pymodule]
-fn _{source_dir}(_py: Python, m: &PyModule) -> PyResult<()> {{
+fn _{}(_py: Python, m: &PyModule) -> PyResult<()> {{
     m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
     Ok(())
 }}
-"#
+"#,
+            &project_info.source_dir
         )
         .to_string();
 
-        let base = tempdir().unwrap().path().to_path_buf();
-        create_dir_all(base.join("test-project/src")).unwrap();
-        let expected_file = base.join("test-project/src/lib.rs");
-        save_lib_file("test-project", source_dir, &Some(base)).unwrap();
+        save_lib_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
