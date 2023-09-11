@@ -226,7 +226,7 @@ fn build_latest_pre_commit_dependencies(
         PreCommitHookVersion {
             id: PreCommitHook::Black,
             repo: "https://github.com/psf/black".to_string(),
-            rev: "23.7.0".to_string(),
+            rev: "23.9.1".to_string(),
         },
         PreCommitHookVersion {
             id: PreCommitHook::MyPy,
@@ -320,7 +320,7 @@ fn build_latest_dev_dependencies(
     let mut packages = vec![
         PythonPackageVersion {
             name: "black".to_string(),
-            version: "23.7.0".to_string(),
+            version: "23.9.1".to_string(),
         },
         PythonPackageVersion {
             name: "mypy".to_string(),
@@ -328,7 +328,7 @@ fn build_latest_dev_dependencies(
         },
         PythonPackageVersion {
             name: "pre-commit".to_string(),
-            version: "3.3.3".to_string(),
+            version: "3.4.0".to_string(),
         },
         PythonPackageVersion {
             name: "pytest".to_string(),
@@ -1150,7 +1150,7 @@ dmypy.json
     - id: end-of-file-fixer
     - id: trailing-whitespace
   - repo: https://github.com/psf/black
-    rev: 23.7.0
+    rev: 23.9.1
     hooks:
     - id: black
       language_version: python3
@@ -1229,9 +1229,9 @@ readme = "README.md"
 python = "^{}"
 
 [tool.poetry.group.dev.dependencies]
-black = "23.7.0"
+black = "23.9.1"
 mypy = "1.5.1"
-pre-commit = "3.3.3"
+pre-commit = "3.4.0"
 pytest = "7.4.2"
 pytest-cov = "4.1.0"
 ruff = "0.0.287"
@@ -1354,9 +1354,9 @@ readme = "README.md"
 python = "^{}"
 
 [tool.poetry.group.dev.dependencies]
-black = "23.7.0"
+black = "23.9.1"
 mypy = "1.5.1"
-pre-commit = "3.3.3"
+pre-commit = "3.4.0"
 pytest = "7.4.2"
 pytest-cov = "4.1.0"
 ruff = "0.0.287"
@@ -1478,9 +1478,9 @@ readme = "README.md"
 python = "^{}"
 
 [tool.poetry.group.dev.dependencies]
-black = "23.7.0"
+black = "23.9.1"
 mypy = "1.5.1"
-pre-commit = "3.3.3"
+pre-commit = "3.4.0"
 pytest = "7.4.2"
 pytest-cov = "4.1.0"
 ruff = "0.0.287"
@@ -1603,9 +1603,9 @@ readme = "README.md"
 python = "^{}"
 
 [tool.poetry.group.dev.dependencies]
-black = ">=23.7.0"
+black = ">=23.9.1"
 mypy = ">=1.5.1"
-pre-commit = ">=3.3.3"
+pre-commit = ">=3.4.0"
 pytest = ">=7.4.2"
 pytest-cov = ">=4.1.0"
 ruff = ">=0.0.287"
@@ -2031,9 +2031,9 @@ fix = true
 
     #[test]
     fn test_save_pyo3_dev_requirements_application_file() {
-        let expected = r#"black==23.7.0
+        let expected = r#"black==23.9.1
 mypy==1.5.1
-pre-commit==3.3.3
+pre-commit==3.4.0
 pytest==7.4.2
 pytest-cov==4.1.0
 ruff==0.0.287
@@ -2055,9 +2055,9 @@ maturin==1.2.3
 
     #[test]
     fn test_save_pyo3_dev_requirements_lib_file() {
-        let expected = r#"black>=23.7.0
+        let expected = r#"black>=23.9.1
 mypy>=1.5.1
-pre-commit>=3.3.3
+pre-commit>=3.4.0
 pytest>=7.4.2
 pytest-cov>=4.1.0
 ruff>=0.0.287
