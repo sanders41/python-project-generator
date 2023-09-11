@@ -243,7 +243,7 @@ pub fn generate_python_files(project_info: &ProjectInfo) -> Result<()> {
         bail!("Error creating __init__.py file");
     }
 
-    if save_test_init_file(&project_info).is_err() {
+    if save_test_init_file(project_info).is_err() {
         bail!("Error creating __init__.py file");
     }
 
