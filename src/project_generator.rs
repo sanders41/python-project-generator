@@ -571,10 +571,10 @@ fn create_pyo3_justfile(source_dir: &str) -> String {
   cargo check
 
 @clippy:
-  cargo clippy
+  cargo clippy --all-targets
 
 @fmt:
-  cargo fmt
+  cargo fmt --all -- --check
 
 @black:
   black {} tests

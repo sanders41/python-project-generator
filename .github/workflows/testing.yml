@@ -9,6 +9,8 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   RUSTFLAGS: "-D warnings"
+  WORKING_DIR: "my_project"
+  MIN_PYTHON_VERSION: "3.8"
 jobs:
   clippy:
     name: Clippy
@@ -46,6 +48,60 @@ jobs:
       uses: Swatinem/rust-cache@v2.6.2
     - name: Run cargo test
       run: cargo test --locked
+  pure-python-linting:
+    strategy:
+      fail-fast: false
+      matrix:
+        project_type: ["application", "lib"]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2.6.2
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "${{ MIN_PYTHON_VERSION }}"
+    - name: Get full Python version
+      id: full-python-version
+      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+    - name: Install Poetry
+      run: |
+        pip install -U pip
+        pip install pipx
+        pipx install poetry
+    - name: Configure poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+    - name: Build package
+      run: cargo build --release
+    - name: Run creation
+      run: |
+        ./scripts/ci_run.sh ${{ matrix.project_type }} 1
+    - name: Cache poetry venv
+      uses: actions/cache@v3
+      id: poetry-cache
+      with:
+        path: my-project/.venv
+        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+    - name: Ensure cache is healthy
+      working-directory: ${{ WORKING_DIR }}
+      if: steps.poetry-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: timeout 10s poetry run pip --version || rm -rf .venv
+    - name: Install Dependencies
+      working-directory: ${{ WORKING_DIR }}
+      run: poetry install
+    - name: MyPy
+      working-directory: ${{ WORKING_DIR }}
+      run: poetry run mypy .
+    - name: ruff
+      working-directory: ${{ WORKING_DIR }}
+      run: poetry run ruff check .
   pure-python-test:
     strategy:
       fail-fast: false
@@ -88,19 +144,62 @@ jobs:
         path: my-project/.venv
         key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
     - name: Ensure cache is healthy
-      working-directory: my-project
+      working-directory: ${{ WORKING_DIR }}
       if: steps.poetry-cache.outputs.cache-hit == 'true'
       shell: bash
       run: timeout 10s poetry run pip --version || rm -rf .venv
     - name: Install Dependencies
-      working-directory: my-project
+      working-directory: ${{ WORKING_DIR }}
       run: poetry install
     - name: Pre-commit install
-      working-directory: my-project
+      working-directory: ${{ WORKING_DIR }}
       run: poetry run pre-commit install
     - name: Test with pytest
-      working-directory: my-project
+      working-directory: ${{ WORKING_DIR }}
       run: poetry run pytest
+  pyo3-linting:
+    strategy:
+      fail-fast: false
+      matrix:
+        project_type: ["application", "lib"]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Just
+      uses: taiki-e/install-action@just
+    - name: Install Rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2.6.2
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "${{ MIN_PYTHON_VERSION }}"
+    - name: Build package
+      run: cargo build --release
+    - name: Run creation
+      run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
+    - name: Install Dependencies
+      working-directory: ${{ WORKING_DIR }}
+      run: |
+        pip install -U pip
+        pip install -r requirements-dev.txt
+        pip install -e .
+        maturin build --out dist
+        pip install --no-index --find-links=dist/ my-project
+    - name: MyPy
+      working-directory: ${{ WORKING_DIR }}
+      run: just mypy
+    - name: Ruff
+      working-directory: ${{ WORKING_DIR }}
+      run: just ruff
+    - name: Generated Project Clippy
+      working-directory: ${{ WORKING_DIR }}
+      run: just clippy
+    - name: Generated Project Fmt
+      working-directory: ${{ WORKING_DIR }}
+      run: just fmt
   pyo3-python-test:
     strategy:
       fail-fast: false
@@ -124,7 +223,7 @@ jobs:
     - name: Run creation
       run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
     - name: Install Dependencies
-      working-directory: my-project
+      working-directory: ${{ WORKING_DIR }}
       run: |
         pip install -U pip
         pip install -r requirements-dev.txt
@@ -132,8 +231,8 @@ jobs:
         maturin build --out dist
         pip install --no-index --find-links=dist/ my-project
     - name: Pre-commit install
-      working-directory: my-project
+      working-directory: ${{ WORKING_DIR }}
       run: pre-commit install
     - name: Test with pytest
-      working-directory: my-project
+      working-directory: ${{ WORKING_DIR }}
       run: pytest
