@@ -243,3 +243,50 @@ fn main() {
         },
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::project_info::{LicenseType, ProjectManager};
+    use super::*;
+    use std::fs::create_dir_all;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_delete_slut() {
+        let base = tempdir().unwrap().path().to_path_buf();
+        let project_slug = "test-project";
+        let slug_dir = base.join(project_slug);
+        let project_info = ProjectInfo {
+            project_name: "My project".to_string(),
+            project_slug: project_slug.to_string(),
+            source_dir: "my_project".to_string(),
+            project_description: "This is a test".to_string(),
+            creator: "Arthur Dent".to_string(),
+            creator_email: "authur@heartofgold.com".to_string(),
+            license: LicenseType::Mit,
+            copyright_year: Some("2023".to_string()),
+            version: "0.1.0".to_string(),
+            python_version: "3.11".to_string(),
+            min_python_version: "3.8".to_string(),
+            project_manager: ProjectManager::Poetry,
+            is_application: true,
+            github_actions_python_test_versions: vec![
+                "3.8".to_string(),
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string(),
+            ],
+            max_line_length: 100,
+            use_dependabot: true,
+            use_continuous_deployment: true,
+            use_release_drafter: true,
+            use_multi_os_ci: true,
+            download_latest_packages: false,
+            project_root_dir: Some(base),
+        };
+        create_dir_all(&slug_dir).unwrap();
+        assert!(slug_dir.exists());
+        delete_slug(&project_info).unwrap();
+        assert!(!slug_dir.exists());
+    }
+}
