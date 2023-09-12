@@ -19,7 +19,6 @@ jobs:
           - os: macos-latest
             artifact_name: python-project-generator
             asset_name: python-project-generator-macos-amd64
-
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust
@@ -28,9 +27,6 @@ jobs:
       - name: Build
         run: cargo build --release --locked
       - name: Compress binaries
-        uses: svenstaro/upx-action@v2
-        with:
-          file: target/release/${{ matrix.artifact_name }}
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
