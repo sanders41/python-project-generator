@@ -21,7 +21,7 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache dependencies
-      uses: Swatinem/rust-cache@v2.6.2
+      uses: Swatinem/rust-cache@v2.7.0
     - name: Run cargo clippy
       run: cargo clippy --all-targets -- --deny warnings
   fmt:
@@ -33,7 +33,7 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache dependencies
-      uses: Swatinem/rust-cache@v2.6.2
+      uses: Swatinem/rust-cache@v2.7.0
     - name: Run cargo fmt
       run: cargo fmt --all -- --check
   test:
@@ -45,7 +45,7 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache dependencies
-      uses: Swatinem/rust-cache@v2.6.2
+      uses: Swatinem/rust-cache@v2.7.0
     - name: Run cargo test
       run: cargo test --locked
   pure-python-linting:
@@ -60,7 +60,7 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache Rust dependencies
-      uses: Swatinem/rust-cache@v2.6.2
+      uses: Swatinem/rust-cache@v2.7.0
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -115,7 +115,7 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache Rust dependencies
-      uses: Swatinem/rust-cache@v2.6.2
+      uses: Swatinem/rust-cache@v2.7.0
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -171,7 +171,7 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache Rust dependencies
-      uses: Swatinem/rust-cache@v2.6.2
+      uses: Swatinem/rust-cache@v2.7.0
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -213,7 +213,7 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache Rust dependencies
-      uses: Swatinem/rust-cache@v2.6.2
+      uses: Swatinem/rust-cache@v2.7.0
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
