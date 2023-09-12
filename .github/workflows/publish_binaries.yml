@@ -26,7 +26,6 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - name: Build
         run: cargo build --release --locked
-      - name: Compress binaries
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
