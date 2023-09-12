@@ -220,7 +220,7 @@ fn build_latest_pre_commit_dependencies(
         PreCommitHookVersion {
             id: PreCommitHook::Ruff,
             repo: "https://github.com/astral-sh/ruff-pre-commit".to_string(),
-            rev: "v0.0.287".to_string(),
+            rev: "v0.0.289".to_string(),
         },
     ];
 
@@ -319,7 +319,7 @@ fn build_latest_dev_dependencies(
         },
         PythonPackageVersion {
             name: "ruff".to_string(),
-            version: "0.0.287".to_string(),
+            version: "0.0.289".to_string(),
         },
     ];
 
@@ -1034,7 +1034,7 @@ dmypy.json
     hooks:
     - id: mypy
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.287
+    rev: v0.0.289
     hooks:
     - id: ruff
       args: [--fix, --exit-non-zero-on-fix]
@@ -1082,7 +1082,7 @@ mypy = "1.5.1"
 pre-commit = "3.4.0"
 pytest = "7.4.2"
 pytest-cov = "4.1.0"
-ruff = "0.0.287"
+ruff = "0.0.289"
 tomli = {{version = "2.0.1", python = "<3.11"}}
 
 [build-system]
@@ -1181,7 +1181,7 @@ mypy = "1.5.1"
 pre-commit = "3.4.0"
 pytest = "7.4.2"
 pytest-cov = "4.1.0"
-ruff = "0.0.287"
+ruff = "0.0.289"
 tomli = {{version = "2.0.1", python = "<3.11"}}
 
 [build-system]
@@ -1279,7 +1279,7 @@ mypy = "1.5.1"
 pre-commit = "3.4.0"
 pytest = "7.4.2"
 pytest-cov = "4.1.0"
-ruff = "0.0.287"
+ruff = "0.0.289"
 tomli = {{version = "2.0.1", python = "<3.11"}}
 
 [build-system]
@@ -1378,7 +1378,7 @@ mypy = ">=1.5.1"
 pre-commit = ">=3.4.0"
 pytest = ">=7.4.2"
 pytest-cov = ">=4.1.0"
-ruff = ">=0.0.287"
+ruff = ">=0.0.289"
 tomli = {{version = ">=2.0.1", python = "<3.11"}}
 
 [build-system]
@@ -1728,7 +1728,7 @@ mypy==1.5.1
 pre-commit==3.4.0
 pytest==7.4.2
 pytest-cov==4.1.0
-ruff==0.0.287
+ruff==0.0.289
 maturin==1.2.3
 "#;
 
@@ -1754,7 +1754,7 @@ mypy>=1.5.1
 pre-commit>=3.4.0
 pytest>=7.4.2
 pytest-cov>=4.1.0
-ruff>=0.0.287
+ruff>=0.0.289
 maturin>=1.2.3
 "#;
 
