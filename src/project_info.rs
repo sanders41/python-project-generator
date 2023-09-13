@@ -508,12 +508,8 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
             } else {
                 None
             }
-        } else if let Some(schedule) = &dependabot_schedule {
-            if let DependabotSchedule::Weekly = schedule {
-                dependabot_day_prompt(Some(Day::Monday))?
-            } else {
-                None
-            }
+        } else if let Some(DependabotSchedule::Weekly) = &dependabot_schedule {
+            dependabot_day_prompt(Some(Day::Monday))?
         } else {
             None
         }
