@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand, ValueEnum};
 
-use crate::project_info::{LicenseType, ProjectManager};
+use crate::project_info::{Day, DependabotSchedule, LicenseType, ProjectManager};
 
 #[derive(Clone, Debug, ValueEnum)]
 pub enum ApplicationOrLib {
@@ -109,6 +109,18 @@ pub enum Param {
     UseDependabot {
         #[clap(help = "Default value for Use Dependabot")]
         value: BooleanChoice,
+    },
+
+    /// Save a default value for Dependabot Schedule
+    DependabotSchedule {
+        #[clap(help = "Default value for Dependabot Schedule")]
+        value: DependabotSchedule,
+    },
+
+    /// Save a default value for Dependabot Day
+    DependabotDay {
+        #[clap(help = "Default value for Dependabot Day")]
+        value: Day,
     },
 
     /// Save a default value for Use Continuous Deployment

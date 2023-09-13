@@ -9,6 +9,24 @@ use time::OffsetDateTime;
 use crate::config::Config;
 
 #[derive(Clone, Debug, Deserialize, Serialize, ValueEnum)]
+pub enum DependabotSchedule {
+    Daily,
+    Weekly,
+    Monthly,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum)]
+pub enum Day {
+    Monday,
+    Tuesday,
+    Wednesday,
+    Thursday,
+    Friday,
+    Saturday,
+    Sunday,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum)]
 pub enum LicenseType {
     Mit,
     Apache2,
@@ -75,6 +93,8 @@ pub struct ProjectInfo {
     pub github_actions_python_test_versions: Vec<String>,
     pub max_line_length: u8,
     pub use_dependabot: bool,
+    pub dependabot_schedule: Option<DependabotSchedule>,
+    pub dependabot_day: Option<Day>,
     pub use_continuous_deployment: bool,
     pub use_release_drafter: bool,
     pub use_multi_os_ci: bool,
@@ -110,6 +130,78 @@ fn boolean_prompt(prompt_text: String, default: Option<bool>) -> Result<bool> {
         Ok(true)
     } else if input == "2" {
         Ok(false)
+    } else {
+        bail!("Invalid selection");
+    }
+}
+
+fn dependabot_day_prompt(default: Option<Day>) -> Result<Option<Day>> {
+    let default_str = match default {
+        Some(s) => match s {
+            Day::Monday => "1".to_string(),
+            Day::Tuesday => "2".to_string(),
+            Day::Wednesday => "3".to_string(),
+            Day::Thursday => "4".to_string(),
+            Day::Friday => "5".to_string(),
+            Day::Saturday => "6".to_string(),
+            Day::Sunday => "6".to_string(),
+        },
+        None => "1".to_string(),
+    };
+    let prompt_text =
+        "Dependabot Day\n  1 - Monday\n  2 - Tuesday\n  3 - Wednesday\n  4 - Thursday\n  5 - Friday\n  6 - Saturday\n  7 - Sunday  Choose from[1, 2, 3, 4, 5, 6, 7]"
+            .to_string();
+    let prompt = Prompt {
+        prompt_text,
+        default: Some(default_str),
+    };
+    let input = prompt.show_prompt()?;
+
+    if input == "1" || input.is_empty() {
+        Ok(Some(Day::Monday))
+    } else if input == "2" {
+        Ok(Some(Day::Tuesday))
+    } else if input == "3" {
+        Ok(Some(Day::Wednesday))
+    } else if input == "4" {
+        Ok(Some(Day::Thursday))
+    } else if input == "5" {
+        Ok(Some(Day::Friday))
+    } else if input == "6" {
+        Ok(Some(Day::Saturday))
+    } else if input == "7" {
+        Ok(Some(Day::Sunday))
+    } else {
+        bail!("Invalid selection");
+    }
+}
+
+fn dependabot_schedule_prompt(
+    default: Option<DependabotSchedule>,
+) -> Result<Option<DependabotSchedule>> {
+    let default_str = match default {
+        Some(s) => match s {
+            DependabotSchedule::Daily => "1".to_string(),
+            DependabotSchedule::Weekly => "2".to_string(),
+            DependabotSchedule::Monthly => "3".to_string(),
+        },
+        None => "1".to_string(),
+    };
+    let prompt_text =
+        "Dependabot Schedule\n  1 - Daily\n  2 - Weekly\n  3 - Monthly\n  Choose from[1, 2, 3]"
+            .to_string();
+    let prompt = Prompt {
+        prompt_text,
+        default: Some(default_str),
+    };
+    let input = prompt.show_prompt()?;
+
+    if input == "1" || input.is_empty() {
+        Ok(Some(DependabotSchedule::Daily))
+    } else if input == "2" {
+        Ok(Some(DependabotSchedule::Weekly))
+    } else if input == "3" {
+        Ok(Some(DependabotSchedule::Monthly))
     } else {
         bail!("Invalid selection");
     }
@@ -391,6 +483,44 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         )?
     };
 
+    let dependabot_schedule = if use_dependabot {
+        if use_defaults {
+            if let Some(schedule) = config.dependabot_schedule {
+                Some(schedule)
+            } else {
+                Some(DependabotSchedule::Daily)
+            }
+        } else {
+            dependabot_schedule_prompt(Some(DependabotSchedule::Daily))?
+        }
+    } else {
+        None
+    };
+
+    let dependabot_day = if use_dependabot {
+        if use_defaults {
+            if use_defaults {
+                if let Some(default) = config.dependabot_day {
+                    Some(default)
+                } else {
+                    Some(Day::Monday)
+                }
+            } else {
+                None
+            }
+        } else if let Some(schedule) = &dependabot_schedule {
+            if let DependabotSchedule::Weekly = schedule {
+                dependabot_day_prompt(Some(Day::Monday))?
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
     let use_continuous_deployment = if use_defaults {
         if let Some(deploy) = config.use_continuous_deployment {
             deploy
@@ -447,6 +577,8 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         github_actions_python_test_versions,
         max_line_length,
         use_dependabot,
+        dependabot_schedule,
+        dependabot_day,
         use_continuous_deployment,
         use_release_drafter,
         use_multi_os_ci,

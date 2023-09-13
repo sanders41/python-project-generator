@@ -5,7 +5,9 @@ use anyhow::{bail, Result};
 use colored::*;
 use serde::{Deserialize, Serialize};
 
-use crate::project_info::{is_valid_python_version, LicenseType, ProjectManager};
+use crate::project_info::{
+    is_valid_python_version, Day, DependabotSchedule, LicenseType, ProjectManager,
+};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
@@ -19,6 +21,8 @@ pub struct Config {
     pub github_actions_python_test_versions: Option<Vec<String>>,
     pub max_line_length: Option<u8>,
     pub use_dependabot: Option<bool>,
+    pub dependabot_schedule: Option<DependabotSchedule>,
+    pub dependabot_day: Option<Day>,
     pub use_continuous_deployment: Option<bool>,
     pub use_release_drafter: Option<bool>,
     pub use_multi_os_ci: Option<bool>,
@@ -38,6 +42,8 @@ impl Config {
             github_actions_python_test_versions: None,
             max_line_length: None,
             use_dependabot: None,
+            dependabot_schedule: None,
+            dependabot_day: None,
             use_continuous_deployment: None,
             use_release_drafter: None,
             use_multi_os_ci: None,
@@ -233,6 +239,32 @@ impl Config {
         Ok(())
     }
 
+    pub fn save_dependabot_schedule(value: DependabotSchedule) -> Result<()> {
+        if let Ok(mut config) = Config::load_config() {
+            config.dependabot_schedule = Some(value);
+            if config.save().is_err() {
+                raise_error()?;
+            };
+        } else {
+            raise_error()?;
+        }
+
+        Ok(())
+    }
+
+    pub fn save_dependabot_day(value: Day) -> Result<()> {
+        if let Ok(mut config) = Config::load_config() {
+            config.dependabot_day = Some(value);
+            if config.save().is_err() {
+                raise_error()?;
+            };
+        } else {
+            raise_error()?;
+        }
+
+        Ok(())
+    }
+
     pub fn save_use_continuous_deployment(value: bool) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.use_continuous_deployment = Some(value);
@@ -345,6 +377,13 @@ impl Config {
             println!("{}: null", gha_python_label.blue());
         }
 
+        let project_manager_label = "Project Manager";
+        if let Some(project_manager) = config.project_manager {
+            println!("{}: {:?}", project_manager_label.blue(), project_manager);
+        } else {
+            println!("{}: null", project_manager_label.blue());
+        }
+
         let max_line_length_label = "Max Line Length";
         if let Some(max_line_length) = config.max_line_length {
             println!("{}: {max_line_length}", max_line_length_label.blue());
@@ -357,6 +396,24 @@ impl Config {
             println!("{}: {use_dependabot}", use_dependabot_label.blue());
         } else {
             println!("{}: null", use_dependabot_label.blue());
+        }
+
+        let dependabot_schedule_label = "Dependabot Schedule";
+        if let Some(dependabot_schedule) = config.dependabot_schedule {
+            println!(
+                "{}: {:?}",
+                dependabot_schedule_label.blue(),
+                dependabot_schedule
+            );
+        } else {
+            println!("{}: null", dependabot_schedule_label.blue());
+        }
+
+        let dependabot_day_label = "Dependabot Day";
+        if let Some(dependabot_day) = config.dependabot_day {
+            println!("{}: {:?}", dependabot_day_label.blue(), dependabot_day);
+        } else {
+            println!("{}: null", dependabot_day_label.blue());
         }
 
         let use_continuous_deployment_label = "Use Continuous Deployment";
