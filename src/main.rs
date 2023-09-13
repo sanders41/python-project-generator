@@ -170,6 +170,18 @@ fn main() {
                     }
                 }
             },
+            Param::DependabotSchedule { value } => {
+                if let Err(e) = Config::save_dependabot_schedule(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+            Param::DependabotDay { value } => {
+                if let Err(e) = Config::save_dependabot_day(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::UseContinuousDeployment { value } => match value {
                 BooleanChoice::True => {
                     if let Err(e) = Config::save_use_continuous_deployment(true) {
@@ -247,7 +259,7 @@ mod tests {
     use tempfile::tempdir;
 
     #[test]
-    fn test_delete_slut() {
+    fn test_delete_slug() {
         let base = tempdir().unwrap().path().to_path_buf();
         let project_slug = "test-project";
         let slug_dir = base.join(project_slug);
@@ -273,6 +285,8 @@ mod tests {
             ],
             max_line_length: 100,
             use_dependabot: true,
+            dependabot_schedule: None,
+            dependabot_day: None,
             use_continuous_deployment: true,
             use_release_drafter: true,
             use_multi_os_ci: true,

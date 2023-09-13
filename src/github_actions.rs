@@ -1,7 +1,7 @@
 use anyhow::Result;
 
 use crate::file_manager::save_file_with_content;
-use crate::project_info::{ProjectInfo, ProjectManager};
+use crate::project_info::{Day, DependabotSchedule, ProjectInfo, ProjectManager};
 
 fn build_actions_python_test_versions(github_action_python_test_versions: &[String]) -> String {
     github_action_python_test_versions
@@ -513,60 +513,130 @@ pub fn save_ci_testing_multi_os_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_dependabot_file() -> String {
-    r#"version: 2
+fn create_dependabot_schedule(
+    dependabot_schedule: &Option<DependabotSchedule>,
+    dependabot_day: &Option<Day>,
+) -> String {
+    if let Some(schedule) = dependabot_schedule {
+        match schedule {
+            DependabotSchedule::Daily => r#"schedule:
+      interval: daily"#
+                .to_string(),
+            DependabotSchedule::Weekly => {
+                if let Some(day) = dependabot_day {
+                    match day {
+                        Day::Monday => r#"schedule:
+      interval: weekly
+      day: monday"#
+                            .to_string(),
+                        Day::Tuesday => r#"schedule:
+      interval: weekly
+      day: tuesday"#
+                            .to_string(),
+                        Day::Wednesday => r#"schedule:
+      interval: weekly
+      day: wednesday"#
+                            .to_string(),
+                        Day::Thursday => r#"schedule:
+      interval: weekly
+      day: thursday"#
+                            .to_string(),
+                        Day::Friday => r#"schedule:
+      interval: weekly
+      day: friday"#
+                            .to_string(),
+                        Day::Saturday => r#"schedule:
+      interval: weekly
+      day: saturday"#
+                            .to_string(),
+                        Day::Sunday => r#"schedule:
+      interval: weekly
+      day: sunday"#
+                            .to_string(),
+                    }
+                } else {
+                    r#"schedule:
+      interval: weekly
+      day: monday"#
+                        .to_string()
+                }
+            }
+            DependabotSchedule::Monthly => r#"schedule:
+      interval: monthly"#
+                .to_string(),
+        }
+    } else {
+        r#"schedule:
+      interval: daily"#
+            .to_string()
+    }
+}
+
+fn create_dependabot_file(
+    dependabot_schedule: &Option<DependabotSchedule>,
+    dependabot_day: &Option<Day>,
+) -> String {
+    let schedule = create_dependabot_schedule(dependabot_schedule, dependabot_day);
+    format!(
+        r#"version: 2
 updates:
   - package-ecosystem: pip
     directory: "/"
-    schedule:
-      interval: daily
+    {schedule}
     labels:
     - skip-changelog
     - dependencies
   - package-ecosystem: github-actions
     directory: '/'
-    schedule:
-      interval: daily
+    {schedule}
     labels:
     - skip-changelog
     - dependencies
 "#
-    .to_string()
+    )
 }
 
-fn create_dependabot_file_pyo3() -> String {
-    r#"version: 2
+fn create_dependabot_file_pyo3(
+    dependabot_schedule: &Option<DependabotSchedule>,
+    dependabot_day: &Option<Day>,
+) -> String {
+    let schedule = create_dependabot_schedule(dependabot_schedule, dependabot_day);
+    format!(
+        r#"version: 2
 updates:
   - package-ecosystem: pip
     directory: "/"
-    schedule:
-      interval: daily
+    {schedule}
     labels:
     - skip-changelog
     - dependencies
   - package-ecosystem: cargo
     directory: "/"
-    schedule:
-      interval: daily
+    {schedule}
     labels:
     - skip-changelog
     - dependencies
   - package-ecosystem: github-actions
     directory: '/'
-    schedule:
-      interval: daily
+    {schedule}
     labels:
     - skip-changelog
     - dependencies
 "#
-    .to_string()
+    )
 }
 
 pub fn save_dependabot_file(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info.base_dir().join(".github/dependabot.yml");
     let content = match &project_info.project_manager {
-        ProjectManager::Maturin => create_dependabot_file_pyo3(),
-        ProjectManager::Poetry => create_dependabot_file(),
+        ProjectManager::Maturin => create_dependabot_file_pyo3(
+            &project_info.dependabot_schedule,
+            &project_info.dependabot_day,
+        ),
+        ProjectManager::Poetry => create_dependabot_file(
+            &project_info.dependabot_schedule,
+            &project_info.dependabot_day,
+        ),
     };
 
     save_file_with_content(&file_path, &content)?;
@@ -824,6 +894,8 @@ mod tests {
             ],
             max_line_length: 100,
             use_dependabot: true,
+            dependabot_schedule: None,
+            dependabot_day: None,
             use_continuous_deployment: true,
             use_release_drafter: true,
             use_multi_os_ci: true,
@@ -1365,6 +1437,169 @@ updates:
 
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
+        project_info.use_dependabot = true;
+        project_info.dependabot_schedule = None;
+        project_info.dependabot_day = None;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github")).unwrap();
+        let expected_file = base.join(".github/dependabot.yml");
+
+        save_dependabot_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_dependabot_file_daily() {
+        let expected = r#"version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: daily
+    labels:
+    - skip-changelog
+    - dependencies
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: daily
+    labels:
+    - skip-changelog
+    - dependencies
+"#
+        .to_string();
+
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.use_dependabot = true;
+        project_info.dependabot_schedule = Some(DependabotSchedule::Daily);
+        project_info.dependabot_day = None;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github")).unwrap();
+        let expected_file = base.join(".github/dependabot.yml");
+
+        save_dependabot_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_dependabot_file_weekly_no_day() {
+        let expected = r#"version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+    - skip-changelog
+    - dependencies
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+    - skip-changelog
+    - dependencies
+"#
+        .to_string();
+
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.use_dependabot = true;
+        project_info.dependabot_schedule = Some(DependabotSchedule::Weekly);
+        project_info.dependabot_day = None;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github")).unwrap();
+        let expected_file = base.join(".github/dependabot.yml");
+
+        save_dependabot_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_dependabot_file_weekly_tuesday() {
+        let expected = r#"version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: tuesday
+    labels:
+    - skip-changelog
+    - dependencies
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: tuesday
+    labels:
+    - skip-changelog
+    - dependencies
+"#
+        .to_string();
+
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.use_dependabot = true;
+        project_info.dependabot_schedule = Some(DependabotSchedule::Weekly);
+        project_info.dependabot_day = Some(Day::Tuesday);
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github")).unwrap();
+        let expected_file = base.join(".github/dependabot.yml");
+
+        save_dependabot_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_dependabot_file_monthly() {
+        let expected = r#"version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels:
+    - skip-changelog
+    - dependencies
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: monthly
+    labels:
+    - skip-changelog
+    - dependencies
+"#
+        .to_string();
+
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.use_dependabot = true;
+        project_info.dependabot_schedule = Some(DependabotSchedule::Monthly);
+        project_info.dependabot_day = None;
         let base = project_info.base_dir();
         create_dir_all(base.join(".github")).unwrap();
         let expected_file = base.join(".github/dependabot.yml");
@@ -1408,6 +1643,194 @@ updates:
 
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
+        project_info.dependabot_schedule = None;
+        project_info.dependabot_day = None;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github")).unwrap();
+        let expected_file = base.join(".github/dependabot.yml");
+
+        save_dependabot_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_dependabot_file_pyo3_daily() {
+        let expected = r#"version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: daily
+    labels:
+    - skip-changelog
+    - dependencies
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: daily
+    labels:
+    - skip-changelog
+    - dependencies
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: daily
+    labels:
+    - skip-changelog
+    - dependencies
+"#
+        .to_string();
+
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.dependabot_schedule = Some(DependabotSchedule::Daily);
+        project_info.dependabot_day = None;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github")).unwrap();
+        let expected_file = base.join(".github/dependabot.yml");
+
+        save_dependabot_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_dependabot_file_pyo3_weekly() {
+        let expected = r#"version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+    - skip-changelog
+    - dependencies
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+    - skip-changelog
+    - dependencies
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+    - skip-changelog
+    - dependencies
+"#
+        .to_string();
+
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.dependabot_schedule = Some(DependabotSchedule::Weekly);
+        project_info.dependabot_day = None;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github")).unwrap();
+        let expected_file = base.join(".github/dependabot.yml");
+
+        save_dependabot_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_dependabot_file_pyo3_weekly_wednesday() {
+        let expected = r#"version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: wednesday
+    labels:
+    - skip-changelog
+    - dependencies
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: wednesday
+    labels:
+    - skip-changelog
+    - dependencies
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: wednesday
+    labels:
+    - skip-changelog
+    - dependencies
+"#
+        .to_string();
+
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.dependabot_schedule = Some(DependabotSchedule::Weekly);
+        project_info.dependabot_day = Some(Day::Wednesday);
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github")).unwrap();
+        let expected_file = base.join(".github/dependabot.yml");
+
+        save_dependabot_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_dependabot_file_pyo3_monthly() {
+        let expected = r#"version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels:
+    - skip-changelog
+    - dependencies
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels:
+    - skip-changelog
+    - dependencies
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: monthly
+    labels:
+    - skip-changelog
+    - dependencies
+"#
+        .to_string();
+
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.dependabot_schedule = Some(DependabotSchedule::Monthly);
+        project_info.dependabot_day = None;
         let base = project_info.base_dir();
         create_dir_all(base.join(".github")).unwrap();
         let expected_file = base.join(".github/dependabot.yml");
