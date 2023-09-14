@@ -68,7 +68,9 @@ fn main() {
             if let Ok(progress_style) = ProgressStyle::with_template("{spinner:.green} {msg}") {
                 let pb = ProgressBar::new_spinner();
                 pb.enable_steady_tick(Duration::from_millis(80));
-                pb.set_style(progress_style);
+                pb.set_style(
+                    progress_style.tick_strings(&["⣷", "⣯", "⣟", "⡿", "⢿", "⣻", "⣽", "⣾"]),
+                );
                 pb.set_message("Generataing Project...");
                 create_result = create(&project_info);
                 pb.finish_and_clear();
