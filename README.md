@@ -124,3 +124,7 @@ To remove custom defaults:
 ```sh
 python-project config reset
 ```
+
+## Contributing
+
+If you are interested in contributing please see our [contributing guide](CONTRIBUTING.md)
