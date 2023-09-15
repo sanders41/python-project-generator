@@ -14,10 +14,10 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         include:
           - os: ubuntu-latest
-            artifact_name: python-project-generator
+            artifact_name: python-project
             asset_name: python-project-generator-linux-amd64
           - os: macos-latest
-            artifact_name: python-project-generator
+            artifact_name: python-project
             asset_name: python-project-generator-macos-amd64
     steps:
       - uses: actions/checkout@v4
