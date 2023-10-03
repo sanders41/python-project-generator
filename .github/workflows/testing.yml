@@ -61,6 +61,11 @@ jobs:
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2.7.0
+    - name: Build package
+      run: cargo build --release
+    - name: Run creation
+      run: |
+        ./scripts/ci_run.sh ${{ matrix.project_type }} 1
     - name: Install Poetry
       run: pipx install poetry
     - name: Configure poetry
@@ -72,11 +77,6 @@ jobs:
       with:
         python-version: "${{ env.MIN_PYTHON_VERSION }}"
         cache: "poetry"
-    - name: Build package
-      run: cargo build --release
-    - name: Run creation
-      run: |
-        ./scripts/ci_run.sh ${{ matrix.project_type }} 1
     - name: Install Dependencies
       working-directory: ${{ env.WORKING_DIR }}
       run: poetry install
@@ -100,6 +100,9 @@ jobs:
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2.7.0
+    - name: Run creation
+      run: |
+        ./scripts/ci_run.sh ${{ matrix.project_type }} 1
     - name: Install Poetry
       run: pipx install poetry
     - name: Configure poetry
@@ -113,9 +116,6 @@ jobs:
         cache: "poetry"
     - name: Build package
       run: cargo build --release
-    - name: Run creation
-      run: |
-        ./scripts/ci_run.sh ${{ matrix.project_type }} 1
     - name: Install Dependencies
       working-directory: ${{ env.WORKING_DIR }}
       run: poetry install
@@ -140,15 +140,15 @@ jobs:
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2.7.0
+    - name: Build package
+      run: cargo build --release
+    - name: Run creation
+      run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: "${{ env.MIN_PYTHON_VERSION }}"
         cache: "pip"
-    - name: Build package
-      run: cargo build --release
-    - name: Run creation
-      run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
     - name: Install Dependencies
       working-directory: ${{ env.WORKING_DIR }}
       run: |
@@ -183,15 +183,15 @@ jobs:
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2.7.0
+    - name: Build package
+      run: cargo build --release
+    - name: Run creation
+      run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: "3.11"
         cache: "pip"
-    - name: Build package
-      run: cargo build --release
-    - name: Run creation
-      run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
     - name: Install Dependencies
       working-directory: ${{ env.WORKING_DIR }}
       run: |
