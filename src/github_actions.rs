@@ -31,32 +31,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "{min_python_version}"
-    - name: Get full Python version
-      id: full-python-version
-      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install Poetry
-      run: |
-        pip install -U pip
-        pip install pipx
-        pipx install poetry
+      run: pipx install poetry
     - name: Configure poetry
       run: |
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
-    - name: Cache poetry venv
-      uses: actions/cache@v3
-      id: poetry-cache
+    - name: Set up Python
+      uses: actions/setup-python@v4
       with:
-        path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
-    - name: Ensure cache is healthy
-      if: steps.poetry-cache.outputs.cache-hit == 'true'
-      shell: bash
-      run: timeout 10s poetry run pip --version || rm -rf .venv
+        python-version: "{min_python_version}"
+        cache: "poetry"
     - name: Install Dependencies
       run: poetry install
     - name: Black check
@@ -76,32 +61,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{{{ matrix.python-version }}}}
-    - name: Get full Python version
-      id: full-python-version
-      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install Poetry
-      run: |
-        pip install -U pip
-        pip install pipx
-        pipx install poetry
+      run: pipx install poetry
     - name: Configure poetry
       run: |
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
-    - name: Cache poetry venv
-      uses: actions/cache@v3
-      id: poetry-cache
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v4
       with:
-        path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
-    - name: Ensure cache is healthy
-      if: steps.poetry-cache.outputs.cache-hit == 'true'
-      shell: bash
-      run: timeout 10s poetry run pip --version || rm -rf .venv
+        python-version: ${{{{ matrix.python-version }}}}
+        cache: "poetry"
     - name: Install Dependencies
       run: poetry install
     - name: Test with pytest
@@ -163,39 +133,20 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "{min_python_version}"
-    - name: Get full Python version
-      id: full-python-version
-      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-    - name: Install Poetry
+        cache: "pip"
+    - name: Install Dependencies
       run: |
         pip install -U pip
-        pip install pipx
-        pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Cache poetry venv
-      uses: actions/cache@v3
-      id: poetry-cache
-      with:
-        path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
-    - name: Ensure cache is healthy
-      if: steps.poetry-cache.outputs.cache-hit == 'true'
-      shell: bash
-      run: timeout 10s poetry run pip --version || rm -rf .venv
-    - name: Install Dependencies
-      run: poetry install
+        pip install -r requirements-dev.txt
+        pip install -e .
+        maturin build --out dist
+        pip install --no-index --find-links=dist/ prelude-parser
     - name: Black check
-      run: |
-        poetry run black {source_dir} tests --check
+      run: black {source_dir} tests --check
     - name: Lint with ruff
-      run: |
-        poetry run ruff check .
+      run: ruff check .
     - name: mypy check
-      run: |
-        poetry run mypy .
+      run: mypy .
   testing:
     strategy:
       fail-fast: false
@@ -208,33 +159,16 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{{{ matrix.python-version }}}}
-    - name: Get full Python version
-      id: full-python-version
-      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-    - name: Install Poetry
+        cache: "pip"
+    - name: Install Dependencies
       run: |
         pip install -U pip
-        pip install pipx
-        pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Cache poetry venv
-      uses: actions/cache@v3
-      id: poetry-cache
-      with:
-        path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
-    - name: Ensure cache is healthy
-      if: steps.poetry-cache.outputs.cache-hit == 'true'
-      shell: bash
-      run: timeout 10s poetry run pip --version || rm -rf .venv
-    - name: Install Dependencies
-      run: poetry install
+        pip install -r requirements-dev.txt
+        pip install -e .
+        maturin build --out dist
+        pip install --no-index --find-links=dist/ prelude-parser
     - name: Test with pytest
-      run: |
-        poetry run pytest
+      run: pytest
 "#
     )
 }
@@ -281,32 +215,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "{min_python_version}"
-    - name: Get full Python version
-      id: full-python-version
-      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install Poetry
-      run: |
-        pip install -U pip
-        pip install pipx
-        pipx install poetry
+      run: pipx install poetry
     - name: Configure poetry
       run: |
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
-    - name: Cache poetry venv
-      uses: actions/cache@v3
-      id: poetry-cache
+    - name: Set up Python
+      uses: actions/setup-python@v4
       with:
-        path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
-    - name: Ensure cache is healthy
-      if: steps.poetry-cache.outputs.cache-hit == 'true'
-      shell: bash
-      run: timeout 10s poetry run pip --version || rm -rf .venv
+        python-version: "{min_python_version}"
+        cache: "poetry"
     - name: Install Dependencies
       run: poetry install
     - name: Black check
@@ -327,32 +246,17 @@ jobs:
     runs-on: ${{{{ matrix.os }}}}
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{{{ matrix.python-version }}}}
-    - name: Get full Python version
-      id: full-python-version
-      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install Poetry
-      run: |
-        pip install -U pip
-        pip install pipx
-        pipx install poetry
+      run: pipx install poetry
     - name: Configure poetry
       run: |
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
-    - name: Cache poetry venv
-      uses: actions/cache@v3
-      id: poetry-cache
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v4
       with:
-        path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
-    - name: Ensure cache is healthy
-      if: steps.poetry-cache.outputs.cache-hit == 'true'
-      shell: bash
-      run: timeout 10s poetry run pip --version || rm -rf .venv
+        python-version: ${{{{ matrix.python-version }}}}
+        cache: "poetry"
     - name: Install Dependencies
       run: poetry install
     - name: Test with pytest
@@ -414,39 +318,20 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "{min_python_version}"
-    - name: Get full Python version
-      id: full-python-version
-      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-    - name: Install Poetry
+        cache: "pip"
+    - name: Install Dependencies
       run: |
         pip install -U pip
-        pip install pipx
-        pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Cache poetry venv
-      uses: actions/cache@v3
-      id: poetry-cache
-      with:
-        path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
-    - name: Ensure cache is healthy
-      if: steps.poetry-cache.outputs.cache-hit == 'true'
-      shell: bash
-      run: timeout 10s poetry run pip --version || rm -rf .venv
-    - name: Install Dependencies
-      run: poetry install
+        pip install -r requirements-dev.txt
+        pip install -e .
+        maturin build --out dist
+        pip install --no-index --find-links=dist/ prelude-parser
     - name: Black check
-      run: |
-        poetry run black {source_dir} tests --check
+      run: black {source_dir} tests --check
     - name: Lint with ruff
-      run: |
-        poetry run ruff check .
+      run: ruff check .
     - name: mypy check
-      run: |
-        poetry run mypy .
+      run: mypy .
   testing:
     strategy:
       fail-fast: false
@@ -460,33 +345,16 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{{{ matrix.python-version }}}}
-    - name: Get full Python version
-      id: full-python-version
-      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-    - name: Install Poetry
+        cache: "pip"
+    - name: Install Dependencies
       run: |
         pip install -U pip
-        pip install pipx
-        pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Cache poetry venv
-      uses: actions/cache@v3
-      id: poetry-cache
-      with:
-        path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
-    - name: Ensure cache is healthy
-      if: steps.poetry-cache.outputs.cache-hit == 'true'
-      shell: bash
-      run: timeout 10s poetry run pip --version || rm -rf .venv
-    - name: Install Dependencies
-      run: poetry install
+        pip install -r requirements-dev.txt
+        pip install -e .
+        maturin build --out dist
+        pip install --no-index --find-links=dist/ prelude-parser
     - name: Test with pytest
-      run: |
-        poetry run pytest
+      run: pytest
 "#
     )
 }
@@ -656,14 +524,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Install Poetry
+      run: pipx install poetry
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: "{python_version}"
-    - name: Install Poetry
-      run: |
-        pip install pipx
-        pipx install poetry
+        cache: "poetry"
     - name: Install Dependencies
       run: |
         poetry install
@@ -938,32 +805,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "{}"
-    - name: Get full Python version
-      id: full-python-version
-      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install Poetry
-      run: |
-        pip install -U pip
-        pip install pipx
-        pipx install poetry
+      run: pipx install poetry
     - name: Configure poetry
       run: |
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
-    - name: Cache poetry venv
-      uses: actions/cache@v3
-      id: poetry-cache
+    - name: Set up Python
+      uses: actions/setup-python@v4
       with:
-        path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
-    - name: Ensure cache is healthy
-      if: steps.poetry-cache.outputs.cache-hit == 'true'
-      shell: bash
-      run: timeout 10s poetry run pip --version || rm -rf .venv
+        python-version: "{}"
+        cache: "poetry"
     - name: Install Dependencies
       run: poetry install
     - name: Black check
@@ -983,32 +835,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{{{ matrix.python-version }}}}
-    - name: Get full Python version
-      id: full-python-version
-      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install Poetry
-      run: |
-        pip install -U pip
-        pip install pipx
-        pipx install poetry
+      run: pipx install poetry
     - name: Configure poetry
       run: |
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
-    - name: Cache poetry venv
-      uses: actions/cache@v3
-      id: poetry-cache
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v4
       with:
-        path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
-    - name: Ensure cache is healthy
-      if: steps.poetry-cache.outputs.cache-hit == 'true'
-      shell: bash
-      run: timeout 10s poetry run pip --version || rm -rf .venv
+        python-version: ${{{{ matrix.python-version }}}}
+        cache: "poetry"
     - name: Install Dependencies
       run: poetry install
     - name: Test with pytest
@@ -1079,39 +916,20 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "{}"
-    - name: Get full Python version
-      id: full-python-version
-      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-    - name: Install Poetry
+        cache: "pip"
+    - name: Install Dependencies
       run: |
         pip install -U pip
-        pip install pipx
-        pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Cache poetry venv
-      uses: actions/cache@v3
-      id: poetry-cache
-      with:
-        path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
-    - name: Ensure cache is healthy
-      if: steps.poetry-cache.outputs.cache-hit == 'true'
-      shell: bash
-      run: timeout 10s poetry run pip --version || rm -rf .venv
-    - name: Install Dependencies
-      run: poetry install
+        pip install -r requirements-dev.txt
+        pip install -e .
+        maturin build --out dist
+        pip install --no-index --find-links=dist/ prelude-parser
     - name: Black check
-      run: |
-        poetry run black {} tests --check
+      run: black {} tests --check
     - name: Lint with ruff
-      run: |
-        poetry run ruff check .
+      run: ruff check .
     - name: mypy check
-      run: |
-        poetry run mypy .
+      run: mypy .
   testing:
     strategy:
       fail-fast: false
@@ -1124,33 +942,16 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{{{ matrix.python-version }}}}
-    - name: Get full Python version
-      id: full-python-version
-      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-    - name: Install Poetry
+        cache: "pip"
+    - name: Install Dependencies
       run: |
         pip install -U pip
-        pip install pipx
-        pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Cache poetry venv
-      uses: actions/cache@v3
-      id: poetry-cache
-      with:
-        path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
-    - name: Ensure cache is healthy
-      if: steps.poetry-cache.outputs.cache-hit == 'true'
-      shell: bash
-      run: timeout 10s poetry run pip --version || rm -rf .venv
-    - name: Install Dependencies
-      run: poetry install
+        pip install -r requirements-dev.txt
+        pip install -e .
+        maturin build --out dist
+        pip install --no-index --find-links=dist/ prelude-parser
     - name: Test with pytest
-      run: |
-        poetry run pytest
+      run: pytest
 "#,
             &project_info.min_python_version, &project_info.source_dir
         );
@@ -1185,32 +986,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "{}"
-    - name: Get full Python version
-      id: full-python-version
-      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install Poetry
-      run: |
-        pip install -U pip
-        pip install pipx
-        pipx install poetry
+      run: pipx install poetry
     - name: Configure poetry
       run: |
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
-    - name: Cache poetry venv
-      uses: actions/cache@v3
-      id: poetry-cache
+    - name: Set up Python
+      uses: actions/setup-python@v4
       with:
-        path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
-    - name: Ensure cache is healthy
-      if: steps.poetry-cache.outputs.cache-hit == 'true'
-      shell: bash
-      run: timeout 10s poetry run pip --version || rm -rf .venv
+        python-version: "{}"
+        cache: "poetry"
     - name: Install Dependencies
       run: poetry install
     - name: Black check
@@ -1231,32 +1017,17 @@ jobs:
     runs-on: ${{{{ matrix.os }}}}
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{{{ matrix.python-version }}}}
-    - name: Get full Python version
-      id: full-python-version
-      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install Poetry
-      run: |
-        pip install -U pip
-        pip install pipx
-        pipx install poetry
+      run: pipx install poetry
     - name: Configure poetry
       run: |
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
-    - name: Cache poetry venv
-      uses: actions/cache@v3
-      id: poetry-cache
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v4
       with:
-        path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
-    - name: Ensure cache is healthy
-      if: steps.poetry-cache.outputs.cache-hit == 'true'
-      shell: bash
-      run: timeout 10s poetry run pip --version || rm -rf .venv
+        python-version: ${{{{ matrix.python-version }}}}
+        cache: "poetry"
     - name: Install Dependencies
       run: poetry install
     - name: Test with pytest
@@ -1328,39 +1099,20 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "{}"
-    - name: Get full Python version
-      id: full-python-version
-      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-    - name: Install Poetry
+        cache: "pip"
+    - name: Install Dependencies
       run: |
         pip install -U pip
-        pip install pipx
-        pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Cache poetry venv
-      uses: actions/cache@v3
-      id: poetry-cache
-      with:
-        path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
-    - name: Ensure cache is healthy
-      if: steps.poetry-cache.outputs.cache-hit == 'true'
-      shell: bash
-      run: timeout 10s poetry run pip --version || rm -rf .venv
-    - name: Install Dependencies
-      run: poetry install
+        pip install -r requirements-dev.txt
+        pip install -e .
+        maturin build --out dist
+        pip install --no-index --find-links=dist/ prelude-parser
     - name: Black check
-      run: |
-        poetry run black {} tests --check
+      run: black {} tests --check
     - name: Lint with ruff
-      run: |
-        poetry run ruff check .
+      run: ruff check .
     - name: mypy check
-      run: |
-        poetry run mypy .
+      run: mypy .
   testing:
     strategy:
       fail-fast: false
@@ -1374,33 +1126,16 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{{{ matrix.python-version }}}}
-    - name: Get full Python version
-      id: full-python-version
-      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-    - name: Install Poetry
+        cache: "pip"
+    - name: Install Dependencies
       run: |
         pip install -U pip
-        pip install pipx
-        pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Cache poetry venv
-      uses: actions/cache@v3
-      id: poetry-cache
-      with:
-        path: .venv
-        key: venv-${{{{ runner.os }}}}-${{{{ steps.full-python-version.outputs.version }}}}-${{{{ hashFiles('**/poetry.lock') }}}}
-    - name: Ensure cache is healthy
-      if: steps.poetry-cache.outputs.cache-hit == 'true'
-      shell: bash
-      run: timeout 10s poetry run pip --version || rm -rf .venv
-    - name: Install Dependencies
-      run: poetry install
+        pip install -r requirements-dev.txt
+        pip install -e .
+        maturin build --out dist
+        pip install --no-index --find-links=dist/ prelude-parser
     - name: Test with pytest
-      run: |
-        poetry run pytest
+      run: pytest
 "#,
             &project_info.min_python_version, &project_info.source_dir
         );
@@ -1862,14 +1597,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Install Poetry
+      run: pipx install poetry
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: "{}"
-    - name: Install Poetry
-      run: |
-        pip install pipx
-        pipx install poetry
+        cache: "poetry"
     - name: Install Dependencies
       run: |
         poetry install
