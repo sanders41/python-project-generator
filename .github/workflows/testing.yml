@@ -72,6 +72,13 @@ jobs:
       with:
         python-version: "${{ env.MIN_PYTHON_VERSION }}"
         cache: "poetry"
+    - name: Build package
+      run: cargo build --release
+    - name: Run creation
+      run: |
+        ./scripts/ci_run.sh ${{ matrix.project_type }} 1
+    - name: Install Dependencies
+      working-directory: ${{ env.WORKING_DIR }}
       run: poetry install
     - name: MyPy
       working-directory: ${{ env.WORKING_DIR }}
@@ -104,6 +111,11 @@ jobs:
       with:
         python-version: "3.11"
         cache: "poetry"
+    - name: Build package
+      run: cargo build --release
+    - name: Run creation
+      run: |
+        ./scripts/ci_run.sh ${{ matrix.project_type }} 1
     - name: Install Dependencies
       working-directory: ${{ env.WORKING_DIR }}
       run: poetry install
