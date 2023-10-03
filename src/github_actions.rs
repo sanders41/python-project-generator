@@ -758,6 +758,7 @@ mod tests {
                 "3.9".to_string(),
                 "3.10".to_string(),
                 "3.11".to_string(),
+                "3.12".to_string(),
             ],
             max_line_length: 100,
             use_dependabot: true,
@@ -778,9 +779,10 @@ mod tests {
                 "3.8".to_string(),
                 "3.9".to_string(),
                 "3.10".to_string(),
-                "3.11".to_string()
+                "3.11".to_string(),
+                "3.12".to_string(),
             ]),
-            r#""3.8", "3.9", "3.10", "3.11""#.to_string()
+            r#""3.8", "3.9", "3.10", "3.11", "3.12""#.to_string()
         );
     }
 
@@ -831,7 +833,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -934,7 +936,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -1012,7 +1014,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{{{ matrix.os }}}}
     steps:
@@ -1117,7 +1119,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{{{ matrix.os }}}}
     steps:
