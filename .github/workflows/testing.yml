@@ -61,22 +61,38 @@ jobs:
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2.7.0
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "${{ env.MIN_PYTHON_VERSION }}"
+    - name: Get full Python version
+      id: full-python-version
+      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+    - name: Install Poetry
+      run: |
+        pip install -U pip
+        pip install pipx
+        pipx install poetry
+    - name: Configure poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
     - name: Build package
       run: cargo build --release
     - name: Run creation
       run: |
         ./scripts/ci_run.sh ${{ matrix.project_type }} 1
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - name: Cache poetry venv
+      uses: actions/cache@v3
+      id: poetry-cache
       with:
-        python-version: "${{ env.MIN_PYTHON_VERSION }}"
-        cache: "poetry"
+        path: my-project/.venv
+        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+    - name: Ensure cache is healthy
+      working-directory: ${{ env.WORKING_DIR }}
+      if: steps.poetry-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: timeout 10s poetry run pip --version || rm -rf .venv
     - name: Install Dependencies
       working-directory: ${{ env.WORKING_DIR }}
       run: poetry install
@@ -100,22 +116,38 @@ jobs:
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2.7.0
-    - name: Run creation
-      run: |
-        ./scripts/ci_run.sh ${{ matrix.project_type }} 1
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: "3.11"
-        cache: "poetry"
+    - name: Get full Python version
+      id: full-python-version
+      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+    - name: Install Poetry
+      run: |
+        pip install -U pip
+        pip install pipx
+        pipx install poetry
+    - name: Configure poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
     - name: Build package
       run: cargo build --release
+    - name: Run creation
+      run: |
+        ./scripts/ci_run.sh ${{ matrix.project_type }} 1
+    - name: Cache poetry venv
+      uses: actions/cache@v3
+      id: poetry-cache
+      with:
+        path: my-project/.venv
+        key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+    - name: Ensure cache is healthy
+      working-directory: ${{ env.WORKING_DIR }}
+      if: steps.poetry-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: timeout 10s poetry run pip --version || rm -rf .venv
     - name: Install Dependencies
       working-directory: ${{ env.WORKING_DIR }}
       run: poetry install
@@ -140,15 +172,14 @@ jobs:
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2.7.0
-    - name: Build package
-      run: cargo build --release
-    - name: Run creation
-      run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: "${{ env.MIN_PYTHON_VERSION }}"
-        cache: "pip"
+    - name: Build package
+      run: cargo build --release
+    - name: Run creation
+      run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
     - name: Install Dependencies
       working-directory: ${{ env.WORKING_DIR }}
       run: |
@@ -183,15 +214,14 @@ jobs:
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2.7.0
-    - name: Build package
-      run: cargo build --release
-    - name: Run creation
-      run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: "3.11"
-        cache: "pip"
+    - name: Build package
+      run: cargo build --release
+    - name: Run creation
+      run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
     - name: Install Dependencies
       working-directory: ${{ env.WORKING_DIR }}
       run: |
