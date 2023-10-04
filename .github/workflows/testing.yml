@@ -71,7 +71,6 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "${{ env.MIN_PYTHON_VERSION }}"
-        cache: "poetry"
     - name: Build package
       run: cargo build --release
     - name: Run creation
@@ -110,7 +109,6 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "3.11"
-        cache: "poetry"
     - name: Build package
       run: cargo build --release
     - name: Run creation
@@ -144,7 +142,6 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "${{ env.MIN_PYTHON_VERSION }}"
-        cache: "pip"
     - name: Build package
       run: cargo build --release
     - name: Run creation
@@ -187,7 +184,6 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "3.11"
-        cache: "pip"
     - name: Build package
       run: cargo build --release
     - name: Run creation
@@ -223,12 +219,11 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "${{ env.MIN_PYTHON_VERSION }}"
-        cache: "pip"
     - name: Build package
       run: cargo build --release
     - name: Run creation
       run: |
-        ./scripts/ci_run.sh ${{ matrix.project_type }} 1
+        ./scripts/ci_run.sh ${{ matrix.project_type }} 3
     - name: Install Dependencies
       working-directory: ${{ env.WORKING_DIR }}
       run: |
@@ -258,7 +253,6 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "3.11"
-        cache: "pip"
     - name: Build package
       run: cargo build --release
     - name: Run creation
