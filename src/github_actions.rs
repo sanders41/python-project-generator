@@ -11,7 +11,7 @@ fn build_actions_python_test_versions(github_action_python_test_versions: &[Stri
         .join(", ")
 }
 
-fn create_ci_testing_linux_only_file(
+fn create_poetry_ci_testing_linux_only_file(
     source_dir: &str,
     min_python_version: &str,
     github_action_python_test_versions: &[String],
@@ -45,14 +45,11 @@ jobs:
     - name: Install Dependencies
       run: poetry install
     - name: Black check
-      run: |
-        poetry run black {source_dir} tests --check
+      run: poetry run black {source_dir} tests --check
     - name: Lint with ruff
-      run: |
-        poetry run ruff check .
+      run: poetry run ruff check .
     - name: mypy check
-      run: |
-        poetry run mypy .
+      run: poetry run mypy .
   testing:
     strategy:
       fail-fast: false
@@ -75,8 +72,65 @@ jobs:
     - name: Install Dependencies
       run: poetry install
     - name: Test with pytest
+      run: poetry run pytest
+"#
+    )
+}
+
+fn create_setuptools_ci_testing_linux_only_file(
+    source_dir: &str,
+    min_python_version: &str,
+    github_action_python_test_versions: &[String],
+) -> String {
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+
+    format!(
+        r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "{min_python_version}"
+        cache: "pip"
+    - name: Install Dependencies
       run: |
-        poetry run pytest
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+    - name: Black check
+      run: black {source_dir} tests --check
+    - name: Lint with ruff
+      run: ruff check .
+    - name: mypy check
+      run: mypy .
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+        cache: "pip"
+    - name: Install Dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+    - name: Test with pytest
+      run: pytest
 "#
     )
 }
@@ -136,11 +190,11 @@ jobs:
         cache: "pip"
     - name: Install Dependencies
       run: |
-        pip install -U pip
-        pip install -r requirements-dev.txt
-        pip install -e .
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+        python -m pip install -e .
         maturin build --out dist
-        pip install --no-index --find-links=dist/ prelude-parser
+        python -m pip install --no-index --find-links=dist/ prelude-parser
     - name: Black check
       run: black {source_dir} tests --check
     - name: Lint with ruff
@@ -162,11 +216,11 @@ jobs:
         cache: "pip"
     - name: Install Dependencies
       run: |
-        pip install -U pip
-        pip install -r requirements-dev.txt
-        pip install -e .
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+        python -m pip install -e .
         maturin build --out dist
-        pip install --no-index --find-links=dist/ prelude-parser
+        python -m pip install --no-index --find-links=dist/ prelude-parser
     - name: Test with pytest
       run: pytest
 "#
@@ -183,7 +237,12 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
             &project_info.min_python_version,
             &project_info.github_actions_python_test_versions,
         ),
-        ProjectManager::Poetry => create_ci_testing_linux_only_file(
+        ProjectManager::Poetry => create_poetry_ci_testing_linux_only_file(
+            &project_info.source_dir,
+            &project_info.min_python_version,
+            &project_info.github_actions_python_test_versions,
+        ),
+        ProjectManager::Setuptools => create_setuptools_ci_testing_linux_only_file(
             &project_info.source_dir,
             &project_info.min_python_version,
             &project_info.github_actions_python_test_versions,
@@ -195,7 +254,7 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
     Ok(())
 }
 
-fn create_ci_testing_multi_os_file(
+fn create_poetry_ci_testing_multi_os_file(
     source_dir: &str,
     min_python_version: &str,
     github_action_python_test_versions: &[String],
@@ -229,14 +288,11 @@ jobs:
     - name: Install Dependencies
       run: poetry install
     - name: Black check
-      run: |
-        poetry run black {source_dir} tests --check
+      run: poetry run black {source_dir} tests --check
     - name: Lint with ruff
-      run: |
-        poetry run ruff check .
+      run: poetry run ruff check .
     - name: mypy check
-      run: |
-        poetry run mypy .
+      run: poetry run mypy .
   testing:
     strategy:
       fail-fast: false
@@ -260,8 +316,66 @@ jobs:
     - name: Install Dependencies
       run: poetry install
     - name: Test with pytest
+      run: poetry run pytest
+"#
+    )
+}
+
+fn create_setuptools_ci_testing_multi_os_file(
+    source_dir: &str,
+    min_python_version: &str,
+    github_action_python_test_versions: &[String],
+) -> String {
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+
+    format!(
+        r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "{min_python_version}"
+        cache: "pip"
+    - name: Install Dependencies
       run: |
-        poetry run pytest
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+    - name: Black check
+      run: black {source_dir} tests --check
+    - name: Lint with ruff
+      run: ruff check .
+    - name: mypy check
+      run: mypy .
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{{{ matrix.os }}}}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+        cache: "pip"
+    - name: Install Dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+    - name: Test with pytest
+      run: pytest
 "#
     )
 }
@@ -321,11 +435,11 @@ jobs:
         cache: "pip"
     - name: Install Dependencies
       run: |
-        pip install -U pip
-        pip install -r requirements-dev.txt
-        pip install -e .
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+        python -m pip install -e .
         maturin build --out dist
-        pip install --no-index --find-links=dist/ prelude-parser
+        python -m pip install --no-index --find-links=dist/ prelude-parser
     - name: Black check
       run: black {source_dir} tests --check
     - name: Lint with ruff
@@ -348,11 +462,11 @@ jobs:
         cache: "pip"
     - name: Install Dependencies
       run: |
-        pip install -U pip
-        pip install -r requirements-dev.txt
-        pip install -e .
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+        python -m pip install -e .
         maturin build --out dist
-        pip install --no-index --find-links=dist/ prelude-parser
+        python -m pip install --no-index --find-links=dist/ prelude-parser
     - name: Test with pytest
       run: pytest
 "#
@@ -369,7 +483,12 @@ pub fn save_ci_testing_multi_os_file(project_info: &ProjectInfo) -> Result<()> {
             &project_info.min_python_version,
             &project_info.github_actions_python_test_versions,
         ),
-        ProjectManager::Poetry => create_ci_testing_multi_os_file(
+        ProjectManager::Poetry => create_poetry_ci_testing_multi_os_file(
+            &project_info.source_dir,
+            &project_info.min_python_version,
+            &project_info.github_actions_python_test_versions,
+        ),
+        ProjectManager::Setuptools => create_setuptools_ci_testing_multi_os_file(
             &project_info.source_dir,
             &project_info.min_python_version,
             &project_info.github_actions_python_test_versions,
@@ -501,7 +620,7 @@ pub fn save_dependabot_file(project_info: &ProjectInfo) -> Result<()> {
             &project_info.dependabot_schedule,
             &project_info.dependabot_day,
         ),
-        ProjectManager::Poetry => create_dependabot_file(
+        _ => create_dependabot_file(
             &project_info.dependabot_schedule,
             &project_info.dependabot_day,
         ),
@@ -512,7 +631,7 @@ pub fn save_dependabot_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_pypi_publish_file(python_version: &str) -> String {
+fn create_poetry_pypi_publish_file(python_version: &str) -> String {
     format!(
         r#"name: PyPi Publish
 on:
@@ -651,13 +770,52 @@ jobs:
     )
 }
 
+fn create_setuptools_pypi_publish_file(python_version: &str) -> String {
+    format!(
+        r#"name: PyPi Publish
+on:
+  release:
+    types:
+    - published
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "{python_version}"
+        cache: "pip"
+    - name: Install Dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip -r requirements-dev.txt
+        python -m pip install build setuptools wheel twine
+    - name: Add pypi token to Poetry
+      run: |
+        poetry config pypi-token.pypi {{{{ "${{{{ secrets.PYPI_API_KEY }}}}" }}}}
+    - name: Publish package
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: "${{{{ secrets.PYPI_API_KEY }}}}"
+      run: |
+        python -m build
+        twine upload dist/*
+"#
+    )
+}
+
 pub fn save_pypi_publish_file(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info
         .base_dir()
         .join(".github/workflows/pypi_publish.yml");
     let content = match &project_info.project_manager {
         ProjectManager::Maturin => create_pypi_publish_file_pyo3(&project_info.python_version),
-        ProjectManager::Poetry => create_pypi_publish_file(&project_info.python_version),
+        ProjectManager::Poetry => create_poetry_pypi_publish_file(&project_info.python_version),
+        ProjectManager::Setuptools => {
+            create_setuptools_pypi_publish_file(&project_info.python_version)
+        }
     };
 
     save_file_with_content(&file_path, &content)?;
@@ -787,7 +945,7 @@ mod tests {
     }
 
     #[test]
-    fn test_save_ci_testing_linux_only_file() {
+    fn test_save_poetry_ci_testing_linux_only_file() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
         project_info.use_multi_os_ci = true;
@@ -821,14 +979,11 @@ jobs:
     - name: Install Dependencies
       run: poetry install
     - name: Black check
-      run: |
-        poetry run black {} tests --check
+      run: poetry run black {} tests --check
     - name: Lint with ruff
-      run: |
-        poetry run ruff check .
+      run: poetry run ruff check .
     - name: mypy check
-      run: |
-        poetry run mypy .
+      run: poetry run mypy .
   testing:
     strategy:
       fail-fast: false
@@ -851,8 +1006,7 @@ jobs:
     - name: Install Dependencies
       run: poetry install
     - name: Test with pytest
-      run: |
-        poetry run pytest
+      run: poetry run pytest
 "#,
             &project_info.min_python_version, &project_info.source_dir
         );
@@ -921,11 +1075,11 @@ jobs:
         cache: "pip"
     - name: Install Dependencies
       run: |
-        pip install -U pip
-        pip install -r requirements-dev.txt
-        pip install -e .
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+        python -m pip install -e .
         maturin build --out dist
-        pip install --no-index --find-links=dist/ prelude-parser
+        python -m pip install --no-index --find-links=dist/ prelude-parser
     - name: Black check
       run: black {} tests --check
     - name: Lint with ruff
@@ -947,11 +1101,11 @@ jobs:
         cache: "pip"
     - name: Install Dependencies
       run: |
-        pip install -U pip
-        pip install -r requirements-dev.txt
-        pip install -e .
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+        python -m pip install -e .
         maturin build --out dist
-        pip install --no-index --find-links=dist/ prelude-parser
+        python -m pip install --no-index --find-links=dist/ prelude-parser
     - name: Test with pytest
       run: pytest
 "#,
@@ -968,7 +1122,75 @@ jobs:
     }
 
     #[test]
-    fn test_save_ci_testing_multi_os_file() {
+    fn test_save_setuptools_ci_testing_linux_only_file() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Setuptools;
+        project_info.use_multi_os_ci = false;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        let expected = format!(
+            r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "{}"
+        cache: "pip"
+    - name: Install Dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+    - name: Black check
+      run: black {} tests --check
+    - name: Lint with ruff
+      run: ruff check .
+    - name: mypy check
+      run: mypy .
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+        cache: "pip"
+    - name: Install Dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+    - name: Test with pytest
+      run: pytest
+"#,
+            &project_info.min_python_version, &project_info.source_dir
+        );
+
+        save_ci_testing_linux_only_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_poetry_ci_testing_multi_os_file() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
         project_info.use_multi_os_ci = true;
@@ -1002,14 +1224,11 @@ jobs:
     - name: Install Dependencies
       run: poetry install
     - name: Black check
-      run: |
-        poetry run black {} tests --check
+      run: poetry run black {} tests --check
     - name: Lint with ruff
-      run: |
-        poetry run ruff check .
+      run: poetry run ruff check .
     - name: mypy check
-      run: |
-        poetry run mypy .
+      run: poetry run mypy .
   testing:
     strategy:
       fail-fast: false
@@ -1033,8 +1252,76 @@ jobs:
     - name: Install Dependencies
       run: poetry install
     - name: Test with pytest
+      run: poetry run pytest
+"#,
+            &project_info.min_python_version, &project_info.source_dir
+        );
+
+        save_ci_testing_multi_os_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_setuptools_ci_testing_multi_os_file() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Setuptools;
+        project_info.use_multi_os_ci = true;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        let expected = format!(
+            r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "{}"
+        cache: "pip"
+    - name: Install Dependencies
       run: |
-        poetry run pytest
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+    - name: Black check
+      run: black {} tests --check
+    - name: Lint with ruff
+      run: ruff check .
+    - name: mypy check
+      run: mypy .
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{{{ matrix.os }}}}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+        cache: "pip"
+    - name: Install Dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+    - name: Test with pytest
+      run: pytest
 "#,
             &project_info.min_python_version, &project_info.source_dir
         );
@@ -1104,11 +1391,11 @@ jobs:
         cache: "pip"
     - name: Install Dependencies
       run: |
-        pip install -U pip
-        pip install -r requirements-dev.txt
-        pip install -e .
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+        python -m pip install -e .
         maturin build --out dist
-        pip install --no-index --find-links=dist/ prelude-parser
+        python -m pip install --no-index --find-links=dist/ prelude-parser
     - name: Black check
       run: black {} tests --check
     - name: Lint with ruff
@@ -1131,11 +1418,11 @@ jobs:
         cache: "pip"
     - name: Install Dependencies
       run: |
-        pip install -U pip
-        pip install -r requirements-dev.txt
-        pip install -e .
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+        python -m pip install -e .
         maturin build --out dist
-        pip install --no-index --find-links=dist/ prelude-parser
+        python -m pip install --no-index --find-links=dist/ prelude-parser
     - name: Test with pytest
       run: pytest
 "#,

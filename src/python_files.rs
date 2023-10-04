@@ -126,7 +126,7 @@ __all__ = ["sum_as_string"]
                 )
             }
         }
-        ProjectManager::Poetry => {
+        _ => {
             format!(
                 r#"from {source_dir}._version import VERSION
 
@@ -190,7 +190,7 @@ fn save_version_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_version_test_file(source_dir: &str, project_manager: &ProjectManager) -> String {
+fn create_version_test_file(source_dir: &str, project_manager: &ProjectManager) -> Option<String> {
     let version_test: &str = match project_manager {
         ProjectManager::Maturin => {
             r#"def test_versions_match():
@@ -210,9 +210,10 @@ fn create_version_test_file(source_dir: &str, project_manager: &ProjectManager) 
 
     assert VERSION == pyproject_version"#
         }
+        ProjectManager::Setuptools => return None,
     };
 
-    format!(
+    Some(format!(
         r#"import sys
 from pathlib import Path
 
@@ -226,14 +227,16 @@ else:
 
 {version_test}
 "#
-    )
+    ))
 }
 
 fn save_version_test_file(project_info: &ProjectInfo) -> Result<()> {
-    let file_path = project_info.base_dir().join("tests/test_version.py");
-    let content = create_version_test_file(&project_info.source_dir, &project_info.project_manager);
-
-    save_file_with_content(&file_path, &content)?;
+    if let Some(content) =
+        create_version_test_file(&project_info.source_dir, &project_info.project_manager)
+    {
+        let file_path = project_info.base_dir().join("tests/test_version.py");
+        save_file_with_content(&file_path, &content)?;
+    };
 
     Ok(())
 }
