@@ -240,7 +240,7 @@ jobs:
     - name: ruff
       working-directory: ${{ env.WORKING_DIR }}
       run: ruff check .
-  poetry-test:
+  setuptools-test:
     strategy:
       fail-fast: false
       matrix:
