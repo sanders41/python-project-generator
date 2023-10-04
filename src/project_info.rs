@@ -410,7 +410,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
 
     let python_version_default = match config.python_version {
         Some(python) => python,
-        None => "3.11".to_string(),
+        None => "3.12".to_string(),
     };
     let python_version = if use_defaults {
         python_version_default
@@ -436,6 +436,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
                 "3.9".to_string(),
                 "3.10".to_string(),
                 "3.11".to_string(),
+                "3.12".to_string(),
             ],
         };
     let github_actions_python_test_versions = if use_defaults {
