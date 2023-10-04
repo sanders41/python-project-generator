@@ -323,17 +323,17 @@ fn build_latest_dev_dependencies(
         },
     ];
 
-    if let ProjectManager::Maturin = project_manager {
-        packages.push(PythonPackageVersion {
+    match project_manager {
+        ProjectManager::Maturin => packages.push(PythonPackageVersion {
             name: "maturin".to_string(),
             version: "1.2.3".to_string(),
-        });
-    } else {
-        packages.push(PythonPackageVersion {
+        }),
+        ProjectManager::Poetry => packages.push(PythonPackageVersion {
             name: "tomli".to_string(),
             version: "2.0.1".to_string(),
-        })
-    }
+        }),
+        ProjectManager::Setuptools => (),
+    };
 
     for mut package in packages {
         if download_latest_packages && package.get_latest_version().is_err() {
@@ -344,13 +344,7 @@ fn build_latest_dev_dependencies(
             println!("\n{}", error_message.yellow());
         }
 
-        if let ProjectManager::Maturin = project_manager {
-            if is_application {
-                version_string.push_str(&format!("{}=={}\n", package.name, package.version));
-            } else {
-                version_string.push_str(&format!("{}>={}\n", package.name, package.version));
-            };
-        } else {
+        if let ProjectManager::Poetry = project_manager {
             let version: String = if is_application {
                 package.version
             } else {
@@ -365,13 +359,17 @@ fn build_latest_dev_dependencies(
             } else {
                 version_string.push_str(&format!("{} = \"{}\"\n", package.name, version));
             }
+        } else if is_application {
+            version_string.push_str(&format!("{}=={}\n", package.name, package.version));
+        } else {
+            version_string.push_str(&format!("{}>={}\n", package.name, package.version));
         }
     }
 
-    if let ProjectManager::Maturin = project_manager {
-        version_string
-    } else {
+    if let ProjectManager::Poetry = project_manager {
         version_string.trim().to_string()
+    } else {
+        version_string
     }
 }
 
@@ -418,6 +416,28 @@ python = "^{{ min_python_version }}"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+"#
+        .to_string(),
+        ProjectManager::Setuptools => r#"[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{{ project_name }}"
+description = "{{ project_description }}"
+authors = [
+  { name = "{{ creator }}", email = "{{ creator_email }}" }
+]
+{% if license != "NoLicense" -%}
+license = { text = "{{ license }}" }
+{% endif -%}
+requires-python = ">={{ min_python_version }}"
+dynamic = ["version", "readme"]
+
+[tool.setuptools.dynamic]
+version = {attr = "{{ source_dir }}.__version__"}
+readme = {file = ["README.md"]}
 
 "#
         .to_string(),
@@ -503,6 +523,21 @@ fn save_pyo3_dev_requirements(project_info: &ProjectInfo) -> Result<()> {
         project_info.download_latest_packages,
         &ProjectManager::Maturin,
     );
+
+    save_file_with_content(&file_path, &content)?;
+
+    Ok(())
+}
+
+fn save_setuptools_dev_requirements(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info.base_dir().join("requirements-dev.txt");
+    let mut content = build_latest_dev_dependencies(
+        project_info.is_application,
+        project_info.download_latest_packages,
+        &ProjectManager::Setuptools,
+    );
+
+    content.push_str("-e .\n");
 
     save_file_with_content(&file_path, &content)?;
 
@@ -629,6 +664,12 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
 
         if save_cargo_toml_file(project_info).is_err() {
             bail!("Error creating Rust lib.rs file");
+        }
+    }
+
+    if let ProjectManager::Setuptools = &project_info.project_manager {
+        if save_setuptools_dev_requirements(project_info).is_err() {
+            bail!("Error creating requirements-dev.txt file");
         }
     }
 
@@ -1057,7 +1098,7 @@ dmypy.json
     }
 
     #[test]
-    fn test_save_pyproject_toml_file_mit_application() {
+    fn test_save_poetry_pyproject_toml_file_mit_application() {
         let mut project_info = project_info_dummy();
         project_info.license = LicenseType::Mit;
         project_info.project_manager = ProjectManager::Poetry;
@@ -1156,7 +1197,7 @@ fix = true
     }
 
     #[test]
-    fn test_save_pyproject_toml_file_apache_application() {
+    fn test_save_poetry_pyproject_toml_file_apache_application() {
         let mut project_info = project_info_dummy();
         project_info.license = LicenseType::Apache2;
         project_info.project_manager = ProjectManager::Poetry;
@@ -1255,7 +1296,7 @@ fix = true
     }
 
     #[test]
-    fn test_save_pyproject_toml_file_no_license_application() {
+    fn test_save_poetry_pyproject_toml_file_no_license_application() {
         let mut project_info = project_info_dummy();
         project_info.license = LicenseType::NoLicense;
         project_info.project_manager = ProjectManager::Poetry;
@@ -1353,7 +1394,7 @@ fix = true
     }
 
     #[test]
-    fn test_create_pyproject_toml_mit_lib() {
+    fn test_create_poetry_pyproject_toml_mit_lib() {
         let mut project_info = project_info_dummy();
         project_info.license = LicenseType::Mit;
         project_info.project_manager = ProjectManager::Poetry;
@@ -1724,6 +1765,377 @@ fix = true
     }
 
     #[test]
+    fn test_save_setuptools_pyproject_toml_file_mit_application() {
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::Mit;
+        project_info.project_manager = ProjectManager::Setuptools;
+        project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
+        let expected = format!(
+            r#"[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{}"
+description = "{}"
+authors = [
+  {{ name = "{}", email = "{}" }}
+]
+license = {{ text = "MIT" }}
+requires-python = ">={}"
+dynamic = ["version", "readme"]
+
+[tool.setuptools.dynamic]
+version = {{attr = "{}.__version__"}}
+readme = {{file = ["README.md"]}}
+
+[tool.black]
+line-length = {}
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.egg
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.nox
+  | \.tox
+  | \.venv
+  | \venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | setup.py
+)/
+'''
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
+
+[tool.coverage.report]
+exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
+
+[tool.ruff]
+select = ["E", "F", "UP", "I001", "T201", "T203"]
+ignore = ["E501"]
+line-length = {}
+target-version = "py{}"
+fix = true
+"#,
+            project_info.source_dir.replace('_', "-"),
+            project_info.project_description,
+            project_info.creator,
+            project_info.creator_email,
+            project_info.min_python_version,
+            project_info.source_dir,
+            project_info.max_line_length,
+            project_info.source_dir,
+            project_info.max_line_length,
+            pyupgrade_version,
+        );
+
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_setuptools_pyproject_toml_file_apache_application() {
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::Apache2;
+        project_info.project_manager = ProjectManager::Setuptools;
+        project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
+        let expected = format!(
+            r#"[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{}"
+description = "{}"
+authors = [
+  {{ name = "{}", email = "{}" }}
+]
+license = {{ text = "Apache-2.0" }}
+requires-python = ">={}"
+dynamic = ["version", "readme"]
+
+[tool.setuptools.dynamic]
+version = {{attr = "{}.__version__"}}
+readme = {{file = ["README.md"]}}
+
+[tool.black]
+line-length = {}
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.egg
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.nox
+  | \.tox
+  | \.venv
+  | \venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | setup.py
+)/
+'''
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
+
+[tool.coverage.report]
+exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
+
+[tool.ruff]
+select = ["E", "F", "UP", "I001", "T201", "T203"]
+ignore = ["E501"]
+line-length = {}
+target-version = "py{}"
+fix = true
+"#,
+            project_info.source_dir.replace('_', "-"),
+            project_info.project_description,
+            project_info.creator,
+            project_info.creator_email,
+            project_info.min_python_version,
+            project_info.source_dir,
+            project_info.max_line_length,
+            project_info.source_dir,
+            project_info.max_line_length,
+            pyupgrade_version,
+        );
+
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_setuptools_pyproject_toml_file_no_license_application() {
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::NoLicense;
+        project_info.project_manager = ProjectManager::Setuptools;
+        project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
+        let expected = format!(
+            r#"[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{}"
+description = "{}"
+authors = [
+  {{ name = "{}", email = "{}" }}
+]
+requires-python = ">={}"
+dynamic = ["version", "readme"]
+
+[tool.setuptools.dynamic]
+version = {{attr = "{}.__version__"}}
+readme = {{file = ["README.md"]}}
+
+[tool.black]
+line-length = {}
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.egg
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.nox
+  | \.tox
+  | \.venv
+  | \venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | setup.py
+)/
+'''
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
+
+[tool.coverage.report]
+exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
+
+[tool.ruff]
+select = ["E", "F", "UP", "I001", "T201", "T203"]
+ignore = ["E501"]
+line-length = {}
+target-version = "py{}"
+fix = true
+"#,
+            project_info.source_dir.replace('_', "-"),
+            project_info.project_description,
+            project_info.creator,
+            project_info.creator_email,
+            project_info.min_python_version,
+            project_info.source_dir,
+            project_info.max_line_length,
+            project_info.source_dir,
+            project_info.max_line_length,
+            pyupgrade_version,
+        );
+
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_create_setuptools_pyproject_toml_mit_lib() {
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::Mit;
+        project_info.project_manager = ProjectManager::Setuptools;
+        project_info.is_application = false;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
+        let expected = format!(
+            r#"[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{}"
+description = "{}"
+authors = [
+  {{ name = "{}", email = "{}" }}
+]
+license = {{ text = "MIT" }}
+requires-python = ">={}"
+dynamic = ["version", "readme"]
+
+[tool.setuptools.dynamic]
+version = {{attr = "{}.__version__"}}
+readme = {{file = ["README.md"]}}
+
+[tool.black]
+line-length = {}
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.egg
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.nox
+  | \.tox
+  | \.venv
+  | \venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | setup.py
+)/
+'''
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
+
+[tool.coverage.report]
+exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
+
+[tool.ruff]
+select = ["E", "F", "UP", "I001", "T201", "T203"]
+ignore = ["E501"]
+line-length = {}
+target-version = "py{}"
+fix = true
+"#,
+            project_info.source_dir.replace('_', "-"),
+            project_info.project_description,
+            project_info.creator,
+            project_info.creator_email,
+            project_info.min_python_version,
+            project_info.source_dir,
+            project_info.max_line_length,
+            project_info.source_dir,
+            project_info.max_line_length,
+            pyupgrade_version,
+        );
+
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
     fn test_save_pyo3_dev_requirements_application_file() {
         let expected = r#"black==23.9.1
 mypy==1.5.1
@@ -1767,6 +2179,58 @@ maturin>=1.2.3
         create_dir_all(&base).unwrap();
         let expected_file = base.join("requirements-dev.txt");
         save_pyo3_dev_requirements(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_setuptools_dev_requirements_application_file() {
+        let expected = r#"black==23.9.1
+mypy==1.5.1
+pre-commit==3.4.0
+pytest==7.4.2
+pytest-cov==4.1.0
+ruff==0.0.289
+-e .
+"#;
+
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("requirements-dev.txt");
+        save_setuptools_dev_requirements(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_setuptools_dev_requirements_lib_file() {
+        let expected = r#"black>=23.9.1
+mypy>=1.5.1
+pre-commit>=3.4.0
+pytest>=7.4.2
+pytest-cov>=4.1.0
+ruff>=0.0.289
+-e .
+"#;
+
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.is_application = false;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("requirements-dev.txt");
+        save_setuptools_dev_requirements(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 

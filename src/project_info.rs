@@ -37,6 +37,7 @@ pub enum LicenseType {
 pub enum ProjectManager {
     Maturin,
     Poetry,
+    Setuptools,
 }
 
 struct Prompt {
@@ -221,11 +222,13 @@ fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectMana
         Some(d) => match d {
             ProjectManager::Maturin => "2".to_string(),
             ProjectManager::Poetry => "1".to_string(),
+            ProjectManager::Setuptools => "3".to_string(),
         },
         None => "poetry".to_string(),
     };
     let prompt_text =
-        "Project Manager\n  1 - Poetry\n  2 - Maturin\n  Choose from[1, 2]".to_string();
+        "Project Manager\n  1 - Poetry\n  2 - Maturin\n  3 - setuptools\n  Choose from[1, 2, 3]"
+            .to_string();
     let prompt = Prompt {
         prompt_text,
         default: Some(default_str),
@@ -236,6 +239,8 @@ fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectMana
         Ok(ProjectManager::Poetry)
     } else if input == "2" {
         Ok(ProjectManager::Maturin)
+    } else if input == "3" {
+        Ok(ProjectManager::Setuptools)
     } else {
         bail!("Invalid selection");
     }
