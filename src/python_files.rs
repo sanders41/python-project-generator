@@ -215,7 +215,8 @@ fn create_version_test_file(source_dir: &str, project_manager: &ProjectManager) 
                 r#"from {source_dir}._version import VERSION
 
 def test_versions_match():
-    assert VERSION == "0.1.0""#
+    assert VERSION == "0.1.0"
+"#
             )
         }
     };
@@ -550,7 +551,7 @@ def sum_as_string(a: int, b: int) -> str: ...
     }
 
     #[test]
-    fn test_save_version_test_file() {
+    fn test_save_version_test_file_poetry() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
         let base = project_info.base_dir();
@@ -614,6 +615,31 @@ def test_versions_match():
         cargo_version = data["package"]["version"]
 
     assert VERSION == cargo_version
+"#,
+            &project_info.source_dir
+        );
+
+        save_version_test_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_eq!(content, expected);
+    }
+
+    #[test]
+    fn test_save_version_test_file_setuptools() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Setuptools;
+        let base = project_info.base_dir();
+        create_dir_all(base.join("tests")).unwrap();
+        let expected_file = base.join("tests/test_version.py");
+        let expected = format!(
+            r#"from {}._version import VERSION
+
+def test_versions_match():
+    assert VERSION == "0.1.0"
 "#,
             &project_info.source_dir
         );
