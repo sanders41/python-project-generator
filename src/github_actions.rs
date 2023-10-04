@@ -907,7 +907,7 @@ mod tests {
             license: LicenseType::Mit,
             copyright_year: Some("2023".to_string()),
             version: "0.1.0".to_string(),
-            python_version: "3.11".to_string(),
+            python_version: "3.12".to_string(),
             min_python_version: "3.8".to_string(),
             project_manager: ProjectManager::Maturin,
             is_application: true,
