@@ -439,6 +439,12 @@ dynamic = ["version", "readme"]
 version = {attr = "{{ source_dir }}.__version__"}
 readme = {file = ["README.md"]}
 
+[tool.setuptools.packages.find]
+include = ["{{ source_dir }}*"]
+
+[tool.setuptools.package-data]
+{{ source_dir }} = ["py.typed"]
+
 "#
         .to_string(),
     };
@@ -1793,6 +1799,12 @@ dynamic = ["version", "readme"]
 version = {{attr = "{}.__version__"}}
 readme = {{file = ["README.md"]}}
 
+[tool.setuptools.packages.find]
+include = ["{}*"]
+
+[tool.setuptools.package-data]
+{} = ["py.typed"]
+
 [tool.black]
 line-length = {}
 include = '\.pyi?$'
@@ -1841,6 +1853,8 @@ fix = true
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
+            project_info.source_dir,
+            project_info.source_dir,
             project_info.source_dir,
             project_info.max_line_length,
             project_info.source_dir,
@@ -1886,6 +1900,12 @@ dynamic = ["version", "readme"]
 version = {{attr = "{}.__version__"}}
 readme = {{file = ["README.md"]}}
 
+[tool.setuptools.packages.find]
+include = ["{}*"]
+
+[tool.setuptools.package-data]
+{} = ["py.typed"]
+
 [tool.black]
 line-length = {}
 include = '\.pyi?$'
@@ -1934,6 +1954,8 @@ fix = true
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
+            project_info.source_dir,
+            project_info.source_dir,
             project_info.source_dir,
             project_info.max_line_length,
             project_info.source_dir,
@@ -1978,6 +2000,12 @@ dynamic = ["version", "readme"]
 version = {{attr = "{}.__version__"}}
 readme = {{file = ["README.md"]}}
 
+[tool.setuptools.packages.find]
+include = ["{}*"]
+
+[tool.setuptools.package-data]
+{} = ["py.typed"]
+
 [tool.black]
 line-length = {}
 include = '\.pyi?$'
@@ -2026,6 +2054,8 @@ fix = true
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
+            project_info.source_dir,
+            project_info.source_dir,
             project_info.source_dir,
             project_info.max_line_length,
             project_info.source_dir,
@@ -2071,6 +2101,12 @@ dynamic = ["version", "readme"]
 version = {{attr = "{}.__version__"}}
 readme = {{file = ["README.md"]}}
 
+[tool.setuptools.packages.find]
+include = ["{}*"]
+
+[tool.setuptools.package-data]
+{} = ["py.typed"]
+
 [tool.black]
 line-length = {}
 include = '\.pyi?$'
@@ -2119,6 +2155,8 @@ fix = true
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
+            project_info.source_dir,
+            project_info.source_dir,
             project_info.source_dir,
             project_info.max_line_length,
             project_info.source_dir,
