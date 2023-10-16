@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use anyhow::Result;
 
 #[derive(Debug)]
@@ -30,6 +32,7 @@ impl LatestVersion for PreCommitHookVersion {
         let response = client
             .get(api_url)
             .header(reqwest::header::USER_AGENT, "python-project-generator")
+            .timeout(Duration::new(5, 0))
             .send()?
             .text()?;
         let info: Vec<serde_json::Value> = serde_json::from_str(&response)?;
@@ -53,7 +56,12 @@ pub struct PythonPackageVersion {
 impl LatestVersion for PythonPackageVersion {
     fn get_latest_version(&mut self) -> Result<()> {
         let url = format!("https://pypi.org/pypi/{}/json", self.name);
-        let response = reqwest::blocking::get(url)?.text()?;
+        let client = reqwest::blocking::Client::new();
+        let response = client
+            .get(url)
+            .timeout(Duration::new(5, 0))
+            .send()?
+            .text()?;
         let info: serde_json::Value = serde_json::from_str(&response)?;
         self.name = info["info"]["name"].to_string().replace('"', "");
         self.version = info["info"]["version"].to_string().replace('"', "");
@@ -76,6 +84,7 @@ impl LatestVersion for RustPackageVersion {
         let response = client
             .get(url)
             .header(reqwest::header::USER_AGENT, "python-project-generator")
+            .timeout(Duration::new(5, 0))
             .send()?
             .text()?;
         let info: serde_json::Value = serde_json::from_str(&response)?;
