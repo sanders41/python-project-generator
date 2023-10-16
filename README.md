@@ -77,6 +77,13 @@ poetry install
 
 Install the Python dependencies when using setuptools.
 
+First create a virtual environment and activate it.
+
+```sh
+python -m venv .venv
+. .venv/bin/activate
+```
+
 ```sh
 python -m pip install -r requirements-dev.txt
 ```
