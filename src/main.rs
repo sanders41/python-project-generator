@@ -35,7 +35,7 @@ fn create(project_info: &ProjectInfo) -> Result<()> {
 }
 
 fn print_error(err: Error) {
-    println!("\n{}", err.to_string().red());
+    eprintln!("\n{}", err.to_string().red());
 }
 
 fn delete_slug(project_info: &ProjectInfo) -> Result<()> {
@@ -244,7 +244,7 @@ fn main() {
             Param::Reset => {
                 if Config::reset().is_err() {
                     let message = "Error resetting config.";
-                    println!("{}", message.red());
+                    eprintln!("{}", message.red());
                     exit(1);
                 }
             }
