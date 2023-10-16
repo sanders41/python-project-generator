@@ -679,10 +679,8 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
         }
     }
 
-    if project_info.use_continuous_deployment {
-        if save_pypi_publish_file(project_info).is_err() {
-            bail!("Error creating PYPI publish file");
-        }
+    if project_info.use_continuous_deployment && save_pypi_publish_file(project_info).is_err() {
+        bail!("Error creating PYPI publish file");
     }
 
     if project_info.use_multi_os_ci {
