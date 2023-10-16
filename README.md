@@ -8,7 +8,13 @@ created.
 
 ## Pure Python project included packages
 
-- [poetry](https://python-poetry.org/) for package managment
+For package managment choose between:
+
+- [poetry](https://python-poetry.org/)
+- [setuptools](https://github.com/pypa/setuptools)
+
+Dev packages:
+
 - [black](https://github.com/psf/black) for code formatting
 - [mypy](https://www.mypy-lang.org/) for static type checking
 - [pre-commit](https://github.com/pre-commit/pre-commit) for pre-commit hooks
@@ -63,10 +69,16 @@ After running the generator a new directory will be created with the name you us
 
 ### Pure Python Projects
 
-Install the Python dependencies.
+Install the Python dependencies when using Poetry.
 
 ```sh
 poetry install
+```
+
+Install the Python dependencies when using setuptools.
+
+```sh
+python -m pip install -r requirements-dev.txt
 ```
 
 Install the pre-commit hooks.
