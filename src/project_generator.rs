@@ -369,6 +369,7 @@ fn build_latest_dev_dependencies(
     if let ProjectManager::Poetry = project_manager {
         version_string.trim().to_string()
     } else {
+        version_string.push_str("-e .\n");
         version_string
     }
 }
@@ -522,28 +523,13 @@ fn save_pyproject_toml_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn save_pyo3_dev_requirements(project_info: &ProjectInfo) -> Result<()> {
+fn save_dev_requirements(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info.base_dir().join("requirements-dev.txt");
     let content = build_latest_dev_dependencies(
         project_info.is_application,
         project_info.download_latest_packages,
-        &ProjectManager::Maturin,
+        &project_info.project_manager,
     );
-
-    save_file_with_content(&file_path, &content)?;
-
-    Ok(())
-}
-
-fn save_setuptools_dev_requirements(project_info: &ProjectInfo) -> Result<()> {
-    let file_path = project_info.base_dir().join("requirements-dev.txt");
-    let mut content = build_latest_dev_dependencies(
-        project_info.is_application,
-        project_info.download_latest_packages,
-        &ProjectManager::Setuptools,
-    );
-
-    content.push_str("-e .\n");
 
     save_file_with_content(&file_path, &content)?;
 
@@ -656,7 +642,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
     }
 
     if let ProjectManager::Maturin = &project_info.project_manager {
-        if save_pyo3_dev_requirements(project_info).is_err() {
+        if save_dev_requirements(project_info).is_err() {
             bail!("Error creating requirements-dev.txt file");
         }
 
@@ -674,7 +660,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
     }
 
     if let ProjectManager::Setuptools = &project_info.project_manager {
-        if save_setuptools_dev_requirements(project_info).is_err() {
+        if save_dev_requirements(project_info).is_err() {
             bail!("Error creating requirements-dev.txt file");
         }
     }
@@ -739,6 +725,56 @@ mod tests {
             download_latest_packages: false,
             project_root_dir: Some(tempdir().unwrap().path().to_path_buf()),
         }
+    }
+
+    fn pinned_poetry_dependencies() -> String {
+        r#"[tool.poetry.group.dev.dependencies]
+black = "23.9.1"
+mypy = "1.5.1"
+pre-commit = "3.4.0"
+pytest = "7.4.2"
+pytest-cov = "4.1.0"
+ruff = "0.0.289"
+tomli = {version = "2.0.1", python = "<3.11"}"#
+            .to_string()
+    }
+
+    fn min_poetry_dependencies() -> String {
+        r#"[tool.poetry.group.dev.dependencies]
+black = ">=23.9.1"
+mypy = ">=1.5.1"
+pre-commit = ">=3.4.0"
+pytest = ">=7.4.2"
+pytest-cov = ">=4.1.0"
+ruff = ">=0.0.289"
+tomli = {version = ">=2.0.1", python = "<3.11"}"#
+            .to_string()
+    }
+
+    fn pinned_requirments_file() -> String {
+        r#"black==23.9.1
+mypy==1.5.1
+pre-commit==3.4.0
+pytest==7.4.2
+pytest-cov==4.1.0
+ruff==0.0.289
+maturin==1.2.3
+-e .
+"#
+        .to_string()
+    }
+
+    fn min_requirments_file() -> String {
+        r#"black>=23.9.1
+mypy>=1.5.1
+pre-commit>=3.4.0
+pytest>=7.4.2
+pytest-cov>=4.1.0
+ruff>=0.0.289
+maturin>=1.2.3
+-e .
+"#
+        .to_string()
     }
 
     #[test]
@@ -1125,14 +1161,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^{}"
 
-[tool.poetry.group.dev.dependencies]
-black = "23.9.1"
-mypy = "1.5.1"
-pre-commit = "3.4.0"
-pytest = "7.4.2"
-pytest-cov = "4.1.0"
-ruff = "0.0.289"
-tomli = {{version = "2.0.1", python = "<3.11"}}
+{}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -1187,6 +1216,7 @@ fix = true
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
+            pinned_poetry_dependencies(),
             project_info.max_line_length,
             project_info.source_dir,
             project_info.max_line_length,
@@ -1224,14 +1254,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^{}"
 
-[tool.poetry.group.dev.dependencies]
-black = "23.9.1"
-mypy = "1.5.1"
-pre-commit = "3.4.0"
-pytest = "7.4.2"
-pytest-cov = "4.1.0"
-ruff = "0.0.289"
-tomli = {{version = "2.0.1", python = "<3.11"}}
+{}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -1286,6 +1309,7 @@ fix = true
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
+            pinned_poetry_dependencies(),
             project_info.max_line_length,
             project_info.source_dir,
             project_info.max_line_length,
@@ -1322,14 +1346,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^{}"
 
-[tool.poetry.group.dev.dependencies]
-black = "23.9.1"
-mypy = "1.5.1"
-pre-commit = "3.4.0"
-pytest = "7.4.2"
-pytest-cov = "4.1.0"
-ruff = "0.0.289"
-tomli = {{version = "2.0.1", python = "<3.11"}}
+{}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -1384,6 +1401,7 @@ fix = true
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
+            pinned_poetry_dependencies(),
             project_info.max_line_length,
             project_info.source_dir,
             project_info.max_line_length,
@@ -1421,14 +1439,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^{}"
 
-[tool.poetry.group.dev.dependencies]
-black = ">=23.9.1"
-mypy = ">=1.5.1"
-pre-commit = ">=3.4.0"
-pytest = ">=7.4.2"
-pytest-cov = ">=4.1.0"
-ruff = ">=0.0.289"
-tomli = {{version = ">=2.0.1", python = "<3.11"}}
+{}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -1483,6 +1494,7 @@ fix = true
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
+            min_poetry_dependencies(),
             project_info.max_line_length,
             project_info.source_dir,
             project_info.max_line_length,
@@ -2175,106 +2187,70 @@ fix = true
 
     #[test]
     fn test_save_pyo3_dev_requirements_application_file() {
-        let expected = r#"black==23.9.1
-mypy==1.5.1
-pre-commit==3.4.0
-pytest==7.4.2
-pytest-cov==4.1.0
-ruff==0.0.289
-maturin==1.2.3
-"#;
-
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
         project_info.is_application = true;
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("requirements-dev.txt");
-        save_pyo3_dev_requirements(&project_info).unwrap();
+        save_dev_requirements(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_eq!(content, pinned_requirments_file());
     }
 
     #[test]
     fn test_save_pyo3_dev_requirements_lib_file() {
-        let expected = r#"black>=23.9.1
-mypy>=1.5.1
-pre-commit>=3.4.0
-pytest>=7.4.2
-pytest-cov>=4.1.0
-ruff>=0.0.289
-maturin>=1.2.3
-"#;
-
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
         project_info.is_application = false;
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("requirements-dev.txt");
-        save_pyo3_dev_requirements(&project_info).unwrap();
+        save_dev_requirements(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_eq!(content, min_requirments_file());
     }
 
     #[test]
     fn test_save_setuptools_dev_requirements_application_file() {
-        let expected = r#"black==23.9.1
-mypy==1.5.1
-pre-commit==3.4.0
-pytest==7.4.2
-pytest-cov==4.1.0
-ruff==0.0.289
--e .
-"#;
-
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
         project_info.is_application = true;
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("requirements-dev.txt");
-        save_setuptools_dev_requirements(&project_info).unwrap();
+        save_dev_requirements(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_eq!(content, pinned_requirments_file());
     }
 
     #[test]
     fn test_save_setuptools_dev_requirements_lib_file() {
-        let expected = r#"black>=23.9.1
-mypy>=1.5.1
-pre-commit>=3.4.0
-pytest>=7.4.2
-pytest-cov>=4.1.0
-ruff>=0.0.289
--e .
-"#;
-
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
         project_info.is_application = false;
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("requirements-dev.txt");
-        save_setuptools_dev_requirements(&project_info).unwrap();
+        save_dev_requirements(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_eq!(content, min_requirments_file());
     }
 
     #[test]
