@@ -71,7 +71,7 @@ fn main() {
                 pb.set_style(
                     progress_style.tick_strings(&["⣷", "⣯", "⣟", "⡿", "⢿", "⣻", "⣽", "⣾"]),
                 );
-                pb.set_message("Generataing Project...");
+                pb.set_message("Generating Project...");
                 create_result = create(&project_info);
                 pb.finish_and_clear();
             } else {
