@@ -205,12 +205,12 @@ fn build_latest_pre_commit_dependencies(
         PreCommitHookVersion {
             id: PreCommitHook::PreCommit,
             repo: "https://github.com/pre-commit/pre-commit-hooks".to_string(),
-            rev: "v4.4.0".to_string(),
+            rev: "v4.5.0".to_string(),
         },
         PreCommitHookVersion {
             id: PreCommitHook::Black,
             repo: "https://github.com/psf/black".to_string(),
-            rev: "23.9.1".to_string(),
+            rev: "23.10.0".to_string(),
         },
         PreCommitHookVersion {
             id: PreCommitHook::MyPy,
@@ -220,7 +220,7 @@ fn build_latest_pre_commit_dependencies(
         PreCommitHookVersion {
             id: PreCommitHook::Ruff,
             repo: "https://github.com/astral-sh/ruff-pre-commit".to_string(),
-            rev: "v0.0.289".to_string(),
+            rev: "v0.1.0".to_string(),
         },
     ];
 
@@ -299,7 +299,7 @@ fn build_latest_dev_dependencies(
     let mut packages = vec![
         PythonPackageVersion {
             name: "black".to_string(),
-            version: "23.9.1".to_string(),
+            version: "23.10.0".to_string(),
         },
         PythonPackageVersion {
             name: "mypy".to_string(),
@@ -307,7 +307,7 @@ fn build_latest_dev_dependencies(
         },
         PythonPackageVersion {
             name: "pre-commit".to_string(),
-            version: "3.4.0".to_string(),
+            version: "3.5.0".to_string(),
         },
         PythonPackageVersion {
             name: "pytest".to_string(),
@@ -319,7 +319,7 @@ fn build_latest_dev_dependencies(
         },
         PythonPackageVersion {
             name: "ruff".to_string(),
-            version: "0.0.289".to_string(),
+            version: "0.1.0".to_string(),
         },
     ];
 
@@ -729,35 +729,35 @@ mod tests {
 
     fn pinned_poetry_dependencies() -> String {
         r#"[tool.poetry.group.dev.dependencies]
-black = "23.9.1"
+black = "23.10.0"
 mypy = "1.5.1"
-pre-commit = "3.4.0"
+pre-commit = "3.5.0"
 pytest = "7.4.2"
 pytest-cov = "4.1.0"
-ruff = "0.0.289"
+ruff = "0.1.0"
 tomli = {version = "2.0.1", python = "<3.11"}"#
             .to_string()
     }
 
     fn min_poetry_dependencies() -> String {
         r#"[tool.poetry.group.dev.dependencies]
-black = ">=23.9.1"
+black = ">=23.10.0"
 mypy = ">=1.5.1"
-pre-commit = ">=3.4.0"
+pre-commit = ">=3.5.0"
 pytest = ">=7.4.2"
 pytest-cov = ">=4.1.0"
-ruff = ">=0.0.289"
+ruff = ">=0.1.0"
 tomli = {version = ">=2.0.1", python = "<3.11"}"#
             .to_string()
     }
 
     fn pinned_requirments_file() -> String {
-        r#"black==23.9.1
+        r#"black==23.10.0
 mypy==1.5.1
-pre-commit==3.4.0
+pre-commit==3.5.0
 pytest==7.4.2
 pytest-cov==4.1.0
-ruff==0.0.289
+ruff==0.1.0
 maturin==1.2.3
 -e .
 "#
@@ -765,12 +765,12 @@ maturin==1.2.3
     }
 
     fn min_requirments_file() -> String {
-        r#"black>=23.9.1
+        r#"black>=23.10.0
 mypy>=1.5.1
-pre-commit>=3.4.0
+pre-commit>=3.5.0
 pytest>=7.4.2
 pytest-cov>=4.1.0
-ruff>=0.0.289
+ruff>=0.1.0
 maturin>=1.2.3
 -e .
 "#
@@ -1100,7 +1100,7 @@ dmypy.json
         let expected = format!(
             r#"repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
     - id: check-added-large-files
     - id: check-toml
@@ -1109,7 +1109,7 @@ dmypy.json
     - id: end-of-file-fixer
     - id: trailing-whitespace
   - repo: https://github.com/psf/black
-    rev: 23.9.1
+    rev: 23.10.0
     hooks:
     - id: black
       language_version: python3
@@ -1119,7 +1119,7 @@ dmypy.json
     hooks:
     - id: mypy
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.289
+    rev: v0.1.0
     hooks:
     - id: ruff
       args: [--fix, --exit-non-zero-on-fix]
