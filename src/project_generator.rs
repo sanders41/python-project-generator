@@ -220,7 +220,7 @@ fn build_latest_pre_commit_dependencies(
         PreCommitHookVersion {
             id: PreCommitHook::Ruff,
             repo: "https://github.com/astral-sh/ruff-pre-commit".to_string(),
-            rev: "v0.1.1".to_string(),
+            rev: "v0.1.2".to_string(),
         },
     ];
 
@@ -319,7 +319,7 @@ fn build_latest_dev_dependencies(
         },
         PythonPackageVersion {
             name: "ruff".to_string(),
-            version: "0.1.1".to_string(),
+            version: "0.1.2".to_string(),
         },
     ];
 
@@ -704,7 +704,7 @@ mod tests {
             creator_email: "authur@heartofgold.com".to_string(),
             license: LicenseType::Mit,
             copyright_year: Some("2023".to_string()),
-            version: "0.1.1".to_string(),
+            version: "0.1.2".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.8".to_string(),
             project_manager: ProjectManager::Poetry,
@@ -734,7 +734,7 @@ mypy = "1.6.1"
 pre-commit = "3.5.0"
 pytest = "7.4.2"
 pytest-cov = "4.1.0"
-ruff = "0.1.1"
+ruff = "0.1.2"
 tomli = {version = "2.0.1", python = "<3.11"}"#
             .to_string()
     }
@@ -746,7 +746,7 @@ mypy = ">=1.6.1"
 pre-commit = ">=3.5.0"
 pytest = ">=7.4.2"
 pytest-cov = ">=4.1.0"
-ruff = ">=0.1.1"
+ruff = ">=0.1.2"
 tomli = {version = ">=2.0.1", python = "<3.11"}"#
             .to_string()
     }
@@ -757,7 +757,7 @@ mypy==1.6.1
 pre-commit==3.5.0
 pytest==7.4.2
 pytest-cov==4.1.0
-ruff==0.1.1
+ruff==0.1.2
 maturin==1.3.1
 -e .
 "#
@@ -770,7 +770,7 @@ mypy>=1.6.1
 pre-commit>=3.5.0
 pytest>=7.4.2
 pytest-cov>=4.1.0
-ruff>=0.1.1
+ruff>=0.1.2
 maturin>=1.3.1
 -e .
 "#
@@ -1119,7 +1119,7 @@ dmypy.json
     hooks:
     - id: mypy
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.1
+    rev: v0.1.2
     hooks:
     - id: ruff
       args: [--fix, --exit-non-zero-on-fix]
