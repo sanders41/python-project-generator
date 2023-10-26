@@ -450,8 +450,8 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
+  # Recommended ignores by ruff when using formatter
   "E501",
-  # Recommened ignores by ruff when using formatter
   "W191",
   "E111",
   "E114",
@@ -1150,8 +1150,8 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
+  # Recommended ignores by ruff when using formatter
   "E501",
-  # Recommened ignores by ruff when using formatter
   "W191",
   "E111",
   "E114",
@@ -1238,8 +1238,8 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
+  # Recommended ignores by ruff when using formatter
   "E501",
-  # Recommened ignores by ruff when using formatter
   "W191",
   "E111",
   "E114",
@@ -1325,8 +1325,8 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
+  # Recommended ignores by ruff when using formatter
   "E501",
-  # Recommened ignores by ruff when using formatter
   "W191",
   "E111",
   "E114",
@@ -1413,8 +1413,8 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
+  # Recommended ignores by ruff when using formatter
   "E501",
-  # Recommened ignores by ruff when using formatter
   "W191",
   "E111",
   "E114",
@@ -1500,8 +1500,8 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
+  # Recommended ignores by ruff when using formatter
   "E501",
-  # Recommened ignores by ruff when using formatter
   "W191",
   "E111",
   "E114",
@@ -1586,8 +1586,8 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
+  # Recommended ignores by ruff when using formatter
   "E501",
-  # Recommened ignores by ruff when using formatter
   "W191",
   "E111",
   "E114",
@@ -1671,8 +1671,8 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
+  # Recommended ignores by ruff when using formatter
   "E501",
-  # Recommened ignores by ruff when using formatter
   "W191",
   "E111",
   "E114",
@@ -1765,8 +1765,8 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
+  # Recommended ignores by ruff when using formatter
   "E501",
-  # Recommened ignores by ruff when using formatter
   "W191",
   "E111",
   "E114",
@@ -1861,8 +1861,8 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
+  # Recommended ignores by ruff when using formatter
   "E501",
-  # Recommened ignores by ruff when using formatter
   "W191",
   "E111",
   "E114",
@@ -1956,8 +1956,8 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
+  # Recommended ignores by ruff when using formatter
   "E501",
-  # Recommened ignores by ruff when using formatter
   "W191",
   "E111",
   "E114",
@@ -2052,8 +2052,8 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
+  # Recommended ignores by ruff when using formatter
   "E501",
-  # Recommened ignores by ruff when using formatter
   "W191",
   "E111",
   "E114",
