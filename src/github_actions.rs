@@ -44,8 +44,8 @@ jobs:
         cache: "poetry"
     - name: Install Dependencies
       run: poetry install
-    - name: Black check
-      run: poetry run black {source_dir} tests --check
+    - name: Ruff format check
+      run: poetry run ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: poetry run ruff check .
     - name: mypy check
@@ -106,8 +106,8 @@ jobs:
       run: |
         python -m pip install -U pip
         python -m pip install -r requirements-dev.txt
-    - name: Black check
-      run: black {source_dir} tests --check
+    - name: Ruff format check
+      run: ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: ruff check .
     - name: mypy check
@@ -195,8 +195,8 @@ jobs:
         python -m pip install -e .
         maturin build --out dist
         python -m pip install --no-index --find-links=dist/ prelude-parser
-    - name: Black check
-      run: black {source_dir} tests --check
+    - name: Ruff format check
+      run: ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: ruff check .
     - name: mypy check
@@ -287,8 +287,8 @@ jobs:
         cache: "poetry"
     - name: Install Dependencies
       run: poetry install
-    - name: Black check
-      run: poetry run black {source_dir} tests --check
+    - name: Ruff format check
+      run: poetry run ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: poetry run ruff check .
     - name: mypy check
@@ -350,8 +350,8 @@ jobs:
       run: |
         python -m pip install -U pip
         python -m pip install -r requirements-dev.txt
-    - name: Black check
-      run: black {source_dir} tests --check
+    - name: Ruff format check
+      run: ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: ruff check .
     - name: mypy check
@@ -440,8 +440,8 @@ jobs:
         python -m pip install -e .
         maturin build --out dist
         python -m pip install --no-index --find-links=dist/ prelude-parser
-    - name: Black check
-      run: black {source_dir} tests --check
+    - name: Ruff format check
+      run: ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: ruff check .
     - name: mypy check
@@ -978,8 +978,8 @@ jobs:
         cache: "poetry"
     - name: Install Dependencies
       run: poetry install
-    - name: Black check
-      run: poetry run black {} tests --check
+    - name: Ruff format check
+      run: poetry run ruff format {} tests --check
     - name: Lint with ruff
       run: poetry run ruff check .
     - name: mypy check
@@ -1080,8 +1080,8 @@ jobs:
         python -m pip install -e .
         maturin build --out dist
         python -m pip install --no-index --find-links=dist/ prelude-parser
-    - name: Black check
-      run: black {} tests --check
+    - name: Ruff format check
+      run: ruff format {} tests --check
     - name: Lint with ruff
       run: ruff check .
     - name: mypy check
@@ -1151,8 +1151,8 @@ jobs:
       run: |
         python -m pip install -U pip
         python -m pip install -r requirements-dev.txt
-    - name: Black check
-      run: black {} tests --check
+    - name: Ruff format check
+      run: ruff format {} tests --check
     - name: Lint with ruff
       run: ruff check .
     - name: mypy check
@@ -1223,8 +1223,8 @@ jobs:
         cache: "poetry"
     - name: Install Dependencies
       run: poetry install
-    - name: Black check
-      run: poetry run black {} tests --check
+    - name: Ruff format check
+      run: poetry run ruff format {} tests --check
     - name: Lint with ruff
       run: poetry run ruff check .
     - name: mypy check
@@ -1296,8 +1296,8 @@ jobs:
       run: |
         python -m pip install -U pip
         python -m pip install -r requirements-dev.txt
-    - name: Black check
-      run: black {} tests --check
+    - name: Ruff format check
+      run: ruff format {} tests --check
     - name: Lint with ruff
       run: ruff check .
     - name: mypy check
@@ -1396,8 +1396,8 @@ jobs:
         python -m pip install -e .
         maturin build --out dist
         python -m pip install --no-index --find-links=dist/ prelude-parser
-    - name: Black check
-      run: black {} tests --check
+    - name: Ruff format check
+      run: ruff format {} tests --check
     - name: Lint with ruff
       run: ruff check .
     - name: mypy check
