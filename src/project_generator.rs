@@ -208,11 +208,6 @@ fn build_latest_pre_commit_dependencies(
             rev: "v4.5.0".to_string(),
         },
         PreCommitHookVersion {
-            id: PreCommitHook::Black,
-            repo: "https://github.com/psf/black".to_string(),
-            rev: "23.10.1".to_string(),
-        },
-        PreCommitHookVersion {
             id: PreCommitHook::MyPy,
             repo: "https://github.com/pre-commit/mirrors-mypy".to_string(),
             rev: "v1.6.1".to_string(),
@@ -239,7 +234,7 @@ fn build_latest_pre_commit_dependencies(
     hooks
 }
 
-fn create_pre_commit_file(max_line_length: &u8, download_latest_packages: bool) -> String {
+fn create_pre_commit_file(download_latest_packages: bool) -> String {
     let mut pre_commit_str = "repos:".to_string();
     let hooks = build_latest_pre_commit_dependencies(download_latest_packages);
     for hook in hooks {
@@ -247,13 +242,6 @@ fn create_pre_commit_file(max_line_length: &u8, download_latest_packages: bool) 
             PreCommitHook::PreCommit => {
                 let info = format!(
                     "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: check-added-large-files\n    - id: check-toml\n    - id: check-yaml\n    - id: debug-statements\n    - id: end-of-file-fixer\n    - id: trailing-whitespace",
-                    hook.repo, hook.rev
-                );
-                pre_commit_str.push_str(&info);
-            }
-            PreCommitHook::Black => {
-                let info = format!(
-                    "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: black\n      language_version: python3\n      args: [--line-length={max_line_length}]",
                     hook.repo, hook.rev
                 );
                 pre_commit_str.push_str(&info);
@@ -267,7 +255,7 @@ fn create_pre_commit_file(max_line_length: &u8, download_latest_packages: bool) 
             }
             PreCommitHook::Ruff => {
                 let info = format!(
-                    "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: ruff\n      args: [--fix, --exit-non-zero-on-fix]",
+                    "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: ruff\n      args: [--fix, --exit-non-zero-on-fix]\n    - id: ruff-format",
                     hook.repo, hook.rev
                 );
                 pre_commit_str.push_str(&info);
@@ -281,10 +269,7 @@ fn create_pre_commit_file(max_line_length: &u8, download_latest_packages: bool) 
 
 fn save_pre_commit_file(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info.base_dir().join(".pre-commit-config.yaml");
-    let content = create_pre_commit_file(
-        &project_info.max_line_length,
-        project_info.download_latest_packages,
-    );
+    let content = create_pre_commit_file(project_info.download_latest_packages);
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
@@ -297,10 +282,6 @@ fn build_latest_dev_dependencies(
 ) -> String {
     let mut version_string = String::new();
     let mut packages = vec![
-        PythonPackageVersion {
-            name: "black".to_string(),
-            version: "23.10.1".to_string(),
-        },
         PythonPackageVersion {
             name: "mypy".to_string(),
             version: "1.6.1".to_string(),
@@ -451,28 +432,7 @@ include = ["{{ source_dir }}*"]
     };
 
     pyproject.push_str(
-        r#"[tool.black]
-line-length = {{ max_line_length }}
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.egg
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.nox
-  | \.tox
-  | \.venv
-  | \venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | setup.py
-)/
-'''
-
-[tool.mypy]
+        r#"[tool.mypy]
 check_untyped_defs = true
 disallow_untyped_defs = true
 
@@ -489,7 +449,24 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
-ignore = ["E501"]
+ignore=[
+  # Recommended ignores by ruff when using formatter
+  "E501",
+  "W191",
+  "E111",
+  "E114",
+  "E117",
+  "D206",
+  "D300",
+  "Q000",
+  "Q001",
+  "Q002",
+  "Q003",
+  "COM812",
+  "COM819",
+  "ISC001",
+  "ISC002",
+]
 line-length = {{ max_line_length }}
 target-version = "py{{ pyupgrade_version }}"
 fix = true
@@ -553,10 +530,10 @@ fn create_pyo3_justfile(source_dir: &str) -> String {
   just --justfile {{{{justfile()}}}} fmt
   echo mypy
   just --justfile {{{{justfile()}}}} mypy
-  echo black
-  just --justfile {{{{justfile()}}}} black
-  echo ruff
+  echo ruff linting
   just --justfile {{{{justfile()}}}} ruff
+  echo ruff formatting
+  just --justfile {{{{justfile()}}}} ruff-format
 
 @check:
   cargo check
@@ -567,14 +544,14 @@ fn create_pyo3_justfile(source_dir: &str) -> String {
 @fmt:
   cargo fmt --all -- --check
 
-@black:
-  black {} tests
-
 @mypy:
   mypy .
 
 @ruff:
   ruff check . --fix
+
+@ruff-format:
+  ruff format {} tests
 
 @test:
   pytest
@@ -729,7 +706,6 @@ mod tests {
 
     fn pinned_poetry_dependencies() -> String {
         r#"[tool.poetry.group.dev.dependencies]
-black = "23.10.1"
 mypy = "1.6.1"
 pre-commit = "3.5.0"
 pytest = "7.4.2"
@@ -741,7 +717,6 @@ tomli = {version = "2.0.1", python = "<3.11"}"#
 
     fn min_poetry_dependencies() -> String {
         r#"[tool.poetry.group.dev.dependencies]
-black = ">=23.10.1"
 mypy = ">=1.6.1"
 pre-commit = ">=3.5.0"
 pytest = ">=7.4.2"
@@ -752,8 +727,7 @@ tomli = {version = ">=2.0.1", python = "<3.11"}"#
     }
 
     fn pinned_requirments_file() -> String {
-        r#"black==23.10.1
-mypy==1.6.1
+        r#"mypy==1.6.1
 pre-commit==3.5.0
 pytest==7.4.2
 pytest-cov==4.1.0
@@ -765,8 +739,7 @@ maturin==1.3.1
     }
 
     fn min_requirments_file() -> String {
-        r#"black>=23.10.1
-mypy>=1.6.1
+        r#"mypy>=1.6.1
 pre-commit>=3.5.0
 pytest>=7.4.2
 pytest-cov>=4.1.0
@@ -1096,9 +1069,7 @@ dmypy.json
 
     #[test]
     fn test_save_pre_commit_file() {
-        let max_line_length: u8 = 100;
-        let expected = format!(
-            r#"repos:
+        let expected = r#"repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -1108,12 +1079,6 @@ dmypy.json
     - id: debug-statements
     - id: end-of-file-fixer
     - id: trailing-whitespace
-  - repo: https://github.com/psf/black
-    rev: 23.10.1
-    hooks:
-    - id: black
-      language_version: python3
-      args: [--line-length={max_line_length}]
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.6.1
     hooks:
@@ -1123,8 +1088,8 @@ dmypy.json
     hooks:
     - id: ruff
       args: [--fix, --exit-non-zero-on-fix]
-"#
-        );
+    - id: ruff-format
+"#;
 
         let project_info = project_info_dummy();
         let base = project_info.base_dir();
@@ -1167,27 +1132,6 @@ python = "^{}"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.black]
-line-length = {}
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.egg
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.nox
-  | \.tox
-  | \.venv
-  | \venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | setup.py
-)/
-'''
-
 [tool.mypy]
 check_untyped_defs = true
 disallow_untyped_defs = true
@@ -1205,7 +1149,24 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
-ignore = ["E501"]
+ignore=[
+  # Recommended ignores by ruff when using formatter
+  "E501",
+  "W191",
+  "E111",
+  "E114",
+  "E117",
+  "D206",
+  "D300",
+  "Q000",
+  "Q001",
+  "Q002",
+  "Q003",
+  "COM812",
+  "COM819",
+  "ISC001",
+  "ISC002",
+]
 line-length = {}
 target-version = "py{}"
 fix = true
@@ -1217,7 +1178,6 @@ fix = true
             project_info.creator_email,
             project_info.min_python_version,
             pinned_poetry_dependencies(),
-            project_info.max_line_length,
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -1260,27 +1220,6 @@ python = "^{}"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.black]
-line-length = {}
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.egg
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.nox
-  | \.tox
-  | \.venv
-  | \venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | setup.py
-)/
-'''
-
 [tool.mypy]
 check_untyped_defs = true
 disallow_untyped_defs = true
@@ -1298,7 +1237,24 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
-ignore = ["E501"]
+ignore=[
+  # Recommended ignores by ruff when using formatter
+  "E501",
+  "W191",
+  "E111",
+  "E114",
+  "E117",
+  "D206",
+  "D300",
+  "Q000",
+  "Q001",
+  "Q002",
+  "Q003",
+  "COM812",
+  "COM819",
+  "ISC001",
+  "ISC002",
+]
 line-length = {}
 target-version = "py{}"
 fix = true
@@ -1310,7 +1266,6 @@ fix = true
             project_info.creator_email,
             project_info.min_python_version,
             pinned_poetry_dependencies(),
-            project_info.max_line_length,
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -1352,27 +1307,6 @@ python = "^{}"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.black]
-line-length = {}
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.egg
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.nox
-  | \.tox
-  | \.venv
-  | \venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | setup.py
-)/
-'''
-
 [tool.mypy]
 check_untyped_defs = true
 disallow_untyped_defs = true
@@ -1390,7 +1324,24 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
-ignore = ["E501"]
+ignore=[
+  # Recommended ignores by ruff when using formatter
+  "E501",
+  "W191",
+  "E111",
+  "E114",
+  "E117",
+  "D206",
+  "D300",
+  "Q000",
+  "Q001",
+  "Q002",
+  "Q003",
+  "COM812",
+  "COM819",
+  "ISC001",
+  "ISC002",
+]
 line-length = {}
 target-version = "py{}"
 fix = true
@@ -1402,7 +1353,6 @@ fix = true
             project_info.creator_email,
             project_info.min_python_version,
             pinned_poetry_dependencies(),
-            project_info.max_line_length,
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -1445,27 +1395,6 @@ python = "^{}"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.black]
-line-length = {}
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.egg
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.nox
-  | \.tox
-  | \.venv
-  | \venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | setup.py
-)/
-'''
-
 [tool.mypy]
 check_untyped_defs = true
 disallow_untyped_defs = true
@@ -1483,7 +1412,24 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
-ignore = ["E501"]
+ignore=[
+  # Recommended ignores by ruff when using formatter
+  "E501",
+  "W191",
+  "E111",
+  "E114",
+  "E117",
+  "D206",
+  "D300",
+  "Q000",
+  "Q001",
+  "Q002",
+  "Q003",
+  "COM812",
+  "COM819",
+  "ISC001",
+  "ISC002",
+]
 line-length = {}
 target-version = "py{}"
 fix = true
@@ -1495,7 +1441,6 @@ fix = true
             project_info.creator_email,
             project_info.min_python_version,
             min_poetry_dependencies(),
-            project_info.max_line_length,
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -1537,27 +1482,6 @@ module-name = "{}._{}"
 binding = "pyo3"
 features = ["pyo3/extension-module"]
 
-[tool.black]
-line-length = {}
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.egg
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.nox
-  | \.tox
-  | \.venv
-  | \venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | setup.py
-)/
-'''
-
 [tool.mypy]
 check_untyped_defs = true
 disallow_untyped_defs = true
@@ -1575,7 +1499,24 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
-ignore = ["E501"]
+ignore=[
+  # Recommended ignores by ruff when using formatter
+  "E501",
+  "W191",
+  "E111",
+  "E114",
+  "E117",
+  "D206",
+  "D300",
+  "Q000",
+  "Q001",
+  "Q002",
+  "Q003",
+  "COM812",
+  "COM819",
+  "ISC001",
+  "ISC002",
+]
 line-length = {}
 target-version = "py{}"
 fix = true
@@ -1586,7 +1527,6 @@ fix = true
             project_info.creator_email,
             project_info.source_dir,
             project_info.source_dir,
-            project_info.max_line_length,
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -1628,27 +1568,6 @@ module-name = "{}._{}"
 binding = "pyo3"
 features = ["pyo3/extension-module"]
 
-[tool.black]
-line-length = {}
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.egg
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.nox
-  | \.tox
-  | \.venv
-  | \venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | setup.py
-)/
-'''
-
 [tool.mypy]
 check_untyped_defs = true
 disallow_untyped_defs = true
@@ -1666,7 +1585,24 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
-ignore = ["E501"]
+ignore=[
+  # Recommended ignores by ruff when using formatter
+  "E501",
+  "W191",
+  "E111",
+  "E114",
+  "E117",
+  "D206",
+  "D300",
+  "Q000",
+  "Q001",
+  "Q002",
+  "Q003",
+  "COM812",
+  "COM819",
+  "ISC001",
+  "ISC002",
+]
 line-length = {}
 target-version = "py{}"
 fix = true
@@ -1677,7 +1613,6 @@ fix = true
             project_info.creator_email,
             project_info.source_dir,
             project_info.source_dir,
-            project_info.max_line_length,
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -1718,27 +1653,6 @@ module-name = "{}._{}"
 binding = "pyo3"
 features = ["pyo3/extension-module"]
 
-[tool.black]
-line-length = {}
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.egg
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.nox
-  | \.tox
-  | \.venv
-  | \venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | setup.py
-)/
-'''
-
 [tool.mypy]
 check_untyped_defs = true
 disallow_untyped_defs = true
@@ -1756,7 +1670,24 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
-ignore = ["E501"]
+ignore=[
+  # Recommended ignores by ruff when using formatter
+  "E501",
+  "W191",
+  "E111",
+  "E114",
+  "E117",
+  "D206",
+  "D300",
+  "Q000",
+  "Q001",
+  "Q002",
+  "Q003",
+  "COM812",
+  "COM819",
+  "ISC001",
+  "ISC002",
+]
 line-length = {}
 target-version = "py{}"
 fix = true
@@ -1767,7 +1698,6 @@ fix = true
             project_info.creator_email,
             project_info.source_dir,
             project_info.source_dir,
-            project_info.max_line_length,
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -1817,27 +1747,6 @@ include = ["{}*"]
 [tool.setuptools.package-data]
 {} = ["py.typed"]
 
-[tool.black]
-line-length = {}
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.egg
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.nox
-  | \.tox
-  | \.venv
-  | \venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | setup.py
-)/
-'''
-
 [tool.mypy]
 check_untyped_defs = true
 disallow_untyped_defs = true
@@ -1855,7 +1764,24 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
-ignore = ["E501"]
+ignore=[
+  # Recommended ignores by ruff when using formatter
+  "E501",
+  "W191",
+  "E111",
+  "E114",
+  "E117",
+  "D206",
+  "D300",
+  "Q000",
+  "Q001",
+  "Q002",
+  "Q003",
+  "COM812",
+  "COM819",
+  "ISC001",
+  "ISC002",
+]
 line-length = {}
 target-version = "py{}"
 fix = true
@@ -1868,7 +1794,6 @@ fix = true
             project_info.source_dir,
             project_info.source_dir,
             project_info.source_dir,
-            project_info.max_line_length,
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -1918,27 +1843,6 @@ include = ["{}*"]
 [tool.setuptools.package-data]
 {} = ["py.typed"]
 
-[tool.black]
-line-length = {}
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.egg
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.nox
-  | \.tox
-  | \.venv
-  | \venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | setup.py
-)/
-'''
-
 [tool.mypy]
 check_untyped_defs = true
 disallow_untyped_defs = true
@@ -1956,7 +1860,24 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
-ignore = ["E501"]
+ignore=[
+  # Recommended ignores by ruff when using formatter
+  "E501",
+  "W191",
+  "E111",
+  "E114",
+  "E117",
+  "D206",
+  "D300",
+  "Q000",
+  "Q001",
+  "Q002",
+  "Q003",
+  "COM812",
+  "COM819",
+  "ISC001",
+  "ISC002",
+]
 line-length = {}
 target-version = "py{}"
 fix = true
@@ -1969,7 +1890,6 @@ fix = true
             project_info.source_dir,
             project_info.source_dir,
             project_info.source_dir,
-            project_info.max_line_length,
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -2018,27 +1938,6 @@ include = ["{}*"]
 [tool.setuptools.package-data]
 {} = ["py.typed"]
 
-[tool.black]
-line-length = {}
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.egg
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.nox
-  | \.tox
-  | \.venv
-  | \venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | setup.py
-)/
-'''
-
 [tool.mypy]
 check_untyped_defs = true
 disallow_untyped_defs = true
@@ -2056,7 +1955,24 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
-ignore = ["E501"]
+ignore=[
+  # Recommended ignores by ruff when using formatter
+  "E501",
+  "W191",
+  "E111",
+  "E114",
+  "E117",
+  "D206",
+  "D300",
+  "Q000",
+  "Q001",
+  "Q002",
+  "Q003",
+  "COM812",
+  "COM819",
+  "ISC001",
+  "ISC002",
+]
 line-length = {}
 target-version = "py{}"
 fix = true
@@ -2069,7 +1985,6 @@ fix = true
             project_info.source_dir,
             project_info.source_dir,
             project_info.source_dir,
-            project_info.max_line_length,
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -2119,27 +2034,6 @@ include = ["{}*"]
 [tool.setuptools.package-data]
 {} = ["py.typed"]
 
-[tool.black]
-line-length = {}
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.egg
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.nox
-  | \.tox
-  | \.venv
-  | \venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | setup.py
-)/
-'''
-
 [tool.mypy]
 check_untyped_defs = true
 disallow_untyped_defs = true
@@ -2157,7 +2051,24 @@ exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
-ignore = ["E501"]
+ignore=[
+  # Recommended ignores by ruff when using formatter
+  "E501",
+  "W191",
+  "E111",
+  "E114",
+  "E117",
+  "D206",
+  "D300",
+  "Q000",
+  "Q001",
+  "Q002",
+  "Q003",
+  "COM812",
+  "COM819",
+  "ISC001",
+  "ISC002",
+]
 line-length = {}
 target-version = "py{}"
 fix = true
@@ -2170,7 +2081,6 @@ fix = true
             project_info.source_dir,
             project_info.source_dir,
             project_info.source_dir,
-            project_info.max_line_length,
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -2277,10 +2187,10 @@ fix = true
   just --justfile {{{{justfile()}}}} fmt
   echo mypy
   just --justfile {{{{justfile()}}}} mypy
-  echo black
-  just --justfile {{{{justfile()}}}} black
-  echo ruff
+  echo ruff linting
   just --justfile {{{{justfile()}}}} ruff
+  echo ruff formatting
+  just --justfile {{{{justfile()}}}} ruff-format
 
 @check:
   cargo check
@@ -2291,14 +2201,14 @@ fix = true
 @fmt:
   cargo fmt --all -- --check
 
-@black:
-  black {} tests
-
 @mypy:
   mypy .
 
 @ruff:
   ruff check . --fix
+
+@ruff-format:
+  ruff format {} tests
 
 @test:
   pytest

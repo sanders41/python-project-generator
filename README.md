@@ -15,25 +15,23 @@ For package managment choose between:
 
 Dev packages:
 
-- [black](https://github.com/psf/black) for code formatting
 - [mypy](https://www.mypy-lang.org/) for static type checking
 - [pre-commit](https://github.com/pre-commit/pre-commit) for pre-commit hooks
 - [pytest](https://docs.pytest.org/en/latest/) for testing
 - [pytest-cov](https://github.com/pytest-dev/pytest-cov) for test coverage reports
-- [ruff](https://beta.ruff.rs/docs/) for linting
+- [ruff](https://beta.ruff.rs/docs/) for linting and code formatting
 
 ## Python project with Rust modules included packages
 
 - [maturin](https://github.com/PyO3/maturin) for package management
-- [black](https://github.com/psf/black) for code formatting
 - [mypy](https://www.mypy-lang.org/) for static type checking
 - [pre-commit](https://github.com/pre-commit/pre-commit) for pre-commit hooks
 - [pytest](https://docs.pytest.org/en/latest/) for testing
 - [pytest-cov](https://github.com/pytest-dev/pytest-cov) for test coverage reports
-- [ruff](https://beta.ruff.rs/docs/) for linting
+- [ruff](https://beta.ruff.rs/docs/) for linting and code formatting
 - [PyO3](https://github.com/PyO3/pyo3) for managing the Rust/Python FFI
 - [justfile](https://github.com/casey/just) for running commands (to use this you will need to
-install just)
+  install just)
 
 ## Installation
 

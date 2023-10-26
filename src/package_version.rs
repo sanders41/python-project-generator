@@ -4,7 +4,6 @@ use anyhow::Result;
 
 #[derive(Debug)]
 pub enum PreCommitHook {
-    Black,
     PreCommit,
     MyPy,
     Ruff,
