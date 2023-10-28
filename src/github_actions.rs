@@ -655,7 +655,7 @@ jobs:
         poetry install
     - name: Add pypi token to Poetry
       run: |
-        poetry config pypi-token.pypi {{{{ "${{{{ secrets.PYPI_API_KEY }}}}" }}}}
+        poetry config pypi-token.pypi ${{{{ secrets.PYPI_API_KEY }}}}
     - name: Publish package
       run: poetry publish --build
 "#
@@ -792,13 +792,10 @@ jobs:
         python -m pip install -U pip
         python -m pip -r requirements-dev.txt
         python -m pip install build setuptools wheel twine
-    - name: Add pypi token to Poetry
-      run: |
-        poetry config pypi-token.pypi {{{{ "${{{{ secrets.PYPI_API_KEY }}}}" }}}}
     - name: Publish package
       env:
         TWINE_USERNAME: __token__
-        TWINE_PASSWORD: "${{{{ secrets.PYPI_API_KEY }}}}"
+        TWINE_PASSWORD: ${{{{ secrets.PYPI_API_KEY }}}}
       run: |
         python -m build
         twine upload dist/*
@@ -1898,7 +1895,7 @@ jobs:
         poetry install
     - name: Add pypi token to Poetry
       run: |
-        poetry config pypi-token.pypi {{{{ "${{{{ secrets.PYPI_API_KEY }}}}" }}}}
+        poetry config pypi-token.pypi ${{{{ secrets.PYPI_API_KEY }}}}
     - name: Publish package
       run: poetry publish --build
 "#,
