@@ -307,7 +307,7 @@ fn build_latest_dev_dependencies(
     match project_manager {
         ProjectManager::Maturin => packages.push(PythonPackageVersion {
             name: "maturin".to_string(),
-            version: "1.3.1".to_string(),
+            version: "1/3/2".to_string(),
         }),
         ProjectManager::Poetry => packages.push(PythonPackageVersion {
             name: "tomli".to_string(),
@@ -732,7 +732,7 @@ pre-commit==3.5.0
 pytest==7.4.2
 pytest-cov==4.1.0
 ruff==0.1.3
-maturin==1.3.1
+maturin==1/3/2
 -e .
 "#
         .to_string()
@@ -744,7 +744,7 @@ pre-commit>=3.5.0
 pytest>=7.4.2
 pytest-cov>=4.1.0
 ruff>=0.1.3
-maturin>=1.3.1
+maturin>=1/3/2
 -e .
 "#
         .to_string()
