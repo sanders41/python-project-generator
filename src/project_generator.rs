@@ -731,8 +731,8 @@ tomli = {version = ">=2.0.1", python = "<3.11"}"#
 pre-commit==3.5.0
 pytest==7.4.2
 pytest-cov==4.1.0
-maturin==1.3.2
 ruff==0.1.5
+maturin==1.3.2
 -e .
 "#
         .to_string()
@@ -743,8 +743,8 @@ ruff==0.1.5
 pre-commit>=3.5.0
 pytest>=7.4.2
 pytest-cov>=4.1.0
-maturin>=1.3.2
 ruff>=0.1.5
+maturin>=1.3.2
 -e .
 "#
         .to_string()
