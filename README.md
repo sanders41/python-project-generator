@@ -35,7 +35,8 @@ Dev packages:
 
 ## Installation
 
-First install [Rust](https://www.rust-lang.org/tools/install). Then to install the package run:
+Python Project Generator can be installed with binaries provided with each release
+[here](https://github.com/sanders41/python-project-generator/releases), or with cargo.
 
 ```sh
 cargo install python-project-generator
