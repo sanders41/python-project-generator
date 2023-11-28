@@ -210,7 +210,7 @@ fn build_latest_pre_commit_dependencies(
         PreCommitHookVersion {
             id: PreCommitHook::MyPy,
             repo: "https://github.com/pre-commit/mirrors-mypy".to_string(),
-            rev: "v1.7.0".to_string(),
+            rev: "v1.7.1".to_string(),
         },
         PreCommitHookVersion {
             id: PreCommitHook::Ruff,
@@ -284,7 +284,7 @@ fn build_latest_dev_dependencies(
     let mut packages = vec![
         PythonPackageVersion {
             name: "mypy".to_string(),
-            version: "1.7.0".to_string(),
+            version: "1.7.1".to_string(),
         },
         PythonPackageVersion {
             name: "pre-commit".to_string(),
@@ -706,7 +706,7 @@ mod tests {
 
     fn pinned_poetry_dependencies() -> String {
         r#"[tool.poetry.group.dev.dependencies]
-mypy = "1.7.0"
+mypy = "1.7.1"
 pre-commit = "3.5.0"
 pytest = "7.4.2"
 pytest-cov = "4.1.0"
@@ -717,7 +717,7 @@ tomli = {version = "2.0.1", python = "<3.11"}"#
 
     fn min_poetry_dependencies() -> String {
         r#"[tool.poetry.group.dev.dependencies]
-mypy = ">=1.7.0"
+mypy = ">=1.7.1"
 pre-commit = ">=3.5.0"
 pytest = ">=7.4.2"
 pytest-cov = ">=4.1.0"
@@ -727,7 +727,7 @@ tomli = {version = ">=2.0.1", python = "<3.11"}"#
     }
 
     fn pinned_requirments_file() -> String {
-        r#"mypy==1.7.0
+        r#"mypy==1.7.1
 pre-commit==3.5.0
 pytest==7.4.2
 pytest-cov==4.1.0
@@ -739,7 +739,7 @@ maturin==1.3.2
     }
 
     fn min_requirments_file() -> String {
-        r#"mypy>=1.7.0
+        r#"mypy>=1.7.1
 pre-commit>=3.5.0
 pytest>=7.4.2
 pytest-cov>=4.1.0
@@ -1080,7 +1080,7 @@ dmypy.json
     - id: end-of-file-fixer
     - id: trailing-whitespace
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.7.0
+    rev: v1.7.1
     hooks:
     - id: mypy
   - repo: https://github.com/astral-sh/ruff-pre-commit
