@@ -7,7 +7,7 @@ name: Publish binaries to release
 
 jobs:
   publish:
-    name: Publish for ${{ matrix.os }}
+    name: Publish for ${{ matrix.os }} ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -16,10 +16,6 @@ jobs:
             artifact_name: python-project
             asset_name: python-project-generator-linux-amd64
             target: x86_64-unknown-linux-gnu
-          - os: ubuntu-latest
-            artifact_name: python-project
-            asset_name: python-project-generator-linux-aarch64
-            target: aarch64-unknown-linux-gnu
           - os: macos-latest
             artifact_name: python-project
             asset_name: python-project-generator-macos-amd64
