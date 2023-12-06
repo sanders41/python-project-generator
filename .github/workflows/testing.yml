@@ -68,7 +68,7 @@ jobs:
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "${{ env.MIN_PYTHON_VERSION }}"
     - name: Build package
@@ -106,7 +106,7 @@ jobs:
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "3.11"
     - name: Build package
@@ -139,7 +139,7 @@ jobs:
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2.7.1
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "${{ env.MIN_PYTHON_VERSION }}"
     - name: Build package
@@ -181,7 +181,7 @@ jobs:
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2.7.1
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "3.11"
     - name: Build package
@@ -216,7 +216,7 @@ jobs:
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2.7.1
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "${{ env.MIN_PYTHON_VERSION }}"
     - name: Build package
@@ -250,7 +250,7 @@ jobs:
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2.7.1
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "3.11"
     - name: Build package
