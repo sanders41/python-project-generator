@@ -288,7 +288,7 @@ fn build_latest_dev_dependencies(
         },
         PythonPackageVersion {
             name: "pre-commit".to_string(),
-            version: "3.5.0".to_string(),
+            version: "3.6.0".to_string(),
         },
         PythonPackageVersion {
             name: "pytest".to_string(),
@@ -707,7 +707,7 @@ mod tests {
     fn pinned_poetry_dependencies() -> String {
         r#"[tool.poetry.group.dev.dependencies]
 mypy = "1.7.1"
-pre-commit = "3.5.0"
+pre-commit = "3.6.0"
 pytest = "7.4.2"
 pytest-cov = "4.1.0"
 ruff = "0.1.7"
@@ -718,7 +718,7 @@ tomli = {version = "2.0.1", python = "<3.11"}"#
     fn min_poetry_dependencies() -> String {
         r#"[tool.poetry.group.dev.dependencies]
 mypy = ">=1.7.1"
-pre-commit = ">=3.5.0"
+pre-commit = ">=3.6.0"
 pytest = ">=7.4.2"
 pytest-cov = ">=4.1.0"
 ruff = ">=0.1.7"
@@ -728,7 +728,7 @@ tomli = {version = ">=2.0.1", python = "<3.11"}"#
 
     fn pinned_requirments_file() -> String {
         r#"mypy==1.7.1
-pre-commit==3.5.0
+pre-commit==3.6.0
 pytest==7.4.2
 pytest-cov==4.1.0
 ruff==0.1.7
@@ -740,7 +740,7 @@ maturin==1.4.0
 
     fn min_requirments_file() -> String {
         r#"mypy>=1.7.1
-pre-commit>=3.5.0
+pre-commit>=3.6.0
 pytest>=7.4.2
 pytest-cov>=4.1.0
 ruff>=0.1.7
