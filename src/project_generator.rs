@@ -734,16 +734,23 @@ maturin=={maturin}
         )
     }
 
-    fn min_requirments_file() -> String {
-        r#"mypy>=1.7.1
-pre-commit>=3.5.0
-pytest>=7.4.2
-pytest-cov>=4.1.0
-ruff>=0.1.7
-maturin>=1.4.0
+    fn min_requirments_file(min_python_version: &str) -> String {
+        let mypy = default_version(&PythonPackage::MyPy, min_python_version);
+        let maturin = default_version(&PythonPackage::Maturin, min_python_version);
+        let pre_commit = default_version(&PythonPackage::PreCommit, min_python_version);
+        let pytest = default_version(&PythonPackage::Pytest, min_python_version);
+        let pytest_cov = default_version(&PythonPackage::PytestCov, min_python_version);
+        let ruff = default_version(&PythonPackage::Ruff, min_python_version);
+        format!(
+            r#"mypy>={mypy}
+pre-commit>={pre_commit}
+pytest>={pytest}
+pytest-cov>={pytest_cov}
+ruff>={ruff}
+maturin>={maturin}
 -e .
 "#
-        .to_string()
+        )
     }
 
     #[test]
@@ -2133,7 +2140,10 @@ fix = true
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, min_requirments_file());
+        assert_eq!(
+            content,
+            min_requirments_file(&project_info.min_python_version)
+        );
     }
 
     #[test]
@@ -2170,7 +2180,10 @@ fix = true
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, min_requirments_file());
+        assert_eq!(
+            content,
+            min_requirments_file(&project_info.min_python_version)
+        );
     }
 
     #[test]
