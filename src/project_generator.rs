@@ -11,7 +11,7 @@ use crate::github_actions::{
 };
 use crate::licenses::{generate_license, license_str};
 use crate::package_version::{
-    LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackageVersion,
+    LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackage, PythonPackageVersion,
 };
 use crate::project_info::{ProjectInfo, ProjectManager};
 use crate::python_files::generate_python_files;
@@ -202,21 +202,9 @@ fn build_latest_pre_commit_dependencies(
     download_latest_packages: bool,
 ) -> Vec<PreCommitHookVersion> {
     let mut hooks = vec![
-        PreCommitHookVersion {
-            id: PreCommitHook::PreCommit,
-            repo: "https://github.com/pre-commit/pre-commit-hooks".to_string(),
-            rev: "v4.5.0".to_string(),
-        },
-        PreCommitHookVersion {
-            id: PreCommitHook::MyPy,
-            repo: "https://github.com/pre-commit/mirrors-mypy".to_string(),
-            rev: "v1.7.1".to_string(),
-        },
-        PreCommitHookVersion {
-            id: PreCommitHook::Ruff,
-            repo: "https://github.com/astral-sh/ruff-pre-commit".to_string(),
-            rev: "v0.1.7".to_string(),
-        },
+        PreCommitHookVersion::new(PreCommitHook::PreCommit),
+        PreCommitHookVersion::new(PreCommitHook::MyPy),
+        PreCommitHookVersion::new(PreCommitHook::Ruff),
     ];
 
     if download_latest_packages {
@@ -224,7 +212,7 @@ fn build_latest_pre_commit_dependencies(
             if hook.get_latest_version().is_err() {
                 let error_message = format!(
                     "Error retrieving latest pre-commit version for {:?}. Using default.",
-                    hook.id
+                    hook.hook.to_string()
                 );
                 println!("\n{}", error_message.yellow());
             }
@@ -238,7 +226,7 @@ fn create_pre_commit_file(download_latest_packages: bool) -> String {
     let mut pre_commit_str = "repos:".to_string();
     let hooks = build_latest_pre_commit_dependencies(download_latest_packages);
     for hook in hooks {
-        match hook.id {
+        match hook.hook {
             PreCommitHook::PreCommit => {
                 let info = format!(
                     "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: check-added-large-files\n    - id: check-toml\n    - id: check-yaml\n    - id: debug-statements\n    - id: end-of-file-fixer\n    - id: trailing-whitespace",
@@ -279,40 +267,26 @@ fn build_latest_dev_dependencies(
     is_application: bool,
     download_latest_packages: bool,
     project_manager: &ProjectManager,
+    min_python_version: &str,
 ) -> String {
     let mut version_string = String::new();
     let mut packages = vec![
-        PythonPackageVersion {
-            name: "mypy".to_string(),
-            version: "1.7.1".to_string(),
-        },
-        PythonPackageVersion {
-            name: "pre-commit".to_string(),
-            version: "3.5.0".to_string(),
-        },
-        PythonPackageVersion {
-            name: "pytest".to_string(),
-            version: "7.4.2".to_string(),
-        },
-        PythonPackageVersion {
-            name: "pytest-cov".to_string(),
-            version: "4.1.0".to_string(),
-        },
-        PythonPackageVersion {
-            name: "ruff".to_string(),
-            version: "0.1.7".to_string(),
-        },
+        PythonPackageVersion::new(PythonPackage::MyPy, min_python_version),
+        PythonPackageVersion::new(PythonPackage::PreCommit, min_python_version),
+        PythonPackageVersion::new(PythonPackage::Pytest, min_python_version),
+        PythonPackageVersion::new(PythonPackage::PytestCov, min_python_version),
+        PythonPackageVersion::new(PythonPackage::Ruff, min_python_version),
     ];
 
     match project_manager {
-        ProjectManager::Maturin => packages.push(PythonPackageVersion {
-            name: "maturin".to_string(),
-            version: "1.4.0".to_string(),
-        }),
-        ProjectManager::Poetry => packages.push(PythonPackageVersion {
-            name: "tomli".to_string(),
-            version: "2.0.1".to_string(),
-        }),
+        ProjectManager::Maturin => packages.push(PythonPackageVersion::new(
+            PythonPackage::Maturin,
+            min_python_version,
+        )),
+        ProjectManager::Poetry => packages.push(PythonPackageVersion::new(
+            PythonPackage::Tomli,
+            min_python_version,
+        )),
         ProjectManager::Setuptools => (),
     };
 
@@ -320,7 +294,7 @@ fn build_latest_dev_dependencies(
         if download_latest_packages && package.get_latest_version().is_err() {
             let error_message = format!(
                 "Error retrieving latest python package version for {:?}. Using default.",
-                package.name
+                package.package.to_string()
             );
             println!("\n{}", error_message.yellow());
         }
@@ -332,18 +306,18 @@ fn build_latest_dev_dependencies(
                 format!(">={}", package.version)
             };
 
-            if package.name == "tomli" {
+            if package.package == PythonPackage::Tomli {
                 version_string.push_str(&format!(
                     "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
-                    package.name, version
+                    package.package, version
                 ));
             } else {
-                version_string.push_str(&format!("{} = \"{}\"\n", package.name, version));
+                version_string.push_str(&format!("{} = \"{}\"\n", package.package, version));
             }
         } else if is_application {
-            version_string.push_str(&format!("{}=={}\n", package.name, package.version));
+            version_string.push_str(&format!("{}=={}\n", package.package, package.version));
         } else {
-            version_string.push_str(&format!("{}>={}\n", package.name, package.version));
+            version_string.push_str(&format!("{}>={}\n", package.package, package.version));
         }
     }
 
@@ -483,7 +457,7 @@ fix = true
         creator_email => project_info.creator_email,
         license => license_text,
         min_python_version => project_info.min_python_version,
-        dev_dependencies => build_latest_dev_dependencies(project_info.is_application, project_info.download_latest_packages, &project_info.project_manager),
+        dev_dependencies => build_latest_dev_dependencies(project_info.is_application, project_info.download_latest_packages, &project_info.project_manager, &project_info.min_python_version),
         max_line_length => project_info.max_line_length,
         source_dir => project_info.source_dir,
         is_application => project_info.is_application,
@@ -506,6 +480,7 @@ fn save_dev_requirements(project_info: &ProjectInfo) -> Result<()> {
         project_info.is_application,
         project_info.download_latest_packages,
         &project_info.project_manager,
+        &project_info.min_python_version,
     );
 
     save_file_with_content(&file_path, &content)?;
@@ -668,9 +643,9 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::package_version::{default_pre_commit_rev, default_version, pre_commit_repo};
     use crate::project_info::{LicenseType, ProjectInfo};
     use tempfile::tempdir;
-
     fn project_info_dummy() -> ProjectInfo {
         ProjectInfo {
             project_name: "My project".to_string(),
@@ -704,38 +679,59 @@ mod tests {
         }
     }
 
-    fn pinned_poetry_dependencies() -> String {
-        r#"[tool.poetry.group.dev.dependencies]
-mypy = "1.7.1"
-pre-commit = "3.5.0"
-pytest = "7.4.2"
-pytest-cov = "4.1.0"
-ruff = "0.1.7"
-tomli = {version = "2.0.1", python = "<3.11"}"#
-            .to_string()
+    fn pinned_poetry_dependencies(min_python_version: &str) -> String {
+        let mypy = default_version(&PythonPackage::MyPy, min_python_version);
+        let pre_commit = default_version(&PythonPackage::PreCommit, min_python_version);
+        let pytest = default_version(&PythonPackage::Pytest, min_python_version);
+        let pytest_cov = default_version(&PythonPackage::PytestCov, min_python_version);
+        let ruff = default_version(&PythonPackage::Ruff, min_python_version);
+        let tomli = default_version(&PythonPackage::Tomli, min_python_version);
+        format!(
+            r#"[tool.poetry.group.dev.dependencies]
+mypy = "{mypy}"
+pre-commit = "{pre_commit}"
+pytest = "{pytest}"
+pytest-cov = "{pytest_cov}"
+ruff = "{ruff}"
+tomli = {{version = "{tomli}", python = "<3.11"}}"#
+        )
     }
 
-    fn min_poetry_dependencies() -> String {
-        r#"[tool.poetry.group.dev.dependencies]
-mypy = ">=1.7.1"
-pre-commit = ">=3.5.0"
-pytest = ">=7.4.2"
-pytest-cov = ">=4.1.0"
-ruff = ">=0.1.7"
-tomli = {version = ">=2.0.1", python = "<3.11"}"#
-            .to_string()
+    fn min_poetry_dependencies(min_python_version: &str) -> String {
+        let mypy = default_version(&PythonPackage::MyPy, min_python_version);
+        let pre_commit = default_version(&PythonPackage::PreCommit, min_python_version);
+        let pytest = default_version(&PythonPackage::Pytest, min_python_version);
+        let pytest_cov = default_version(&PythonPackage::PytestCov, min_python_version);
+        let ruff = default_version(&PythonPackage::Ruff, min_python_version);
+        let tomli = default_version(&PythonPackage::Tomli, min_python_version);
+        format!(
+            r#"[tool.poetry.group.dev.dependencies]
+mypy = ">={mypy}"
+pre-commit = ">={pre_commit}"
+pytest = ">={pytest}"
+pytest-cov = ">={pytest_cov}"
+ruff = ">={ruff}"
+tomli = {{version = ">={tomli}", python = "<3.11"}}"#
+        )
     }
 
-    fn pinned_requirments_file() -> String {
-        r#"mypy==1.7.1
-pre-commit==3.5.0
-pytest==7.4.2
-pytest-cov==4.1.0
-ruff==0.1.7
-maturin==1.4.0
+    fn pinned_requirments_file(min_python_version: &str) -> String {
+        let mypy = default_version(&PythonPackage::MyPy, min_python_version);
+        let pre_commit = default_version(&PythonPackage::PreCommit, min_python_version);
+        let pytest = default_version(&PythonPackage::Pytest, min_python_version);
+        let pytest_cov = default_version(&PythonPackage::PytestCov, min_python_version);
+        let ruff = default_version(&PythonPackage::Ruff, min_python_version);
+        let maturin = default_version(&PythonPackage::Maturin, min_python_version);
+        format!(
+            r#"mypy=={mypy}
+pre-commit=={pre_commit}
+pytest=={pytest}
+pytest-cov=={pytest_cov}
+ruff=={ruff}
+maturin=={maturin}
 -e .
 "#
-        .to_string()
+        )
     }
 
     fn min_requirments_file() -> String {
@@ -1069,9 +1065,16 @@ dmypy.json
 
     #[test]
     fn test_save_pre_commit_file() {
-        let expected = r#"repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+        let mypy_rev = default_pre_commit_rev(&PreCommitHook::MyPy);
+        let mypy_repo = pre_commit_repo(&PreCommitHook::MyPy);
+        let pre_commit_rev = default_pre_commit_rev(&PreCommitHook::PreCommit);
+        let pc_repo = pre_commit_repo(&PreCommitHook::PreCommit);
+        let ruff_rev = default_pre_commit_rev(&PreCommitHook::Ruff);
+        let ruff_repo = pre_commit_repo(&PreCommitHook::Ruff);
+        let expected = format!(
+            r#"repos:
+  - repo: {pc_repo}
+    rev: {pre_commit_rev}
     hooks:
     - id: check-added-large-files
     - id: check-toml
@@ -1079,17 +1082,18 @@ dmypy.json
     - id: debug-statements
     - id: end-of-file-fixer
     - id: trailing-whitespace
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.7.1
+  - repo: {mypy_repo}
+    rev: {mypy_rev}
     hooks:
     - id: mypy
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.7
+  - repo: {ruff_repo}
+    rev: {ruff_rev}
     hooks:
     - id: ruff
       args: [--fix, --exit-non-zero-on-fix]
     - id: ruff-format
-"#;
+"#
+        );
 
         let project_info = project_info_dummy();
         let base = project_info.base_dir();
@@ -1177,7 +1181,7 @@ fix = true
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
-            pinned_poetry_dependencies(),
+            pinned_poetry_dependencies(&project_info.min_python_version),
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -1265,7 +1269,7 @@ fix = true
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
-            pinned_poetry_dependencies(),
+            pinned_poetry_dependencies(&project_info.min_python_version),
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -1352,7 +1356,7 @@ fix = true
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
-            pinned_poetry_dependencies(),
+            pinned_poetry_dependencies(&project_info.min_python_version),
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -1440,7 +1444,7 @@ fix = true
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
-            min_poetry_dependencies(),
+            min_poetry_dependencies(&project_info.min_python_version),
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -2109,7 +2113,10 @@ fix = true
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, pinned_requirments_file());
+        assert_eq!(
+            content,
+            pinned_requirments_file(&project_info.min_python_version)
+        );
     }
 
     #[test]
@@ -2143,7 +2150,10 @@ fix = true
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, pinned_requirments_file());
+        assert_eq!(
+            content,
+            pinned_requirments_file(&project_info.min_python_version)
+        );
     }
 
     #[test]
