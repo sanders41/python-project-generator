@@ -431,13 +431,32 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     let github_actions_python_test_version_default =
         match config.github_actions_python_test_versions {
             Some(versions) => versions,
-            None => vec![
-                "3.8".to_string(),
-                "3.9".to_string(),
-                "3.10".to_string(),
-                "3.11".to_string(),
-                "3.12".to_string(),
-            ],
+            None => {
+                let mut split_version = min_python_version.split('.');
+                if let Some(v) = split_version.nth(1) {
+                    let min = v.parse::<i32>()?;
+                    if min >= 12 {
+                        vec![format!("3.{min}")]
+                    } else {
+                        let mut versions: Vec<String> = Vec::new();
+
+                        // Up to 3.12
+                        for i in min..13 {
+                            versions.push(format!("3.{i}"));
+                        }
+
+                        versions
+                    }
+                } else {
+                    vec![
+                        "3.8".to_string(),
+                        "3.9".to_string(),
+                        "3.10".to_string(),
+                        "3.11".to_string(),
+                        "3.12".to_string(),
+                    ]
+                }
+            }
         };
     let github_actions_python_test_versions = if use_defaults {
         github_actions_python_test_version_default
