@@ -322,10 +322,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         bail!(format!("The {project_slug} directory already exists"));
     }
 
-    let source_dir_default = project_name
-        .replace(' ', "_")
-        .replace('-', "_")
-        .to_lowercase();
+    let source_dir_default = project_name.replace([' ', '-'], "_").to_lowercase();
     let source_dir = if use_defaults {
         source_dir_default
     } else {

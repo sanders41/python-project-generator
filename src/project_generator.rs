@@ -18,9 +18,9 @@ use crate::python_files::generate_python_files;
 use crate::rust_files::{save_cargo_toml_file, save_lib_file};
 
 fn create_directories(project_info: &ProjectInfo) -> Result<()> {
-    let module = project_info.source_dir.replace('-', "_");
+    let module = project_info.source_dir.replace([' ', '-'], "_");
     let base = project_info.base_dir();
-    let src = base.join(&module);
+    let src = base.join(module);
     create_dir_all(src)?;
 
     let github_dir = base.join(".github/workflows");
@@ -331,7 +331,7 @@ fn build_latest_dev_dependencies(
 }
 
 fn create_pyproject_toml(project_info: &ProjectInfo) -> String {
-    let module = project_info.source_dir.replace('-', "_");
+    let module = project_info.source_dir.replace([' ', '-'], "_");
     let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
     let license_text = license_str(&project_info.license);
     let mut pyproject = match &project_info.project_manager {
@@ -538,7 +538,7 @@ fn create_pyo3_justfile(module: &str) -> String {
 }
 
 fn save_pyo3_justfile(project_info: &ProjectInfo) -> Result<()> {
-    let module = project_info.source_dir.replace('-', "_");
+    let module = project_info.source_dir.replace([' ', '-'], "_");
     let file_path = project_info.base_dir().join("justfile");
     let content = create_pyo3_justfile(&module);
 

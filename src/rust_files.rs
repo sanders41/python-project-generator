@@ -58,7 +58,7 @@ fn create_cargo_toml_file(
 ) -> String {
     let versions = build_latest_dependencies(min_python_version, download_latest_packages);
     let license = license_str(license_type);
-    let name = source_dir.replace('-', "_");
+    let name = source_dir.replace([' ', '-'], "_");
 
     format!(
         r#"[package]
@@ -96,7 +96,7 @@ pub fn save_cargo_toml_file(project_info: &ProjectInfo) -> Result<()> {
 }
 
 fn create_lib_file(source_dir: &str) -> String {
-    let module = source_dir.replace('-', "_");
+    let module = source_dir.replace([' ', '-'], "_");
     format!(
         r#"use pyo3::prelude::*;
 
