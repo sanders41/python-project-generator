@@ -58,6 +58,7 @@ fn create_cargo_toml_file(
 ) -> String {
     let versions = build_latest_dependencies(min_python_version, download_latest_packages);
     let license = license_str(license_type);
+    let name = source_dir.replace([' ', '-'], "_");
 
     format!(
         r#"[package]
@@ -69,7 +70,7 @@ license = "{license}"
 readme = "README.md"
 
 [lib]
-name = "_{source_dir}"
+name = "_{name}"
 crate-type = ["cdylib"]
 
 [dependencies]
@@ -95,6 +96,7 @@ pub fn save_cargo_toml_file(project_info: &ProjectInfo) -> Result<()> {
 }
 
 fn create_lib_file(source_dir: &str) -> String {
+    let module = source_dir.replace([' ', '-'], "_");
     format!(
         r#"use pyo3::prelude::*;
 
@@ -104,7 +106,7 @@ fn sum_as_string(a: usize, b: usize) -> PyResult<String> {{
 }}
 
 #[pymodule]
-fn _{source_dir}(_py: Python, m: &PyModule) -> PyResult<()> {{
+fn _{module}(_py: Python, m: &PyModule) -> PyResult<()> {{
     m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
     Ok(())
 }}
