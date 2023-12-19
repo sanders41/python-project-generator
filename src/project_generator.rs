@@ -18,8 +18,9 @@ use crate::python_files::generate_python_files;
 use crate::rust_files::{save_cargo_toml_file, save_lib_file};
 
 fn create_directories(project_info: &ProjectInfo) -> Result<()> {
+    let module = project_info.source_dir.replace('-', "_");
     let base = project_info.base_dir();
-    let src = base.join(&project_info.source_dir);
+    let src = base.join(&module);
     create_dir_all(src)?;
 
     let github_dir = base.join(".github/workflows");
@@ -330,6 +331,7 @@ fn build_latest_dev_dependencies(
 }
 
 fn create_pyproject_toml(project_info: &ProjectInfo) -> String {
+    let module = project_info.source_dir.replace('-', "_");
     let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
     let license_text = license_str(&project_info.license);
     let mut pyproject = match &project_info.project_manager {
@@ -347,7 +349,7 @@ license = "{{ license }}"
 readme = "README.md"
 
 [tool.maturin]
-module-name = "{{ source_dir }}._{{ source_dir }}"
+module-name = "{{ module }}._{{ module }}"
 binding = "pyo3"
 features = ["pyo3/extension-module"]
 
@@ -392,14 +394,14 @@ requires-python = ">={{ min_python_version }}"
 dynamic = ["version", "readme"]
 
 [tool.setuptools.dynamic]
-version = {attr = "{{ source_dir }}.__version__"}
+version = {attr = "{{ module }}.__version__"}
 readme = {file = ["README.md"]}
 
 [tool.setuptools.packages.find]
-include = ["{{ source_dir }}*"]
+include = ["{{ module }}*"]
 
 [tool.setuptools.package-data]
-{{ source_dir }} = ["py.typed"]
+{{ module }} = ["py.typed"]
 
 "#
         .to_string(),
@@ -416,7 +418,7 @@ disallow_untyped_defs = false
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--cov={{ source_dir }} --cov-report term-missing --no-cov-on-fail"
+addopts = "--cov={{ module }} --cov-report term-missing --no-cov-on-fail"
 
 [tool.coverage.report]
 exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
@@ -450,7 +452,7 @@ fix = true
 
     render!(
         &pyproject,
-        project_name => project_info.source_dir.replace('_', "-"),
+        project_name => module.replace('_', "-"),
         version => project_info.version,
         project_description => project_info.project_description,
         creator => project_info.creator,
@@ -459,7 +461,7 @@ fix = true
         min_python_version => project_info.min_python_version,
         dev_dependencies => build_latest_dev_dependencies(project_info.is_application, project_info.download_latest_packages, &project_info.project_manager, &project_info.min_python_version),
         max_line_length => project_info.max_line_length,
-        source_dir => project_info.source_dir,
+        module => module,
         is_application => project_info.is_application,
         pyupgrade_version => pyupgrade_version,
     )
@@ -488,7 +490,7 @@ fn save_dev_requirements(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_pyo3_justfile(source_dir: &str) -> String {
+fn create_pyo3_justfile(module: &str) -> String {
     format!(
         r#"@develop:
   maturin develop
@@ -531,13 +533,14 @@ fn create_pyo3_justfile(source_dir: &str) -> String {
 @test:
   pytest
 "#,
-        source_dir
+        module
     )
 }
 
 fn save_pyo3_justfile(project_info: &ProjectInfo) -> Result<()> {
+    let module = project_info.source_dir.replace('-', "_");
     let file_path = project_info.base_dir().join("justfile");
-    let content = create_pyo3_justfile(&project_info.source_dir);
+    let content = create_pyo3_justfile(&module);
 
     save_file_with_content(&file_path, &content)?;
 

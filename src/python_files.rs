@@ -5,9 +5,9 @@ use anyhow::{bail, Result};
 use crate::file_manager::save_file_with_content;
 use crate::project_info::{ProjectInfo, ProjectManager};
 
-fn create_dunder_main_file(source_dir: &str) -> String {
+fn create_dunder_main_file(module: &str) -> String {
     format!(
-        r#"from {source_dir}.main import main  #  pragma: no cover
+        r#"from {module}.main import main  #  pragma: no cover
 
 if __name__ == "__main__":
     raise SystemExit(main())
@@ -29,23 +29,24 @@ if __name__ == "__main__":
 }
 
 fn save_main_files(project_info: &ProjectInfo) -> Result<()> {
-    let src = project_info.base_dir().join(&project_info.source_dir);
+    let module = project_info.source_dir.replace('-', "_");
+    let src = project_info.base_dir().join(&module);
     let main = src.join("main.py");
     let main_content = create_main_file();
 
     save_file_with_content(&main, &main_content)?;
 
     let main_dunder = src.join("__main__.py");
-    let main_dunder_content = create_dunder_main_file(&project_info.source_dir);
+    let main_dunder_content = create_dunder_main_file(&module);
 
     save_file_with_content(&main_dunder, &main_dunder_content)?;
 
     Ok(())
 }
 
-fn create_main_test_file(source_dir: &str) -> String {
+fn create_main_test_file(module: &str) -> String {
     format!(
-        r#"from {source_dir}.main import main
+        r#"from {module}.main import main
 
 
 def test_main():
@@ -55,17 +56,18 @@ def test_main():
 }
 
 fn save_main_test_file(project_info: &ProjectInfo) -> Result<()> {
+    let module = project_info.source_dir.replace('-', "_");
     let file_path = project_info.base_dir().join("tests/test_main.py");
-    let content = create_main_test_file(&project_info.source_dir);
+    let content = create_main_test_file(&module);
 
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
 }
 
-fn create_pyo3_test_file(source_dir: &str) -> String {
+fn create_pyo3_test_file(module: &str) -> String {
     format!(
-        r#"from {source_dir} import sum_as_string
+        r#"from {module} import sum_as_string
 
 
 def test_sum_as_string():
@@ -75,25 +77,26 @@ def test_sum_as_string():
 }
 
 fn save_pyo3_test_file(project_info: &ProjectInfo) -> Result<()> {
+    let module = project_info.source_dir.replace('-', "_");
     let file_path = project_info
         .base_dir()
-        .join(format!("tests/test_{}.py", &project_info.source_dir));
-    let content = create_pyo3_test_file(&project_info.source_dir);
+        .join(format!("tests/test_{}.py", &module));
+    let content = create_pyo3_test_file(&module);
 
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
 }
 
-fn create_project_init_file(source_dir: &str, project_manager: &ProjectManager) -> String {
+fn create_project_init_file(module: &str, project_manager: &ProjectManager) -> String {
     match project_manager {
         ProjectManager::Maturin => {
             let v_ascii: u8 = 118;
-            if let Some(first_char) = source_dir.chars().next() {
+            if let Some(first_char) = module.chars().next() {
                 if (first_char as u8) < v_ascii {
                     format!(
-                        r#"from {source_dir}._{source_dir} import sum_as_string
-from {source_dir}._version import VERSION
+                        r#"from {module}._{module} import sum_as_string
+from {module}._version import VERSION
 
 __version__ = VERSION
 
@@ -103,8 +106,8 @@ __all__ = ["sum_as_string"]
                     )
                 } else {
                     format!(
-                        r#"from {source_dir}._version import VERSION
-from {source_dir}._{source_dir} import sum_as_string
+                        r#"from {module}._version import VERSION
+from {module}._{module} import sum_as_string
 
 __version__ = VERSION
 
@@ -115,8 +118,8 @@ __all__ = ["sum_as_string"]
                 }
             } else {
                 format!(
-                    r#"from {source_dir}._{source_dir} import sum_as_string
-r#"from {source_dir}._version import VERSION
+                    r#"from {module}._{module} import sum_as_string
+r#"from {module}._version import VERSION
 
 __version__ = VERSION
 
@@ -128,7 +131,7 @@ __all__ = ["sum_as_string"]
         }
         _ => {
             format!(
-                r#"from {source_dir}._version import VERSION
+                r#"from {module}._version import VERSION
 
 __version__ = VERSION
 "#
@@ -145,10 +148,11 @@ fn save_test_init_file(project_info: &ProjectInfo) -> Result<()> {
 }
 
 fn save_project_init_file(project_info: &ProjectInfo) -> Result<()> {
+    let module = project_info.source_dir.replace('-', "_");
     let file_path = project_info
         .base_dir()
-        .join(format!("{}/__init__.py", &project_info.source_dir));
-    let content = create_project_init_file(&project_info.source_dir, &project_info.project_manager);
+        .join(format!("{}/__init__.py", &module));
+    let content = create_project_init_file(&module, &project_info.project_manager);
 
     save_file_with_content(&file_path, &content)?;
 
@@ -164,10 +168,10 @@ def sum_as_string(a: int, b: int) -> str: ...
 }
 
 pub fn save_pyi_file(project_info: &ProjectInfo) -> Result<()> {
-    let file_path = project_info.base_dir().join(format!(
-        "{}/_{}.pyi",
-        &project_info.source_dir, &project_info.source_dir
-    ));
+    let module = project_info.source_dir.replace('-', "_");
+    let file_path = project_info
+        .base_dir()
+        .join(format!("{}/_{}.pyi", &module, &module));
     let content = create_pyi_file();
 
     save_file_with_content(&file_path, &content)?;
@@ -180,9 +184,10 @@ fn create_version_file(version: &str) -> String {
 }
 
 fn save_version_file(project_info: &ProjectInfo) -> Result<()> {
+    let module = project_info.source_dir.replace('-', "_");
     let file_path = project_info
         .base_dir()
-        .join(format!("{}/_version.py", &project_info.source_dir));
+        .join(format!("{}/_version.py", &module));
     let content = create_version_file(&project_info.version);
 
     save_file_with_content(&file_path, &content)?;
@@ -190,7 +195,7 @@ fn save_version_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_version_test_file(source_dir: &str, project_manager: &ProjectManager) -> String {
+fn create_version_test_file(module: &str, project_manager: &ProjectManager) -> String {
     let version_test: &str = match project_manager {
         ProjectManager::Maturin => {
             r#"def test_versions_match():
@@ -212,7 +217,7 @@ fn create_version_test_file(source_dir: &str, project_manager: &ProjectManager) 
         }
         ProjectManager::Setuptools => {
             return format!(
-                r#"from {source_dir}._version import VERSION
+                r#"from {module}._version import VERSION
 
 def test_versions_match():
     assert VERSION == "0.1.0"
@@ -225,7 +230,7 @@ def test_versions_match():
         r#"import sys
 from pathlib import Path
 
-from {source_dir}._version import VERSION
+from {module}._version import VERSION
 
 if sys.version_info < (3, 11):
     import tomli as tomllib
@@ -239,8 +244,9 @@ else:
 }
 
 fn save_version_test_file(project_info: &ProjectInfo) -> Result<()> {
+    let module = project_info.source_dir.replace('-', "_");
     let file_path = project_info.base_dir().join("tests/test_version.py");
-    let content = create_version_test_file(&project_info.source_dir, &project_info.project_manager);
+    let content = create_version_test_file(&module, &project_info.project_manager);
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
