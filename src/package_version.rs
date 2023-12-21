@@ -151,7 +151,7 @@ impl LatestVersion for RustPackageVersion {
 pub fn default_version(package: &PythonPackage, min_python_version: &str) -> String {
     match package {
         PythonPackage::Maturin => "1.4.0".to_string(),
-        PythonPackage::MyPy => "1.7.1".to_string(),
+        PythonPackage::MyPy => "1.8.0".to_string(),
 
         // TODO: This isn't a good resolver but it will work for now. Should be imporoved.
         PythonPackage::PreCommit => {
@@ -168,16 +168,16 @@ pub fn default_version(package: &PythonPackage, min_python_version: &str) -> Str
         }
         PythonPackage::Pytest => "7.4.3".to_string(),
         PythonPackage::PytestCov => "4.1.0".to_string(),
-        PythonPackage::Ruff => "0.1.8".to_string(),
+        PythonPackage::Ruff => "0.1.9".to_string(),
         PythonPackage::Tomli => "2.0.1".to_string(),
     }
 }
 
 pub fn default_pre_commit_rev(hook: &PreCommitHook) -> String {
     match hook {
-        PreCommitHook::MyPy => "v1.7.1".to_string(),
+        PreCommitHook::MyPy => "v1.8.0".to_string(),
         PreCommitHook::PreCommit => "v4.5.0".to_string(),
-        PreCommitHook::Ruff => "v0.1.8".to_string(),
+        PreCommitHook::Ruff => "v0.1.9".to_string(),
     }
 }
 
