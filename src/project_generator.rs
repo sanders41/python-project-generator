@@ -424,6 +424,11 @@ addopts = "--cov={{ module }} --cov-report term-missing --no-cov-on-fail"
 exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
+line-length = {{ max_line_length }}
+target-version = "py{{ pyupgrade_version }}"
+fix = true
+
+[tool.ruff.lint]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
@@ -443,9 +448,6 @@ ignore=[
   "ISC001",
   "ISC002",
 ]
-line-length = {{ max_line_length }}
-target-version = "py{{ pyupgrade_version }}"
-fix = true
 
 "#,
     );
@@ -1162,6 +1164,11 @@ addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
 exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
+line-length = {}
+target-version = "py{}"
+fix = true
+
+[tool.ruff.lint]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
@@ -1181,9 +1188,6 @@ ignore=[
   "ISC001",
   "ISC002",
 ]
-line-length = {}
-target-version = "py{}"
-fix = true
 "#,
             project_info.source_dir.replace('_', "-"),
             project_info.version,
@@ -1250,6 +1254,11 @@ addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
 exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
+line-length = {}
+target-version = "py{}"
+fix = true
+
+[tool.ruff.lint]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
@@ -1269,9 +1278,6 @@ ignore=[
   "ISC001",
   "ISC002",
 ]
-line-length = {}
-target-version = "py{}"
-fix = true
 "#,
             project_info.source_dir.replace('_', "-"),
             project_info.version,
@@ -1337,6 +1343,11 @@ addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
 exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
+line-length = {}
+target-version = "py{}"
+fix = true
+
+[tool.ruff.lint]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
@@ -1356,9 +1367,6 @@ ignore=[
   "ISC001",
   "ISC002",
 ]
-line-length = {}
-target-version = "py{}"
-fix = true
 "#,
             project_info.source_dir.replace('_', "-"),
             project_info.version,
@@ -1425,6 +1433,11 @@ addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
 exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
+line-length = {}
+target-version = "py{}"
+fix = true
+
+[tool.ruff.lint]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
@@ -1444,9 +1457,6 @@ ignore=[
   "ISC001",
   "ISC002",
 ]
-line-length = {}
-target-version = "py{}"
-fix = true
 "#,
             project_info.source_dir.replace('_', "-"),
             project_info.version,
@@ -1512,6 +1522,11 @@ addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
 exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
+line-length = {}
+target-version = "py{}"
+fix = true
+
+[tool.ruff.lint]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
@@ -1531,9 +1546,6 @@ ignore=[
   "ISC001",
   "ISC002",
 ]
-line-length = {}
-target-version = "py{}"
-fix = true
 "#,
             project_info.source_dir.replace('_', "-"),
             project_info.project_description,
@@ -1598,6 +1610,11 @@ addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
 exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
+line-length = {}
+target-version = "py{}"
+fix = true
+
+[tool.ruff.lint]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
@@ -1617,9 +1634,6 @@ ignore=[
   "ISC001",
   "ISC002",
 ]
-line-length = {}
-target-version = "py{}"
-fix = true
 "#,
             project_info.source_dir.replace('_', "-"),
             project_info.project_description,
@@ -1683,6 +1697,11 @@ addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
 exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
+line-length = {}
+target-version = "py{}"
+fix = true
+
+[tool.ruff.lint]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
@@ -1702,9 +1721,6 @@ ignore=[
   "ISC001",
   "ISC002",
 ]
-line-length = {}
-target-version = "py{}"
-fix = true
 "#,
             project_info.source_dir.replace('_', "-"),
             project_info.project_description,
@@ -1777,6 +1793,11 @@ addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
 exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
+line-length = {}
+target-version = "py{}"
+fix = true
+
+[tool.ruff.lint]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
@@ -1796,9 +1817,6 @@ ignore=[
   "ISC001",
   "ISC002",
 ]
-line-length = {}
-target-version = "py{}"
-fix = true
 "#,
             project_info.source_dir.replace('_', "-"),
             project_info.project_description,
@@ -1873,6 +1891,11 @@ addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
 exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
+line-length = {}
+target-version = "py{}"
+fix = true
+
+[tool.ruff.lint]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
@@ -1892,9 +1915,6 @@ ignore=[
   "ISC001",
   "ISC002",
 ]
-line-length = {}
-target-version = "py{}"
-fix = true
 "#,
             project_info.source_dir.replace('_', "-"),
             project_info.project_description,
@@ -1968,6 +1988,11 @@ addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
 exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
+line-length = {}
+target-version = "py{}"
+fix = true
+
+[tool.ruff.lint]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
@@ -1987,9 +2012,6 @@ ignore=[
   "ISC001",
   "ISC002",
 ]
-line-length = {}
-target-version = "py{}"
-fix = true
 "#,
             project_info.source_dir.replace('_', "-"),
             project_info.project_description,
@@ -2064,6 +2086,11 @@ addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
 exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
+line-length = {}
+target-version = "py{}"
+fix = true
+
+[tool.ruff.lint]
 select = ["E", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
@@ -2083,9 +2110,6 @@ ignore=[
   "ISC001",
   "ISC002",
 ]
-line-length = {}
-target-version = "py{}"
-fix = true
 "#,
             project_info.source_dir.replace('_', "-"),
             project_info.project_description,
