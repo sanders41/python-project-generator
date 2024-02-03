@@ -792,7 +792,7 @@ dependencies = [
 
 [[package]]
 name = "python-project-generator"
-version = "1.0.10"
+version = "1.0.11"
 dependencies = [
  "anyhow",
  "clap",
@@ -1083,9 +1083,9 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.3.32"
+version = "0.3.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe80ced77cbfb4cb91a94bf72b378b4b6791a0d9b7f09d0be747d1bdff4e68bd"
+checksum = "00b24b79b7a07f10209f19e683ca1e289d80b1e76ffa8c2b779718566a083679"
 dependencies = [
  "deranged",
  "libc",
@@ -1119,9 +1119,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.35.1"
+version = "1.36.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c89b4efa943be685f629b149f53829423f8f5531ea21249408e8e2f8671ec104"
+checksum = "61285f6515fa018fb2d1e46eb21223fff441ee8db5d0f1435e8ab4f5cdb80931"
 dependencies = [
  "backtrace",
  "bytes",
