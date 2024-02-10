@@ -160,10 +160,10 @@ pub fn default_version(package: &PythonPackage, min_python_version: &str) -> Str
                 if minor < 10 {
                     "3.5.0".to_string()
                 } else {
-                    "3.6.0".to_string()
+                    "3.6.1".to_string()
                 }
             } else {
-                "3.6.0".to_string()
+                "3.6.1".to_string()
             }
         }
         PythonPackage::Pytest => "8.0.0".to_string(),
@@ -204,6 +204,6 @@ mod tests {
     fn test_three_ten() {
         let version = default_version(&PythonPackage::PreCommit, "3.10");
 
-        assert_eq!("3.6.0", version)
+        assert_eq!("3.6.1", version)
     }
 }
