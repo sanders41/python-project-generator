@@ -351,7 +351,6 @@ readme = "README.md"
 [tool.maturin]
 module-name = "{{ module }}._{{ module }}"
 binding = "pyo3"
-features = ["pyo3/extension-module"]
 
 "#
         .to_string(),
@@ -1504,7 +1503,6 @@ readme = "README.md"
 [tool.maturin]
 module-name = "{}._{}"
 binding = "pyo3"
-features = ["pyo3/extension-module"]
 
 [tool.mypy]
 check_untyped_defs = true
@@ -1592,7 +1590,6 @@ readme = "README.md"
 [tool.maturin]
 module-name = "{}._{}"
 binding = "pyo3"
-features = ["pyo3/extension-module"]
 
 [tool.mypy]
 check_untyped_defs = true
@@ -1679,7 +1676,6 @@ readme = "README.md"
 [tool.maturin]
 module-name = "{}._{}"
 binding = "pyo3"
-features = ["pyo3/extension-module"]
 
 [tool.mypy]
 check_untyped_defs = true
