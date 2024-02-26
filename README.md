@@ -47,6 +47,15 @@ Install on Arch with the AUR:
 paru -S python-project-generator-bin
 ```
 
+Install on Debian/Ubuntu:
+
+Note: Change the version to match the version you want to install.
+
+```sh
+curl -LO https://github.com/sanders41/python-project-generator/releases/download/v1.0.16/python-project-generator_1.0.16_amd64.deb
+sudo dpkg -i python_project_generator_1.0.16_amd64.deb
+```
+
 Python Project Generator can also be installed with binaries provided with each release
 [here](https://github.com/sanders41/python-project-generator/releases), or with cargo.
 
