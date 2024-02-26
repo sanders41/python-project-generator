@@ -35,12 +35,20 @@ Dev packages:
 
 ## Installation
 
-Python Project Generator can be installed with binaries provided with each release
-[here](https://github.com/sanders41/python-project-generator/releases), or with cargo.
+Install with `cargo`:
 
 ```sh
 cargo install python-project-generator
 ```
+
+Install on Arch with the AUR:
+
+```sh
+paru -S python-project-generator-bin
+```
+
+Python Project Generator can also be installed with binaries provided with each release
+[here](https://github.com/sanders41/python-project-generator/releases), or with cargo.
 
 ## How to use
 
