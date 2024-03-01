@@ -1,5 +1,6 @@
 use anyhow::Result;
 use colored::*;
+use rayon::prelude::*;
 
 use crate::file_manager::save_file_with_content;
 use crate::licenses::license_str;
@@ -9,21 +10,25 @@ use crate::project_info::{LicenseType, ProjectInfo};
 fn build_latest_dependencies(min_python_version: &str, download_latest_packages: bool) -> String {
     let mut version_string = String::new();
     let abi = format!("abi3-py{}", min_python_version.replace('.', ""));
-    let packages = vec![RustPackageVersion {
+    let mut packages = vec![RustPackageVersion {
         name: "pyo3".to_string(),
         version: "0.20.3".to_string(),
         features: Some(vec!["extension-module".to_string(), abi]),
     }];
 
-    for mut package in packages {
-        if download_latest_packages && package.get_latest_version().is_err() {
-            let error_message = format!(
-                "Error retrieving latest crate version for {:?}. Using default.",
-                package.name
-            );
-            println!("\n{}", error_message.yellow());
-        }
+    if download_latest_packages {
+        packages.par_iter_mut().for_each(|package| {
+            if package.get_latest_version().is_err() {
+                let error_message = format!(
+                    "Error retrieving latest crate version for {:?}. Using default.",
+                    package.name
+                );
+                println!("\n{}", error_message.yellow());
+            }
+        })
+    }
 
+    for package in packages {
         if let Some(features) = &package.features {
             let mut feature_str = "[".to_string();
             for feature in features {
