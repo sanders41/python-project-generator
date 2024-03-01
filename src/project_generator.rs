@@ -3,6 +3,7 @@ use std::fs::create_dir_all;
 use anyhow::{bail, Result};
 use colored::*;
 use minijinja::render;
+use rayon::prelude::*;
 
 use crate::file_manager::{save_empty_src_file, save_file_with_content};
 use crate::github_actions::{
@@ -209,7 +210,7 @@ fn build_latest_pre_commit_dependencies(
     ];
 
     if download_latest_packages {
-        for hook in &mut hooks {
+        hooks.par_iter_mut().for_each(|hook| {
             if hook.get_latest_version().is_err() {
                 let error_message = format!(
                     "Error retrieving latest pre-commit version for {:?}. Using default.",
@@ -217,7 +218,7 @@ fn build_latest_pre_commit_dependencies(
                 );
                 println!("\n{}", error_message.yellow());
             }
-        }
+        });
     }
 
     hooks
@@ -291,15 +292,19 @@ fn build_latest_dev_dependencies(
         ProjectManager::Setuptools => (),
     };
 
-    for mut package in packages {
-        if download_latest_packages && package.get_latest_version().is_err() {
-            let error_message = format!(
-                "Error retrieving latest python package version for {:?}. Using default.",
-                package.package.to_string()
-            );
-            println!("\n{}", error_message.yellow());
-        }
+    if download_latest_packages {
+        packages.par_iter_mut().for_each(|package| {
+            if package.get_latest_version().is_err() {
+                let error_message = format!(
+                    "Error retrieving latest python package version for {:?}. Using default.",
+                    package.package.to_string()
+                );
+                println!("\n{}", error_message.yellow());
+            }
+        })
+    }
 
+    for package in packages {
         if let ProjectManager::Poetry = project_manager {
             let version: String = if is_application {
                 package.version
