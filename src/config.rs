@@ -339,7 +339,7 @@ impl Config {
 
         let license_label = "License";
         if let Some(license) = config.license {
-            println!("{}: {:?}", license_label.blue(), license);
+            println!("{}: {}", license_label.blue(), license);
         } else {
             println!("{}: null", license_label.blue());
         }
@@ -379,7 +379,7 @@ impl Config {
 
         let project_manager_label = "Project Manager";
         if let Some(project_manager) = config.project_manager {
-            println!("{}: {:?}", project_manager_label.blue(), project_manager);
+            println!("{}: {}", project_manager_label.blue(), project_manager);
         } else {
             println!("{}: null", project_manager_label.blue());
         }
@@ -401,7 +401,7 @@ impl Config {
         let dependabot_schedule_label = "Dependabot Schedule";
         if let Some(dependabot_schedule) = config.dependabot_schedule {
             println!(
-                "{}: {:?}",
+                "{}: {}",
                 dependabot_schedule_label.blue(),
                 dependabot_schedule
             );
@@ -411,7 +411,7 @@ impl Config {
 
         let dependabot_day_label = "Dependabot Day";
         if let Some(dependabot_day) = config.dependabot_day {
-            println!("{}: {:?}", dependabot_day_label.blue(), dependabot_day);
+            println!("{}: {}", dependabot_day_label.blue(), dependabot_day);
         } else {
             println!("{}: null", dependabot_day_label.blue());
         }

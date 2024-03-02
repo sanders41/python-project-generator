@@ -1,5 +1,8 @@
-use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::{
+    fmt,
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 use anyhow::{bail, Result};
 use clap::ValueEnum;
@@ -15,6 +18,16 @@ pub enum DependabotSchedule {
     Monthly,
 }
 
+impl fmt::Display for DependabotSchedule {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            DependabotSchedule::Daily => write!(f, "Daily"),
+            DependabotSchedule::Weekly => write!(f, "Weekly"),
+            DependabotSchedule::Monthly => write!(f, "Montly"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize, ValueEnum)]
 pub enum Day {
     Monday,
@@ -26,6 +39,20 @@ pub enum Day {
     Sunday,
 }
 
+impl fmt::Display for Day {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Day::Monday => write!(f, "Monday"),
+            Day::Tuesday => write!(f, "Tuesday"),
+            Day::Wednesday => write!(f, "Wednesday"),
+            Day::Thursday => write!(f, "Thursday"),
+            Day::Friday => write!(f, "Friday"),
+            Day::Saturday => write!(f, "Saturday"),
+            Day::Sunday => write!(f, "Sunday"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize, ValueEnum)]
 pub enum LicenseType {
     Mit,
@@ -33,11 +60,31 @@ pub enum LicenseType {
     NoLicense,
 }
 
+impl fmt::Display for LicenseType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            LicenseType::Mit => write!(f, "MIT"),
+            LicenseType::Apache2 => write!(f, "Apache 2.0"),
+            LicenseType::NoLicense => write!(f, "No License"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize, ValueEnum)]
 pub enum ProjectManager {
     Maturin,
     Poetry,
     Setuptools,
+}
+
+impl fmt::Display for ProjectManager {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ProjectManager::Maturin => write!(f, "Maturin"),
+            ProjectManager::Poetry => write!(f, "Poetry"),
+            ProjectManager::Setuptools => write!(f, "Setuptools"),
+        }
+    }
 }
 
 struct Prompt {
@@ -278,7 +325,7 @@ fn copyright_year_prompt(license: &LicenseType, default: Option<String>) -> Resu
 
     if input.is_empty() {
         bail!(format!(
-            "A copyright year is required for {:?} license",
+            "A copyright year is required for {} license",
             license
         ));
     } else {
