@@ -20,7 +20,7 @@ fn build_latest_dependencies(min_python_version: &str, download_latest_packages:
         packages.par_iter_mut().for_each(|package| {
             if package.get_latest_version().is_err() {
                 let error_message = format!(
-                    "Error retrieving latest crate version for {:?}. Using default.",
+                    "Error retrieving latest crate version for {}. Using default.",
                     package.name
                 );
                 println!("\n{}", error_message.yellow());

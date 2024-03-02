@@ -213,8 +213,8 @@ fn build_latest_pre_commit_dependencies(
         hooks.par_iter_mut().for_each(|hook| {
             if hook.get_latest_version().is_err() {
                 let error_message = format!(
-                    "Error retrieving latest pre-commit version for {:?}. Using default.",
-                    hook.hook.to_string()
+                    "Error retrieving latest pre-commit version for {}. Using default.",
+                    hook.hook
                 );
                 println!("\n{}", error_message.yellow());
             }
@@ -296,8 +296,8 @@ fn build_latest_dev_dependencies(
         packages.par_iter_mut().for_each(|package| {
             if package.get_latest_version().is_err() {
                 let error_message = format!(
-                    "Error retrieving latest python package version for {:?}. Using default.",
-                    package.package.to_string()
+                    "Error retrieving latest python package version for {}. Using default.",
+                    package.package
                 );
                 println!("\n{}", error_message.yellow());
             }
