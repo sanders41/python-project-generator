@@ -60,7 +60,7 @@ jobs:
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - name: Install packages
-        run: apt install build-essential pkg-config libssl-dev
+        run: sudo apt-get install build-essential pkg-config libssl-dev
       - name: Install cargo-deb
         run: cargo install cargo-deb
       - name: Create package
