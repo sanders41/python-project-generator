@@ -269,26 +269,18 @@ fn build_latest_dev_dependencies(
     is_application: bool,
     download_latest_packages: bool,
     project_manager: &ProjectManager,
-    min_python_version: &str,
 ) -> String {
     let mut version_string = String::new();
     let mut packages = vec![
-        PythonPackageVersion::new(PythonPackage::MyPy, min_python_version),
-        PythonPackageVersion::new(PythonPackage::PreCommit, min_python_version),
-        PythonPackageVersion::new(PythonPackage::Pytest, min_python_version),
-        PythonPackageVersion::new(PythonPackage::PytestCov, min_python_version),
-        PythonPackageVersion::new(PythonPackage::Ruff, min_python_version),
+        PythonPackageVersion::new(PythonPackage::MyPy),
+        PythonPackageVersion::new(PythonPackage::Pytest),
+        PythonPackageVersion::new(PythonPackage::PytestCov),
+        PythonPackageVersion::new(PythonPackage::Ruff),
     ];
 
     match project_manager {
-        ProjectManager::Maturin => packages.push(PythonPackageVersion::new(
-            PythonPackage::Maturin,
-            min_python_version,
-        )),
-        ProjectManager::Poetry => packages.push(PythonPackageVersion::new(
-            PythonPackage::Tomli,
-            min_python_version,
-        )),
+        ProjectManager::Maturin => packages.push(PythonPackageVersion::new(PythonPackage::Maturin)),
+        ProjectManager::Poetry => packages.push(PythonPackageVersion::new(PythonPackage::Tomli)),
         ProjectManager::Setuptools => (),
     };
 
@@ -466,7 +458,7 @@ ignore=[
         creator_email => project_info.creator_email,
         license => license_text,
         min_python_version => project_info.min_python_version,
-        dev_dependencies => build_latest_dev_dependencies(project_info.is_application, project_info.download_latest_packages, &project_info.project_manager, &project_info.min_python_version),
+        dev_dependencies => build_latest_dev_dependencies(project_info.is_application, project_info.download_latest_packages, &project_info.project_manager),
         max_line_length => project_info.max_line_length,
         module => module,
         is_application => project_info.is_application,
@@ -489,7 +481,6 @@ fn save_dev_requirements(project_info: &ProjectInfo) -> Result<()> {
         project_info.is_application,
         project_info.download_latest_packages,
         &project_info.project_manager,
-        &project_info.min_python_version,
     );
 
     save_file_with_content(&file_path, &content)?;
@@ -689,17 +680,15 @@ mod tests {
         }
     }
 
-    fn pinned_poetry_dependencies(min_python_version: &str) -> String {
-        let mypy = default_version(&PythonPackage::MyPy, min_python_version);
-        let pre_commit = default_version(&PythonPackage::PreCommit, min_python_version);
-        let pytest = default_version(&PythonPackage::Pytest, min_python_version);
-        let pytest_cov = default_version(&PythonPackage::PytestCov, min_python_version);
-        let ruff = default_version(&PythonPackage::Ruff, min_python_version);
-        let tomli = default_version(&PythonPackage::Tomli, min_python_version);
+    fn pinned_poetry_dependencies() -> String {
+        let mypy = default_version(&PythonPackage::MyPy);
+        let pytest = default_version(&PythonPackage::Pytest);
+        let pytest_cov = default_version(&PythonPackage::PytestCov);
+        let ruff = default_version(&PythonPackage::Ruff);
+        let tomli = default_version(&PythonPackage::Tomli);
         format!(
             r#"[tool.poetry.group.dev.dependencies]
 mypy = "{mypy}"
-pre-commit = "{pre_commit}"
 pytest = "{pytest}"
 pytest-cov = "{pytest_cov}"
 ruff = "{ruff}"
@@ -707,17 +696,15 @@ tomli = {{version = "{tomli}", python = "<3.11"}}"#
         )
     }
 
-    fn min_poetry_dependencies(min_python_version: &str) -> String {
-        let mypy = default_version(&PythonPackage::MyPy, min_python_version);
-        let pre_commit = default_version(&PythonPackage::PreCommit, min_python_version);
-        let pytest = default_version(&PythonPackage::Pytest, min_python_version);
-        let pytest_cov = default_version(&PythonPackage::PytestCov, min_python_version);
-        let ruff = default_version(&PythonPackage::Ruff, min_python_version);
-        let tomli = default_version(&PythonPackage::Tomli, min_python_version);
+    fn min_poetry_dependencies() -> String {
+        let mypy = default_version(&PythonPackage::MyPy);
+        let pytest = default_version(&PythonPackage::Pytest);
+        let pytest_cov = default_version(&PythonPackage::PytestCov);
+        let ruff = default_version(&PythonPackage::Ruff);
+        let tomli = default_version(&PythonPackage::Tomli);
         format!(
             r#"[tool.poetry.group.dev.dependencies]
 mypy = ">={mypy}"
-pre-commit = ">={pre_commit}"
 pytest = ">={pytest}"
 pytest-cov = ">={pytest_cov}"
 ruff = ">={ruff}"
@@ -725,16 +712,14 @@ tomli = {{version = ">={tomli}", python = "<3.11"}}"#
         )
     }
 
-    fn pinned_requirments_file(min_python_version: &str) -> String {
-        let mypy = default_version(&PythonPackage::MyPy, min_python_version);
-        let pre_commit = default_version(&PythonPackage::PreCommit, min_python_version);
-        let pytest = default_version(&PythonPackage::Pytest, min_python_version);
-        let pytest_cov = default_version(&PythonPackage::PytestCov, min_python_version);
-        let ruff = default_version(&PythonPackage::Ruff, min_python_version);
-        let maturin = default_version(&PythonPackage::Maturin, min_python_version);
+    fn pinned_requirments_file() -> String {
+        let mypy = default_version(&PythonPackage::MyPy);
+        let pytest = default_version(&PythonPackage::Pytest);
+        let pytest_cov = default_version(&PythonPackage::PytestCov);
+        let ruff = default_version(&PythonPackage::Ruff);
+        let maturin = default_version(&PythonPackage::Maturin);
         format!(
             r#"mypy=={mypy}
-pre-commit=={pre_commit}
 pytest=={pytest}
 pytest-cov=={pytest_cov}
 ruff=={ruff}
@@ -744,16 +729,14 @@ maturin=={maturin}
         )
     }
 
-    fn min_requirments_file(min_python_version: &str) -> String {
-        let mypy = default_version(&PythonPackage::MyPy, min_python_version);
-        let maturin = default_version(&PythonPackage::Maturin, min_python_version);
-        let pre_commit = default_version(&PythonPackage::PreCommit, min_python_version);
-        let pytest = default_version(&PythonPackage::Pytest, min_python_version);
-        let pytest_cov = default_version(&PythonPackage::PytestCov, min_python_version);
-        let ruff = default_version(&PythonPackage::Ruff, min_python_version);
+    fn min_requirments_file() -> String {
+        let mypy = default_version(&PythonPackage::MyPy);
+        let maturin = default_version(&PythonPackage::Maturin);
+        let pytest = default_version(&PythonPackage::Pytest);
+        let pytest_cov = default_version(&PythonPackage::PytestCov);
+        let ruff = default_version(&PythonPackage::Ruff);
         format!(
             r#"mypy>={mypy}
-pre-commit>={pre_commit}
 pytest>={pytest}
 pytest-cov>={pytest_cov}
 ruff>={ruff}
@@ -1200,7 +1183,7 @@ ignore=[
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
-            pinned_poetry_dependencies(&project_info.min_python_version),
+            pinned_poetry_dependencies(),
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -1290,7 +1273,7 @@ ignore=[
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
-            pinned_poetry_dependencies(&project_info.min_python_version),
+            pinned_poetry_dependencies(),
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -1379,7 +1362,7 @@ ignore=[
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
-            pinned_poetry_dependencies(&project_info.min_python_version),
+            pinned_poetry_dependencies(),
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -1469,7 +1452,7 @@ ignore=[
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
-            min_poetry_dependencies(&project_info.min_python_version),
+            min_poetry_dependencies(),
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -2152,10 +2135,7 @@ ignore=[
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(
-            content,
-            pinned_requirments_file(&project_info.min_python_version)
-        );
+        assert_eq!(content, pinned_requirments_file());
     }
 
     #[test]
@@ -2172,10 +2152,7 @@ ignore=[
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(
-            content,
-            min_requirments_file(&project_info.min_python_version)
-        );
+        assert_eq!(content, min_requirments_file());
     }
 
     #[test]
@@ -2192,10 +2169,7 @@ ignore=[
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(
-            content,
-            pinned_requirments_file(&project_info.min_python_version)
-        );
+        assert_eq!(content, pinned_requirments_file());
     }
 
     #[test]
@@ -2212,10 +2186,7 @@ ignore=[
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(
-            content,
-            min_requirments_file(&project_info.min_python_version)
-        );
+        assert_eq!(content, min_requirments_file());
     }
 
     #[test]

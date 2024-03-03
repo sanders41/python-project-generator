@@ -3,7 +3,7 @@ name: Testing
 on:
   push:
     branches:
-    - main
+      - main
   pull_request:
 env:
   CARGO_TERM_COLOR: always
@@ -16,38 +16,38 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    - name: Cache dependencies
-      uses: Swatinem/rust-cache@v2.7.3
-    - name: Run cargo clippy
-      run: cargo clippy --all-targets -- --deny warnings
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2.7.3
+      - name: Run cargo clippy
+        run: cargo clippy --all-targets -- --deny warnings
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    - name: Cache dependencies
-      uses: Swatinem/rust-cache@v2.7.3
-    - name: Run cargo fmt
-      run: cargo fmt --all -- --check
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2.7.3
+      - name: Run cargo fmt
+        run: cargo fmt --all -- --check
   test:
     name: Tests
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    - name: Cache dependencies
-      uses: Swatinem/rust-cache@v2.7.3
-    - name: Run cargo test
-      run: cargo test --locked
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2.7.3
+      - name: Run cargo test
+        run: cargo test --locked
   poetry-linting:
     strategy:
       fail-fast: false
@@ -55,36 +55,36 @@ jobs:
         project_type: ["application", "lib"]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    - name: Cache Rust dependencies
-      uses: Swatinem/rust-cache@v2.7.3
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "${{ env.MIN_PYTHON_VERSION }}"
-    - name: Build package
-      run: cargo build --release
-    - name: Run creation
-      run: |
-        ./scripts/ci_run.sh ${{ matrix.project_type }} 1
-    - name: Install Dependencies
-      working-directory: ${{ env.WORKING_DIR }}
-      run: poetry install
-    - name: MyPy
-      working-directory: ${{ env.WORKING_DIR }}
-      run: poetry run mypy .
-    - name: ruff
-      working-directory: ${{ env.WORKING_DIR }}
-      run: poetry run ruff check .
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2.7.3
+      - name: Install Poetry
+        run: pipx install poetry
+      - name: Configure poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "${{ env.MIN_PYTHON_VERSION }}"
+      - name: Build package
+        run: cargo build --release
+      - name: Run creation
+        run: |
+          ./scripts/ci_run.sh ${{ matrix.project_type }} 1
+      - name: Install Dependencies
+        working-directory: ${{ env.WORKING_DIR }}
+        run: poetry install
+      - name: MyPy
+        working-directory: ${{ env.WORKING_DIR }}
+        run: poetry run mypy .
+      - name: ruff
+        working-directory: ${{ env.WORKING_DIR }}
+        run: poetry run ruff check .
   poetry-test:
     strategy:
       fail-fast: false
@@ -93,36 +93,36 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    - name: Cache Rust dependencies
-      uses: Swatinem/rust-cache@v2.7.3
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
-    - name: Build package
-      run: cargo build --release
-    - name: Run creation
-      run: |
-        ./scripts/ci_run.sh ${{ matrix.project_type }} 1
-    - name: Install Dependencies
-      working-directory: ${{ env.WORKING_DIR }}
-      run: poetry install
-    - name: Pre-commit install
-      working-directory: ${{ env.WORKING_DIR }}
-      run: poetry run pre-commit install
-    - name: Test with pytest
-      working-directory: ${{ env.WORKING_DIR }}
-      run: poetry run pytest
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2.7.3
+      - name: Install Poetry
+        run: pipx install poetry pre-commit
+      - name: Configure poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Build package
+        run: cargo build --release
+      - name: Run creation
+        run: |
+          ./scripts/ci_run.sh ${{ matrix.project_type }} 1
+      - name: Install Dependencies
+        working-directory: ${{ env.WORKING_DIR }}
+        run: poetry install
+      - name: Pre-commit install
+        working-directory: ${{ env.WORKING_DIR }}
+        run: poetry run pre-commit install
+      - name: Test with pytest
+        working-directory: ${{ env.WORKING_DIR }}
+        run: poetry run pytest
   pyo3-linting:
     strategy:
       fail-fast: false
@@ -130,42 +130,42 @@ jobs:
         project_type: ["application", "lib"]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Just
-      uses: taiki-e/install-action@just
-    - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    - name: Cache Rust dependencies
-      uses: Swatinem/rust-cache@v2.7.3
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "${{ env.MIN_PYTHON_VERSION }}"
-    - name: Build package
-      run: cargo build --release
-    - name: Run creation
-      run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
-    - name: Install Dependencies
-      working-directory: ${{ env.WORKING_DIR }}
-      run: |
-        python -m pip install -U pip
-        python -m pip install -r requirements-dev.txt
-        python -m pip install -e .
-        maturin build --out dist
-        python -m pip install --no-index --find-links=dist/ my-project
-    - name: MyPy
-      working-directory: ${{ env.WORKING_DIR }}
-      run: just mypy
-    - name: Ruff
-      working-directory: ${{ env.WORKING_DIR }}
-      run: just ruff
-    - name: Generated Project Clippy
-      working-directory: ${{ env.WORKING_DIR }}
-      run: just clippy
-    - name: Generated Project Fmt
-      working-directory: ${{ env.WORKING_DIR }}
-      run: just fmt
+      - uses: actions/checkout@v4
+      - name: Install Just
+        uses: taiki-e/install-action@just
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2.7.3
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "${{ env.MIN_PYTHON_VERSION }}"
+      - name: Build package
+        run: cargo build --release
+      - name: Run creation
+        run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
+      - name: Install Dependencies
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          python -m pip install -U pip
+          python -m pip install -r requirements-dev.txt
+          python -m pip install -e .
+          maturin build --out dist
+          python -m pip install --no-index --find-links=dist/ my-project
+      - name: MyPy
+        working-directory: ${{ env.WORKING_DIR }}
+        run: just mypy
+      - name: Ruff
+        working-directory: ${{ env.WORKING_DIR }}
+        run: just ruff
+      - name: Generated Project Clippy
+        working-directory: ${{ env.WORKING_DIR }}
+        run: just clippy
+      - name: Generated Project Fmt
+        working-directory: ${{ env.WORKING_DIR }}
+        run: just fmt
   pyo3-python-test:
     strategy:
       fail-fast: false
@@ -174,34 +174,35 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    - name: Cache Rust dependencies
-      uses: Swatinem/rust-cache@v2.7.3
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
-    - name: Build package
-      run: cargo build --release
-    - name: Run creation
-      run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
-    - name: Install Dependencies
-      working-directory: ${{ env.WORKING_DIR }}
-      run: |
-        python -m pip install -U pip
-        python -m pip install -r requirements-dev.txt
-        python -m pip install -e .
-        maturin build --out dist
-        python -m pip install --no-index --find-links=dist/ my-project
-    - name: Pre-commit install
-      working-directory: ${{ env.WORKING_DIR }}
-      run: pre-commit install
-    - name: Test with pytest
-      working-directory: ${{ env.WORKING_DIR }}
-      run: pytest
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2.7.3
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Build package
+        run: cargo build --release
+      - name: Run creation
+        run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
+      - name: Install Dependencies
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          python -m pip install -U pip
+          pipx install pre-commit
+          python -m pip install -r requirements-dev.txt
+          python -m pip install -e .
+          maturin build --out dist
+          python -m pip install --no-index --find-links=dist/ my-project
+      - name: Pre-commit install
+        working-directory: ${{ env.WORKING_DIR }}
+        run: pre-commit install
+      - name: Test with pytest
+        working-directory: ${{ env.WORKING_DIR }}
+        run: pytest
   setuptools-linting:
     strategy:
       fail-fast: false
@@ -209,32 +210,33 @@ jobs:
         project_type: ["application", "lib"]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    - name: Cache Rust dependencies
-      uses: Swatinem/rust-cache@v2.7.3
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "${{ env.MIN_PYTHON_VERSION }}"
-    - name: Build package
-      run: cargo build --release
-    - name: Run creation
-      run: |
-        ./scripts/ci_run.sh ${{ matrix.project_type }} 3
-    - name: Install Dependencies
-      working-directory: ${{ env.WORKING_DIR }}
-      run: |
-        python -m pip install -U pip
-        python -m pip install -r requirements-dev.txt
-    - name: MyPy
-      working-directory: ${{ env.WORKING_DIR }}
-      run: mypy .
-    - name: ruff
-      working-directory: ${{ env.WORKING_DIR }}
-      run: ruff check .
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2.7.3
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "${{ env.MIN_PYTHON_VERSION }}"
+      - name: Build package
+        run: cargo build --release
+      - name: Run creation
+        run: |
+          ./scripts/ci_run.sh ${{ matrix.project_type }} 3
+      - name: Install Dependencies
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          python -m pip install -U pip
+          pipx install pre-commit
+          python -m pip install -r requirements-dev.txt
+      - name: MyPy
+        working-directory: ${{ env.WORKING_DIR }}
+        run: mypy .
+      - name: ruff
+        working-directory: ${{ env.WORKING_DIR }}
+        run: ruff check .
   setuptools-test:
     strategy:
       fail-fast: false
@@ -243,29 +245,30 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    - name: Cache Rust dependencies
-      uses: Swatinem/rust-cache@v2.7.3
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
-    - name: Build package
-      run: cargo build --release
-    - name: Run creation
-      run: |
-        ./scripts/ci_run.sh ${{ matrix.project_type }} 3
-    - name: Install Dependencies
-      working-directory: ${{ env.WORKING_DIR }}
-      run: |
-        python -m pip install -U pip
-        python -m pip install -r requirements-dev.txt
-    - name: Pre-commit install
-      working-directory: ${{ env.WORKING_DIR }}
-      run: pre-commit install
-    - name: Test with pytest
-      working-directory: ${{ env.WORKING_DIR }}
-      run: pytest
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2.7.3
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Build package
+        run: cargo build --release
+      - name: Run creation
+        run: |
+          ./scripts/ci_run.sh ${{ matrix.project_type }} 3
+      - name: Install Dependencies
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          python -m pip install -U pip
+          pipx install pre-commit
+          python -m pip install -r requirements-dev.txt
+      - name: Pre-commit install
+        working-directory: ${{ env.WORKING_DIR }}
+        run: pre-commit install
+      - name: Test with pytest
+        working-directory: ${{ env.WORKING_DIR }}
+        run: pytest
