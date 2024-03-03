@@ -7,7 +7,6 @@ use anyhow::Result;
 pub enum PythonPackage {
     Maturin,
     MyPy,
-    PreCommit,
     Pytest,
     PytestCov,
     Ruff,
@@ -19,7 +18,6 @@ impl fmt::Display for PythonPackage {
         match self {
             PythonPackage::Maturin => write!(f, "maturin"),
             PythonPackage::MyPy => write!(f, "mypy"),
-            PythonPackage::PreCommit => write!(f, "pre-commit"),
             PythonPackage::Pytest => write!(f, "pytest"),
             PythonPackage::PytestCov => write!(f, "pytest-cov"),
             PythonPackage::Ruff => write!(f, "ruff"),
@@ -114,8 +112,8 @@ impl LatestVersion for PythonPackageVersion {
 }
 
 impl PythonPackageVersion {
-    pub fn new(package: PythonPackage, min_python_version: &str) -> Self {
-        let version = default_version(&package, min_python_version);
+    pub fn new(package: PythonPackage) -> Self {
+        let version = default_version(&package);
 
         PythonPackageVersion { package, version }
     }
@@ -148,24 +146,10 @@ impl LatestVersion for RustPackageVersion {
     }
 }
 
-pub fn default_version(package: &PythonPackage, min_python_version: &str) -> String {
+pub fn default_version(package: &PythonPackage) -> String {
     match package {
         PythonPackage::Maturin => "1.4.0".to_string(),
         PythonPackage::MyPy => "1.8.0".to_string(),
-
-        // TODO: This isn't a good resolver but it will work for now. Should be imporoved.
-        PythonPackage::PreCommit => {
-            let version_info: Vec<&str> = min_python_version.split('.').collect();
-            if let Ok(minor) = version_info[1].parse::<i32>() {
-                if minor < 10 {
-                    "3.5.0".to_string()
-                } else {
-                    "3.6.2".to_string()
-                }
-            } else {
-                "3.6.2".to_string()
-            }
-        }
         PythonPackage::Pytest => "8.0.2".to_string(),
         PythonPackage::PytestCov => "4.1.0".to_string(),
         PythonPackage::Ruff => "0.3.0".to_string(),
@@ -186,24 +170,5 @@ pub fn pre_commit_repo(hook: &PreCommitHook) -> String {
         PreCommitHook::MyPy => "https://github.com/pre-commit/mirrors-mypy".to_string(),
         PreCommitHook::PreCommit => "https://github.com/pre-commit/pre-commit-hooks".to_string(),
         PreCommitHook::Ruff => "https://github.com/astral-sh/ruff-pre-commit".to_string(),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_less_than_three_ten() {
-        let version = default_version(&PythonPackage::PreCommit, "3.9");
-
-        assert_eq!("3.5.0", version)
-    }
-
-    #[test]
-    fn test_three_ten() {
-        let version = default_version(&PythonPackage::PreCommit, "3.10");
-
-        assert_eq!("3.6.2", version)
     }
 }

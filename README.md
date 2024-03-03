@@ -16,7 +16,6 @@ For package managment choose between:
 Dev packages:
 
 - [mypy](https://www.mypy-lang.org/) for static type checking
-- [pre-commit](https://github.com/pre-commit/pre-commit) for pre-commit hooks
 - [pytest](https://docs.pytest.org/en/latest/) for testing
 - [pytest-cov](https://github.com/pytest-dev/pytest-cov) for test coverage reports
 - [ruff](https://beta.ruff.rs/docs/) for linting and code formatting
@@ -25,7 +24,6 @@ Dev packages:
 
 - [maturin](https://github.com/PyO3/maturin) for package management
 - [mypy](https://www.mypy-lang.org/) for static type checking
-- [pre-commit](https://github.com/pre-commit/pre-commit) for pre-commit hooks
 - [pytest](https://docs.pytest.org/en/latest/) for testing
 - [pytest-cov](https://github.com/pytest-dev/pytest-cov) for test coverage reports
 - [ruff](https://beta.ruff.rs/docs/) for linting and code formatting
