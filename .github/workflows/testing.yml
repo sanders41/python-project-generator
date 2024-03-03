@@ -100,7 +100,7 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.7.3
       - name: Install Poetry
-        run: pipx install poetry
+        run: pipx install poetry pre-commit
       - name: Configure poetry
         run: |
           poetry config virtualenvs.create true
