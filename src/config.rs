@@ -9,7 +9,7 @@ use crate::project_info::{
     is_valid_python_version, Day, DependabotSchedule, LicenseType, ProjectManager,
 };
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 pub struct Config {
     pub creator: Option<String>,
     pub creator_email: Option<String>,
@@ -30,27 +30,6 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new() -> Self {
-        Self {
-            creator: None,
-            creator_email: None,
-            license: None,
-            python_version: None,
-            min_python_version: None,
-            project_manager: None,
-            is_application: None,
-            github_actions_python_test_versions: None,
-            max_line_length: None,
-            use_dependabot: None,
-            dependabot_schedule: None,
-            dependabot_day: None,
-            use_continuous_deployment: None,
-            use_release_drafter: None,
-            use_multi_os_ci: None,
-            download_latest_packages: None,
-        }
-    }
-
     pub fn load_config() -> Result<Self> {
         if let Some(config_file) = config_file_path() {
             if config_file.exists() {
@@ -62,11 +41,11 @@ impl Config {
             }
         };
 
-        Ok(Self::new())
+        Ok(Self::default())
     }
 
     pub fn reset() -> Result<()> {
-        let config = Config::new();
+        let config = Config::default();
         config.save()?;
 
         Ok(())
@@ -320,7 +299,7 @@ impl Config {
     pub fn show() {
         let config = match Config::load_config() {
             Ok(c) => c,
-            Err(_) => Config::new(),
+            Err(_) => Config::default(),
         };
 
         let creator_label = "Creator";

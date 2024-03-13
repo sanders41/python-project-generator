@@ -347,7 +347,7 @@ fn copyright_year_prompt(license: &LicenseType, default: Option<String>) -> Resu
 pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     let config = match Config::load_config() {
         Ok(c) => c,
-        Err(_) => Config::new(),
+        Err(_) => Config::default(),
     };
     let project_name_prompt = Prompt {
         prompt_text: "Project Name".to_string(),
