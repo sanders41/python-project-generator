@@ -68,11 +68,11 @@ jobs:
         run: |
           cargo deb --deb-revision=""  # --deb-revision="" removes the -1 post tag
           cd target/debian
-          DEB_FILE=$(find python-project-generator*_*.deb)
+          echo "DEB_FILE=$(find python-project-generator*_*.deb)" >> "$GITHUB_OUTPUT"
       - name: Upload deb package to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN}}
-          file: target/debian/${{ steps.create-deb.DEB_FILE }}
-          asset_name: ${{ steps.create-deb.DEB_FILE }}
+          file: target/debian/${{ steps.create-deb.outputs.DEB_FILE }}
+          asset_name: ${{ steps.create-deb.outputs.DEB_FILE }}
           tag: ${{ github.ref }}
