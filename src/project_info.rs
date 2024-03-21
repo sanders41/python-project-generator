@@ -294,8 +294,8 @@ fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectMana
 }
 
 pub fn is_valid_python_version(version: &str) -> bool {
-    let split_version = version.split('.');
-    let split_length = split_version.clone().count();
+    let split_version: Vec<&str> = version.split('.').collect();
+    let split_length = split_version.len();
 
     if !(2..=3).contains(&split_length) {
         return false;
