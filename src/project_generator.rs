@@ -333,7 +333,7 @@ fn create_pyproject_toml(project_info: &ProjectInfo) -> String {
     let license_text = license_str(&project_info.license);
     let mut pyproject = match &project_info.project_manager {
         ProjectManager::Maturin => r#"[build-system]
-requires = ["maturin>=1.0.0"]
+requires = ["maturin>=1.5,<2.0"]
 build-backend = "maturin"
 
 [project]
@@ -1479,7 +1479,7 @@ ignore=[
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
             r#"[build-system]
-requires = ["maturin>=1.0.0"]
+requires = ["maturin>=1.5,<2.0"]
 build-backend = "maturin"
 
 [project]
@@ -1567,7 +1567,7 @@ ignore=[
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
             r#"[build-system]
-requires = ["maturin>=1.0.0"]
+requires = ["maturin>=1.5,<2.0"]
 build-backend = "maturin"
 
 [project]
@@ -1655,7 +1655,7 @@ ignore=[
         let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
         let expected = format!(
             r#"[build-system]
-requires = ["maturin>=1.0.0"]
+requires = ["maturin>=1.5,<2.0"]
 build-backend = "maturin"
 
 [project]
