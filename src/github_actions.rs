@@ -692,7 +692,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
-          name: wheels
+          name: wheels-linux-${{ matrix.target }}
           path: dist
   windows:
     runs-on: windows-latest
@@ -714,7 +714,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
-          name: wheels
+          name: wheels-windows-${{ matrix.target }}
           path: dist
   macos:
     runs-on: macos-latest
@@ -735,7 +735,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
-          name: wheels
+          name: wheels-macos-${{ matrix.target }}
           path: dist
   sdist:
     runs-on: ubuntu-latest
@@ -749,23 +749,22 @@ jobs:
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
-          name: wheels
+          name: wheels-sdist
           path: dist
   release:
     name: Release
     runs-on: ubuntu-latest
+    if: "startsWith(github.ref, 'refs/tags/')"
     needs: [linux, windows, macos, sdist]
     steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: wheels
+      - uses: actions/download-artifact@v4
       - name: Publish to PyPI
         uses: PyO3/maturin-action@v1
         env:
-          MATURIN_PYPI_TOKEN: ${{{{ secrets.PYPI_API_TOKEN }}}}
+          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         with:
           command: upload
-          args: --skip-existing *
+          args: --non-interactive --skip-existing wheels-*/*
 "#
     )
 }
@@ -1947,7 +1946,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
-          name: wheels
+          name: wheels-linux-${{ matrix.target }}
           path: dist
   windows:
     runs-on: windows-latest
@@ -1969,7 +1968,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
-          name: wheels
+          name: wheels-windows-${{ matrix.target }}
           path: dist
   macos:
     runs-on: macos-latest
@@ -1990,7 +1989,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
-          name: wheels
+          name: wheels-macos-${{ matrix.target }}
           path: dist
   sdist:
     runs-on: ubuntu-latest
@@ -2004,23 +2003,22 @@ jobs:
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
-          name: wheels
+          name: wheels-sdist
           path: dist
   release:
     name: Release
     runs-on: ubuntu-latest
+    if: "startsWith(github.ref, 'refs/tags/')"
     needs: [linux, windows, macos, sdist]
     steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: wheels
+      - uses: actions/download-artifact@v4
       - name: Publish to PyPI
         uses: PyO3/maturin-action@v1
         env:
-          MATURIN_PYPI_TOKEN: ${{{{ secrets.PYPI_API_TOKEN }}}}
+          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         with:
           command: upload
-          args: --skip-existing *
+          args: --non-interactive --skip-existing wheels-*/*
 "#,
             &project_info.python_version,
             &project_info.python_version,
