@@ -151,7 +151,7 @@ pub fn default_version(package: &PythonPackage) -> String {
         PythonPackage::Maturin => "1.5.1".to_string(),
         PythonPackage::MyPy => "1.9.0".to_string(),
         PythonPackage::Pytest => "8.1.1".to_string(),
-        PythonPackage::PytestCov => "4.1.0".to_string(),
+        PythonPackage::PytestCov => "5.0.0".to_string(),
         PythonPackage::Ruff => "0.3.4".to_string(),
         PythonPackage::Tomli => "2.0.1".to_string(),
     }
