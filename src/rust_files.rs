@@ -12,7 +12,7 @@ fn build_latest_dependencies(min_python_version: &str, download_latest_packages:
     let abi = format!("abi3-py{}", min_python_version.replace('.', ""));
     let mut packages = vec![RustPackageVersion {
         name: "pyo3".to_string(),
-        version: "0.20.3".to_string(),
+        version: "0.21.0".to_string(),
         features: Some(vec!["extension-module".to_string(), abi]),
     }];
 
@@ -111,7 +111,7 @@ fn sum_as_string(a: usize, b: usize) -> PyResult<String> {{
 }}
 
 #[pymodule]
-fn _{module}(_py: Python, m: &PyModule) -> PyResult<()> {{
+fn _{module}(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {{
     m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
     Ok(())
 }}
@@ -189,7 +189,7 @@ name = "_{}"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = {{ version = "0.20.3", features = ["extension-module", "abi3-py38"] }}
+pyo3 = {{ version = "0.21.0", features = ["extension-module", "abi3-py38"] }}
 "#,
             &project_info.project_slug, &project_info.project_description, &project_info.source_dir
         );
@@ -218,7 +218,7 @@ fn sum_as_string(a: usize, b: usize) -> PyResult<String> {{
 }}
 
 #[pymodule]
-fn _{}(_py: Python, m: &PyModule) -> PyResult<()> {{
+fn _{}(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {{
     m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
     Ok(())
 }}
