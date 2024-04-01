@@ -189,7 +189,7 @@ name = "_{}"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = {{ version = "0.21.0", features = ["extension-module", "abi3-py38"] }}
+pyo3 = {{ version = "0.21.1", features = ["extension-module", "abi3-py38"] }}
 "#,
             &project_info.project_slug, &project_info.project_description, &project_info.source_dir
         );
