@@ -12,7 +12,7 @@ fn build_latest_dependencies(min_python_version: &str, download_latest_packages:
     let abi = format!("abi3-py{}", min_python_version.replace('.', ""));
     let mut packages = vec![RustPackageVersion {
         name: "pyo3".to_string(),
-        version: "0.21.1".to_string(),
+        version: "0.21.2".to_string(),
         features: Some(vec!["extension-module".to_string(), abi]),
     }];
 
@@ -189,7 +189,7 @@ name = "_{}"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = {{ version = "0.21.1", features = ["extension-module", "abi3-py38"] }}
+pyo3 = {{ version = "0.21.2", features = ["extension-module", "abi3-py38"] }}
 "#,
             &project_info.project_slug, &project_info.project_description, &project_info.source_dir
         );
