@@ -426,7 +426,7 @@ target-version = "py{{ pyupgrade_version }}"
 fix = true
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "I001", "T201", "T203"]
+select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
   "E501",
@@ -1157,7 +1157,7 @@ target-version = "py{}"
 fix = true
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "I001", "T201", "T203"]
+select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
   "E501",
@@ -1247,7 +1247,7 @@ target-version = "py{}"
 fix = true
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "I001", "T201", "T203"]
+select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
   "E501",
@@ -1336,7 +1336,7 @@ target-version = "py{}"
 fix = true
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "I001", "T201", "T203"]
+select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
   "E501",
@@ -1426,7 +1426,7 @@ target-version = "py{}"
 fix = true
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "I001", "T201", "T203"]
+select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
   "E501",
@@ -1515,7 +1515,7 @@ target-version = "py{}"
 fix = true
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "I001", "T201", "T203"]
+select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
   "E501",
@@ -1603,7 +1603,7 @@ target-version = "py{}"
 fix = true
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "I001", "T201", "T203"]
+select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
   "E501",
@@ -1690,7 +1690,7 @@ target-version = "py{}"
 fix = true
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "I001", "T201", "T203"]
+select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
   "E501",
@@ -1786,7 +1786,7 @@ target-version = "py{}"
 fix = true
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "I001", "T201", "T203"]
+select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
   "E501",
@@ -1884,7 +1884,7 @@ target-version = "py{}"
 fix = true
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "I001", "T201", "T203"]
+select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
   "E501",
@@ -1981,7 +1981,7 @@ target-version = "py{}"
 fix = true
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "I001", "T201", "T203"]
+select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
   "E501",
@@ -2079,7 +2079,7 @@ target-version = "py{}"
 fix = true
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "I001", "T201", "T203"]
+select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
 ignore=[
   # Recommended ignores by ruff when using formatter
   "E501",
