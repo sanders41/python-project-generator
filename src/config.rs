@@ -466,34 +466,26 @@ mod tests {
     fn test_config_dir() {
         let config_dir = config_dir();
         assert_ne!(config_dir, None);
+        let config = config_dir.unwrap();
 
-        if let Some(c) = config_dir {
-            let last = c.file_name();
-            assert_ne!(last, None);
-            if let Some(l) = last {
-                assert_eq!(l, "python-project-generator");
-            }
-        }
+        let last = config.file_name();
+        assert_ne!(last, None);
+        assert_eq!(last.unwrap(), "python-project-generator");
     }
 
     #[test]
     fn test_config_file_path() {
         let config_file_path = config_file_path();
         assert_ne!(config_file_path, None);
+        let mut config = config_file_path.unwrap();
 
-        if let Some(mut c) = config_file_path {
-            let last = c.file_name();
-            assert_ne!(last, None);
-            if let Some(l) = last {
-                assert_eq!(l, "config.json");
-            }
+        let last = config.file_name();
+        assert_ne!(last, None);
+        assert_eq!(last.unwrap(), "config.json");
 
-            c.pop();
-            let dir = c.file_name();
-            assert_ne!(dir, None);
-            if let Some(d) = dir {
-                assert_eq!(d, "python-project-generator");
-            }
-        }
+        config.pop();
+        let dir = config.file_name();
+        assert_ne!(dir, None);
+        assert_eq!(dir.unwrap(), "python-project-generator");
     }
 }
