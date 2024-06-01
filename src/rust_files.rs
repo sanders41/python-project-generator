@@ -7,13 +7,12 @@ use crate::licenses::license_str;
 use crate::package_version::{LatestVersion, RustPackageVersion};
 use crate::project_info::{LicenseType, ProjectInfo};
 
-fn build_latest_dependencies(min_python_version: &str, download_latest_packages: bool) -> String {
+fn build_latest_dependencies(download_latest_packages: bool) -> String {
     let mut version_string = String::new();
-    let abi = format!("abi3-py{}", min_python_version.replace('.', ""));
     let mut packages = vec![RustPackageVersion {
         name: "pyo3".to_string(),
         version: "0.21.2".to_string(),
-        features: Some(vec!["extension-module".to_string(), abi]),
+        features: Some(vec!["extension-module".to_string()]),
     }];
 
     if download_latest_packages {
@@ -58,10 +57,9 @@ fn create_cargo_toml_file(
     project_description: &str,
     source_dir: &str,
     license_type: &LicenseType,
-    min_python_version: &str,
     download_latest_packages: bool,
 ) -> String {
-    let versions = build_latest_dependencies(min_python_version, download_latest_packages);
+    let versions = build_latest_dependencies(download_latest_packages);
     let license = license_str(license_type);
     let name = source_dir.replace([' ', '-'], "_");
 
@@ -91,7 +89,6 @@ pub fn save_cargo_toml_file(project_info: &ProjectInfo) -> Result<()> {
         &project_info.project_description,
         &project_info.source_dir,
         &project_info.license,
-        &project_info.min_python_version,
         project_info.download_latest_packages,
     );
 
@@ -189,7 +186,7 @@ name = "_{}"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = {{ version = "0.21.2", features = ["extension-module", "abi3-py38"] }}
+pyo3 = {{ version = "0.21.2", features = ["extension-module"] }}
 "#,
             &project_info.project_slug, &project_info.project_description, &project_info.source_dir
         );
