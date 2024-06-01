@@ -2,7 +2,7 @@
 name = "python-project-generator"
 version = "1.0.36"
 edition = "2021"
-authors = ["Paul Sanders <psanders1@gmail.com>"]
+authors = ["Paul Sanders <paul@paulsanders.dev>"]
 description = "Generates a Python project structure."
 documentation = "https://github.com/sanders41/python-project-generator"
 homepage = "https://github.com/sanders41/python-project-generator"
