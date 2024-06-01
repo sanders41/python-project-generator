@@ -1,6 +1,7 @@
 # Python Project Generator
 
 [![Tests Status](https://github.com/sanders41/python-project-generator/workflows/Testing/badge.svg?branch=main&event=push)](https://github.com/sanders41/python-project-generator/actions?query=workflow%3ATesting+branch%3Amain+event%3Apush)
+![crates.io](https://img.shields.io/crates/v/python-project-generator.svg?color=brightgreen)
 
 Generates a Python project structure with github actions for continuous integration and continuous
 deployment. Both pure Python projects and Python projects with Rust modules using PyO3 can be
