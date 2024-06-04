@@ -5,7 +5,7 @@ exclude-labels:
   - "skip-changelog"
 version-resolver:
   major:
-    labesl:
+    labels:
       - "breaking_change"
   minor:
     labels:
@@ -19,7 +19,8 @@ categories:
     labels:
       - "bug"
   - title: "⚠️ Breaking changes"
-    label: "breaking-change"
+    labels:
+      - "breaking-change"
 change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
 template: |
   ## Changes
