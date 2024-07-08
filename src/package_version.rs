@@ -148,7 +148,7 @@ impl LatestVersion for RustPackageVersion {
 
 pub fn default_version(package: &PythonPackage) -> String {
     match package {
-        PythonPackage::Maturin => "1.6.0".to_string(),
+        PythonPackage::Maturin => "1.7.0".to_string(),
         PythonPackage::MyPy => "1.10.1".to_string(),
         PythonPackage::Pytest => "8.2.2".to_string(),
         PythonPackage::PytestCov => "5.0.0".to_string(),
