@@ -149,7 +149,7 @@ impl LatestVersion for RustPackageVersion {
 pub fn default_version(package: &PythonPackage) -> String {
     match package {
         PythonPackage::Maturin => "1.7.0".to_string(),
-        PythonPackage::MyPy => "1.10.1".to_string(),
+        PythonPackage::MyPy => "1.11.0".to_string(),
         PythonPackage::Pytest => "8.3.2".to_string(),
         PythonPackage::PytestCov => "5.0.0".to_string(),
         PythonPackage::Ruff => "0.5.4".to_string(),
@@ -159,7 +159,7 @@ pub fn default_version(package: &PythonPackage) -> String {
 
 pub fn default_pre_commit_rev(hook: &PreCommitHook) -> String {
     match hook {
-        PreCommitHook::MyPy => "v1.10.1".to_string(),
+        PreCommitHook::MyPy => "v1.11.0".to_string(),
         PreCommitHook::PreCommit => "v4.7.1".to_string(),
         PreCommitHook::Ruff => "v0.5.4".to_string(),
     }
