@@ -266,7 +266,6 @@ fn save_pre_commit_file(project_info: &ProjectInfo) -> Result<()> {
 }
 
 fn build_latest_dev_dependencies(
-    is_application: bool,
     download_latest_packages: bool,
     project_manager: &ProjectManager,
 ) -> String {
@@ -298,24 +297,17 @@ fn build_latest_dev_dependencies(
 
     for package in packages {
         if let ProjectManager::Poetry = project_manager {
-            let version: String = if is_application {
-                package.version
-            } else {
-                format!(">={}", package.version)
-            };
-
             if package.package == PythonPackage::Tomli {
                 version_string.push_str(&format!(
                     "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
-                    package.package, version
+                    package.package, package.version
                 ));
             } else {
-                version_string.push_str(&format!("{} = \"{}\"\n", package.package, version));
+                version_string
+                    .push_str(&format!("{} = \"{}\"\n", package.package, package.version));
             }
-        } else if is_application {
-            version_string.push_str(&format!("{}=={}\n", package.package, package.version));
         } else {
-            version_string.push_str(&format!("{}>={}\n", package.package, package.version));
+            version_string.push_str(&format!("{}=={}\n", package.package, package.version));
         }
     }
 
@@ -458,7 +450,7 @@ ignore=[
         creator_email => project_info.creator_email,
         license => license_text,
         min_python_version => project_info.min_python_version,
-        dev_dependencies => build_latest_dev_dependencies(project_info.is_application, project_info.download_latest_packages, &project_info.project_manager),
+        dev_dependencies => build_latest_dev_dependencies(project_info.download_latest_packages, &project_info.project_manager),
         max_line_length => project_info.max_line_length,
         module => module,
         is_application => project_info.is_application,
@@ -478,7 +470,6 @@ fn save_pyproject_toml_file(project_info: &ProjectInfo) -> Result<()> {
 fn save_dev_requirements(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info.base_dir().join("requirements-dev.txt");
     let content = build_latest_dev_dependencies(
-        project_info.is_application,
         project_info.download_latest_packages,
         &project_info.project_manager,
     );
@@ -680,7 +671,7 @@ mod tests {
         }
     }
 
-    fn pinned_poetry_dependencies() -> String {
+    fn poetry_dependencies() -> String {
         let mypy = default_version(&PythonPackage::MyPy);
         let pytest = default_version(&PythonPackage::Pytest);
         let pytest_cov = default_version(&PythonPackage::PytestCov);
@@ -696,23 +687,7 @@ tomli = {{version = "{tomli}", python = "<3.11"}}"#
         )
     }
 
-    fn min_poetry_dependencies() -> String {
-        let mypy = default_version(&PythonPackage::MyPy);
-        let pytest = default_version(&PythonPackage::Pytest);
-        let pytest_cov = default_version(&PythonPackage::PytestCov);
-        let ruff = default_version(&PythonPackage::Ruff);
-        let tomli = default_version(&PythonPackage::Tomli);
-        format!(
-            r#"[tool.poetry.group.dev.dependencies]
-mypy = ">={mypy}"
-pytest = ">={pytest}"
-pytest-cov = ">={pytest_cov}"
-ruff = ">={ruff}"
-tomli = {{version = ">={tomli}", python = "<3.11"}}"#
-        )
-    }
-
-    fn pinned_requirments_file() -> String {
+    fn requirements_file() -> String {
         let mypy = default_version(&PythonPackage::MyPy);
         let pytest = default_version(&PythonPackage::Pytest);
         let pytest_cov = default_version(&PythonPackage::PytestCov);
@@ -724,23 +699,6 @@ pytest=={pytest}
 pytest-cov=={pytest_cov}
 ruff=={ruff}
 maturin=={maturin}
--e .
-"#
-        )
-    }
-
-    fn min_requirments_file() -> String {
-        let mypy = default_version(&PythonPackage::MyPy);
-        let maturin = default_version(&PythonPackage::Maturin);
-        let pytest = default_version(&PythonPackage::Pytest);
-        let pytest_cov = default_version(&PythonPackage::PytestCov);
-        let ruff = default_version(&PythonPackage::Ruff);
-        format!(
-            r#"mypy>={mypy}
-pytest>={pytest}
-pytest-cov>={pytest_cov}
-ruff>={ruff}
-maturin>={maturin}
 -e .
 "#
         )
@@ -1183,7 +1141,7 @@ ignore=[
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
-            pinned_poetry_dependencies(),
+            poetry_dependencies(),
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -1273,7 +1231,7 @@ ignore=[
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
-            pinned_poetry_dependencies(),
+            poetry_dependencies(),
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -1362,7 +1320,7 @@ ignore=[
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
-            pinned_poetry_dependencies(),
+            poetry_dependencies(),
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -1452,7 +1410,7 @@ ignore=[
             project_info.creator,
             project_info.creator_email,
             project_info.min_python_version,
-            min_poetry_dependencies(),
+            poetry_dependencies(),
             project_info.source_dir,
             project_info.max_line_length,
             pyupgrade_version,
@@ -2135,7 +2093,7 @@ ignore=[
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, pinned_requirments_file());
+        assert_eq!(content, requirements_file());
     }
 
     #[test]
@@ -2152,7 +2110,7 @@ ignore=[
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, min_requirments_file());
+        assert_eq!(content, requirements_file());
     }
 
     #[test]
@@ -2169,7 +2127,7 @@ ignore=[
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, pinned_requirments_file());
+        assert_eq!(content, requirements_file());
     }
 
     #[test]
@@ -2186,7 +2144,7 @@ ignore=[
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, min_requirments_file());
+        assert_eq!(content, requirements_file());
     }
 
     #[test]
