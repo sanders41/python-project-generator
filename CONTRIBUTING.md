@@ -12,15 +12,15 @@ for something that interests you.
 
 Please include:
 
-1. A short, self-contained snippet reproducing the problem. You can format the code by using
-[GitHub markdown](https://docs.github.com/en/free-pro-team@latest/github/writing-on-github). For
-example:
+1.  A short, self-contained snippet reproducing the problem. You can format the code by using
+    [GitHub markdown](https://docs.github.com/en/free-pro-team@latest/github/writing-on-github). For
+    example:
 
-    ```sh
-    python-project create
-    ```
+        ```sh
+        python-project create
+        ```
 
-2. Explain what is currently happening and what you expect instead.
+2.  Explain what is currently happening and what you expect instead.
 
 ## Working on the code
 
@@ -88,6 +88,25 @@ cargo check --all-targets
 ```
 
 Be sure to run all these checks before submitting your pull request.
+
+#### just
+
+If you have [just](https://github.com/casey/just) installed it can be used for testing and linting.
+
+To run linting:
+
+```sh
+just lint
+```
+
+Using just to run the tests will start Meilisearch in a Docker container, run the tests, then stop
+the container.
+
+```sh
+just test
+```
+
+To see a full list of `just` commands run `just --list`
 
 ## Committing your code
 
