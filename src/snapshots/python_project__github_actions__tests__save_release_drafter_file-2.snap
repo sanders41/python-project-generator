@@ -1,0 +1,5 @@
+---
+source: src/github_actions.rs
+expression: release_drafter_file_template_content
+---
+"name-template: 'v$RESOLVED_VERSION'\ntag-template: 'v$RESOLVED_VERSION'\nexclude-labels:\n  - 'dependencies'\n  - 'skip-changelog'\nversion-resolver:\n  minor:\n    labels:\n      - 'breaking-change'\n      - 'enhancement'\n  default: patch\ncategories:\n  - title: 'Features'\n    labels:\n      - 'enhancement'\n  - title: 'Bug Fixes'\n    labels:\n      - 'bug'\n  - title: '⚠ Breaking changes'\n    label: 'breaking-change'\nchange-template: '- $TITLE @$AUTHOR (#$NUMBER)'\ntemplate: |\n  ## Changes\n\n  $CHANGES\n"

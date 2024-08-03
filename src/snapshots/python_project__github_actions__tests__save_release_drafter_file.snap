@@ -1,0 +1,5 @@
+---
+source: src/github_actions.rs
+expression: release_drafter_file_content
+---
+"name: Release Drafter\n\non:\n  push:\n    branches:\n      - main\n\njobs:\n  update_release_draft:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: release-drafter/release-drafter@v5\n        with:\n          config-name: release_drafter_template.yml\n        env:\n          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}\n"

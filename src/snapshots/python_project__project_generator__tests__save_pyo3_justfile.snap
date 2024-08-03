@@ -1,0 +1,5 @@
+---
+source: src/project_generator.rs
+expression: content
+---
+"@develop:\n  maturin develop\n\n@install: && develop\n  python -m pip install -r requirements-dev.txt\n\n@lint:\n  echo cargo check\n  just --justfile {{justfile()}} check\n  echo cargo clippy\n  just --justfile {{justfile()}} clippy\n  echo cargo fmt\n  just --justfile {{justfile()}} fmt\n  echo mypy\n  just --justfile {{justfile()}} mypy\n  echo ruff linting\n  just --justfile {{justfile()}} ruff\n  echo ruff formatting\n  just --justfile {{justfile()}} ruff-format\n\n@check:\n  cargo check\n\n@clippy:\n  cargo clippy --all-targets\n\n@fmt:\n  cargo fmt --all -- --check\n\n@mypy:\n  mypy .\n\n@ruff:\n  ruff check . --fix\n\n@ruff-format:\n  ruff format my_project tests\n\n@test:\n  pytest\n"

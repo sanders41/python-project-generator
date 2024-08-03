@@ -1,0 +1,5 @@
+---
+source: src/python_files.rs
+expression: content
+---
+"from __future__ import annotations\n\ndef sum_as_string(a: int, b: int) -> str: ...\n"

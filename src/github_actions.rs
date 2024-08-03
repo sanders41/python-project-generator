@@ -889,6 +889,7 @@ pub fn save_release_drafter_file(project_info: &ProjectInfo) -> Result<()> {
 mod tests {
     use super::*;
     use crate::project_info::{LicenseType, ProjectInfo, ProjectManager};
+    use insta::assert_yaml_snapshot;
     use std::fs::create_dir_all;
     use tempfile::tempdir;
 
@@ -948,72 +949,13 @@ mod tests {
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
         let expected_file = base.join(".github/workflows/testing.yml");
-        let expected = format!(
-            r#"name: Testing
-
-on:
-  push:
-    branches:
-    - main
-  pull_request:
-jobs:
-  linting:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "{}"
-        cache: "poetry"
-    - name: Install Dependencies
-      run: poetry install
-    - name: Ruff format check
-      run: poetry run ruff format {} tests --check
-    - name: Lint with ruff
-      run: poetry run ruff check .
-    - name: mypy check
-      run: poetry run mypy .
-  testing:
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{{{ matrix.python-version }}}}
-        cache: "poetry"
-    - name: Install Dependencies
-      run: poetry install
-    - name: Test with pytest
-      run: poetry run pytest
-"#,
-            &project_info.min_python_version, &project_info.source_dir
-        );
-
         save_ci_testing_linux_only_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1023,98 +965,13 @@ jobs:
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
         let expected_file = base.join(".github/workflows/testing.yml");
-        let expected = format!(
-            r#"name: Testing
-
-on:
-  push:
-    branches:
-    - main
-  pull_request:
-env:
-  CARGO_TERM_COLOR: always
-  RUST_BACKTRACE: 1
-  RUSTFLAGS: "-D warnings"
-jobs:
-  clippy:
-    name: Clippy
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    - name: Cache dependencies
-      uses: Swatinem/rust-cache@v2.6.2
-    - name: Run cargo clippy
-      run: cargo clippy --all-targets -- --deny warnings
-  fmt:
-    name: Rustfmt
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    - name: Cache dependencies
-      uses: Swatinem/rust-cache@v2.6.2
-    - name: Run cargo fmt
-      run: cargo fmt --all -- --check
-  python-linting:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "{}"
-        cache: "pip"
-    - name: Install Dependencies
-      run: |
-        python -m pip install -U pip
-        python -m pip install -r requirements-dev.txt
-        python -m pip install -e .
-        maturin build --out dist
-        python -m pip install --no-index --find-links=dist/ prelude-parser
-    - name: Ruff format check
-      run: ruff format {} tests --check
-    - name: Lint with ruff
-      run: ruff check .
-    - name: mypy check
-      run: mypy .
-  testing:
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{{{ matrix.python-version }}}}
-        cache: "pip"
-    - name: Install Dependencies
-      run: |
-        python -m pip install -U pip
-        python -m pip install -r requirements-dev.txt
-        python -m pip install -e .
-        maturin build --out dist
-        python -m pip install --no-index --find-links=dist/ prelude-parser
-    - name: Test with pytest
-      run: pytest
-"#,
-            &project_info.min_python_version, &project_info.source_dir
-        );
-
         save_ci_testing_linux_only_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1125,64 +982,13 @@ jobs:
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
         let expected_file = base.join(".github/workflows/testing.yml");
-        let expected = format!(
-            r#"name: Testing
-
-on:
-  push:
-    branches:
-    - main
-  pull_request:
-jobs:
-  linting:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "{}"
-        cache: "pip"
-    - name: Install Dependencies
-      run: |
-        python -m pip install -U pip
-        python -m pip install -r requirements-dev.txt
-    - name: Ruff format check
-      run: ruff format {} tests --check
-    - name: Lint with ruff
-      run: ruff check .
-    - name: mypy check
-      run: mypy .
-  testing:
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{{{ matrix.python-version }}}}
-        cache: "pip"
-    - name: Install Dependencies
-      run: |
-        python -m pip install -U pip
-        python -m pip install -r requirements-dev.txt
-    - name: Test with pytest
-      run: pytest
-"#,
-            &project_info.min_python_version, &project_info.source_dir
-        );
-
         save_ci_testing_linux_only_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1193,73 +999,13 @@ jobs:
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
         let expected_file = base.join(".github/workflows/testing.yml");
-        let expected = format!(
-            r#"name: Testing
-
-on:
-  push:
-    branches:
-    - main
-  pull_request:
-jobs:
-  linting:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "{}"
-        cache: "poetry"
-    - name: Install Dependencies
-      run: poetry install
-    - name: Ruff format check
-      run: poetry run ruff format {} tests --check
-    - name: Lint with ruff
-      run: poetry run ruff check .
-    - name: mypy check
-      run: poetry run mypy .
-  testing:
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{{{ matrix.os }}}}
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{{{ matrix.python-version }}}}
-        cache: "poetry"
-    - name: Install Dependencies
-      run: poetry install
-    - name: Test with pytest
-      run: poetry run pytest
-"#,
-            &project_info.min_python_version, &project_info.source_dir
-        );
-
         save_ci_testing_multi_os_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1270,65 +1016,13 @@ jobs:
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
         let expected_file = base.join(".github/workflows/testing.yml");
-        let expected = format!(
-            r#"name: Testing
-
-on:
-  push:
-    branches:
-    - main
-  pull_request:
-jobs:
-  linting:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "{}"
-        cache: "pip"
-    - name: Install Dependencies
-      run: |
-        python -m pip install -U pip
-        python -m pip install -r requirements-dev.txt
-    - name: Ruff format check
-      run: ruff format {} tests --check
-    - name: Lint with ruff
-      run: ruff check .
-    - name: mypy check
-      run: mypy .
-  testing:
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{{{ matrix.os }}}}
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{{{ matrix.python-version }}}}
-        cache: "pip"
-    - name: Install Dependencies
-      run: |
-        python -m pip install -U pip
-        python -m pip install -r requirements-dev.txt
-    - name: Test with pytest
-      run: pytest
-"#,
-            &project_info.min_python_version, &project_info.source_dir
-        );
-
         save_ci_testing_multi_os_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1339,122 +1033,17 @@ jobs:
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
         let expected_file = base.join(".github/workflows/testing.yml");
-        let expected = format!(
-            r#"name: Testing
-
-on:
-  push:
-    branches:
-    - main
-  pull_request:
-env:
-  CARGO_TERM_COLOR: always
-  RUST_BACKTRACE: 1
-  RUSTFLAGS: "-D warnings"
-jobs:
-  clippy:
-    name: Clippy
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    - name: Cache dependencies
-      uses: Swatinem/rust-cache@v2.6.2
-    - name: Run cargo clippy
-      run: cargo clippy --all-targets -- --deny warnings
-  fmt:
-    name: Rustfmt
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    - name: Cache dependencies
-      uses: Swatinem/rust-cache@v2.6.2
-    - name: Run cargo fmt
-      run: cargo fmt --all -- --check
-  python-linting:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "{}"
-        cache: "pip"
-    - name: Install Dependencies
-      run: |
-        python -m pip install -U pip
-        python -m pip install -r requirements-dev.txt
-        python -m pip install -e .
-        maturin build --out dist
-        python -m pip install --no-index --find-links=dist/ prelude-parser
-    - name: Ruff format check
-      run: ruff format {} tests --check
-    - name: Lint with ruff
-      run: ruff check .
-    - name: mypy check
-      run: mypy .
-  testing:
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{{{ matrix.os }}}}
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{{{ matrix.python-version }}}}
-        cache: "pip"
-    - name: Install Dependencies
-      run: |
-        python -m pip install -U pip
-        python -m pip install -r requirements-dev.txt
-        python -m pip install -e .
-        maturin build --out dist
-        python -m pip install --no-index --find-links=dist/ prelude-parser
-    - name: Test with pytest
-      run: pytest
-"#,
-            &project_info.min_python_version, &project_info.source_dir
-        );
-
         save_ci_testing_multi_os_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
     fn test_save_dependabot_file() {
-        let expected = r#"version: 2
-updates:
-  - package-ecosystem: pip
-    directory: "/"
-    schedule:
-      interval: daily
-    labels:
-    - skip-changelog
-    - dependencies
-  - package-ecosystem: github-actions
-    directory: '/'
-    schedule:
-      interval: daily
-    labels:
-    - skip-changelog
-    - dependencies
-"#
-        .to_string();
-
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
         project_info.use_dependabot = true;
@@ -1470,30 +1059,11 @@ updates:
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
     fn test_save_dependabot_file_daily() {
-        let expected = r#"version: 2
-updates:
-  - package-ecosystem: pip
-    directory: "/"
-    schedule:
-      interval: daily
-    labels:
-    - skip-changelog
-    - dependencies
-  - package-ecosystem: github-actions
-    directory: '/'
-    schedule:
-      interval: daily
-    labels:
-    - skip-changelog
-    - dependencies
-"#
-        .to_string();
-
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
         project_info.use_dependabot = true;
@@ -1509,32 +1079,11 @@ updates:
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
     fn test_save_dependabot_file_weekly_no_day() {
-        let expected = r#"version: 2
-updates:
-  - package-ecosystem: pip
-    directory: "/"
-    schedule:
-      interval: weekly
-      day: monday
-    labels:
-    - skip-changelog
-    - dependencies
-  - package-ecosystem: github-actions
-    directory: '/'
-    schedule:
-      interval: weekly
-      day: monday
-    labels:
-    - skip-changelog
-    - dependencies
-"#
-        .to_string();
-
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
         project_info.use_dependabot = true;
@@ -1550,32 +1099,11 @@ updates:
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
     fn test_save_dependabot_file_weekly_tuesday() {
-        let expected = r#"version: 2
-updates:
-  - package-ecosystem: pip
-    directory: "/"
-    schedule:
-      interval: weekly
-      day: tuesday
-    labels:
-    - skip-changelog
-    - dependencies
-  - package-ecosystem: github-actions
-    directory: '/'
-    schedule:
-      interval: weekly
-      day: tuesday
-    labels:
-    - skip-changelog
-    - dependencies
-"#
-        .to_string();
-
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
         project_info.use_dependabot = true;
@@ -1591,30 +1119,11 @@ updates:
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
     fn test_save_dependabot_file_monthly() {
-        let expected = r#"version: 2
-updates:
-  - package-ecosystem: pip
-    directory: "/"
-    schedule:
-      interval: monthly
-    labels:
-    - skip-changelog
-    - dependencies
-  - package-ecosystem: github-actions
-    directory: '/'
-    schedule:
-      interval: monthly
-    labels:
-    - skip-changelog
-    - dependencies
-"#
-        .to_string();
-
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
         project_info.use_dependabot = true;
@@ -1630,37 +1139,11 @@ updates:
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
     fn test_save_dependabot_file_pyo3() {
-        let expected = r#"version: 2
-updates:
-  - package-ecosystem: pip
-    directory: "/"
-    schedule:
-      interval: daily
-    labels:
-    - skip-changelog
-    - dependencies
-  - package-ecosystem: cargo
-    directory: "/"
-    schedule:
-      interval: daily
-    labels:
-    - skip-changelog
-    - dependencies
-  - package-ecosystem: github-actions
-    directory: '/'
-    schedule:
-      interval: daily
-    labels:
-    - skip-changelog
-    - dependencies
-"#
-        .to_string();
-
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
         project_info.dependabot_schedule = None;
@@ -1675,37 +1158,11 @@ updates:
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
     fn test_save_dependabot_file_pyo3_daily() {
-        let expected = r#"version: 2
-updates:
-  - package-ecosystem: pip
-    directory: "/"
-    schedule:
-      interval: daily
-    labels:
-    - skip-changelog
-    - dependencies
-  - package-ecosystem: cargo
-    directory: "/"
-    schedule:
-      interval: daily
-    labels:
-    - skip-changelog
-    - dependencies
-  - package-ecosystem: github-actions
-    directory: '/'
-    schedule:
-      interval: daily
-    labels:
-    - skip-changelog
-    - dependencies
-"#
-        .to_string();
-
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
         project_info.dependabot_schedule = Some(DependabotSchedule::Daily);
@@ -1720,40 +1177,11 @@ updates:
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
     fn test_save_dependabot_file_pyo3_weekly() {
-        let expected = r#"version: 2
-updates:
-  - package-ecosystem: pip
-    directory: "/"
-    schedule:
-      interval: weekly
-      day: monday
-    labels:
-    - skip-changelog
-    - dependencies
-  - package-ecosystem: cargo
-    directory: "/"
-    schedule:
-      interval: weekly
-      day: monday
-    labels:
-    - skip-changelog
-    - dependencies
-  - package-ecosystem: github-actions
-    directory: '/'
-    schedule:
-      interval: weekly
-      day: monday
-    labels:
-    - skip-changelog
-    - dependencies
-"#
-        .to_string();
-
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
         project_info.dependabot_schedule = Some(DependabotSchedule::Weekly);
@@ -1768,40 +1196,11 @@ updates:
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
     fn test_save_dependabot_file_pyo3_weekly_wednesday() {
-        let expected = r#"version: 2
-updates:
-  - package-ecosystem: pip
-    directory: "/"
-    schedule:
-      interval: weekly
-      day: wednesday
-    labels:
-    - skip-changelog
-    - dependencies
-  - package-ecosystem: cargo
-    directory: "/"
-    schedule:
-      interval: weekly
-      day: wednesday
-    labels:
-    - skip-changelog
-    - dependencies
-  - package-ecosystem: github-actions
-    directory: '/'
-    schedule:
-      interval: weekly
-      day: wednesday
-    labels:
-    - skip-changelog
-    - dependencies
-"#
-        .to_string();
-
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
         project_info.dependabot_schedule = Some(DependabotSchedule::Weekly);
@@ -1816,37 +1215,11 @@ updates:
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
     fn test_save_dependabot_file_pyo3_monthly() {
-        let expected = r#"version: 2
-updates:
-  - package-ecosystem: pip
-    directory: "/"
-    schedule:
-      interval: monthly
-    labels:
-    - skip-changelog
-    - dependencies
-  - package-ecosystem: cargo
-    directory: "/"
-    schedule:
-      interval: monthly
-    labels:
-    - skip-changelog
-    - dependencies
-  - package-ecosystem: github-actions
-    directory: '/'
-    schedule:
-      interval: monthly
-    labels:
-    - skip-changelog
-    - dependencies
-"#
-        .to_string();
-
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
         project_info.dependabot_schedule = Some(DependabotSchedule::Monthly);
@@ -1861,7 +1234,7 @@ updates:
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1871,43 +1244,13 @@ updates:
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
         let expected_file = base.join(".github/workflows/pypi_publish.yml");
-        let expected = format!(
-            r#"name: PyPi Publish
-on:
-  release:
-    types:
-    - published
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "{}"
-        cache: "poetry"
-    - name: Install Dependencies
-      run: |
-        poetry install
-    - name: Add pypi token to Poetry
-      run: |
-        poetry config pypi-token.pypi ${{{{ secrets.PYPI_API_KEY }}}}
-    - name: Publish package
-      run: poetry publish --build
-"#,
-            &project_info.python_version
-        );
-
         save_pypi_publish_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1917,172 +1260,17 @@ jobs:
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
         let expected_file = base.join(".github/workflows/pypi_publish.yml");
-        let expected = format!(
-            r#"name: PyPi Publish
-on:
-  release:
-    types:
-    - published
-permissions:
-  contents: read
-jobs:
-  linux:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        target: [x86_64, x86, aarch64, armv7, s390x, ppc64le]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "{}"
-      - name: Build wheels
-        uses: PyO3/maturin-action@v1
-        with:
-          target: ${{{{ matrix.target }}}}
-          args: --release --out dist --find-interpreter
-          sccache: 'true'
-          manylinux: auto
-      - name: Upload wheels
-        uses: actions/upload-artifact@v3
-        with:
-          name: wheels-linux-${{ matrix.target }}
-          path: dist
-  windows:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        target: [x64, x86]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "{}"
-          architecture: ${{{{ matrix.target }}}}
-      - name: Build wheels
-        uses: PyO3/maturin-action@v1
-        with:
-          target: ${{{{ matrix.target }}}}
-          args: --release --out dist --find-interpreter
-          sccache: 'true'
-      - name: Upload wheels
-        uses: actions/upload-artifact@v3
-        with:
-          name: wheels-windows-${{ matrix.target }}
-          path: dist
-  macos:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        target: [x86_64, aarch64]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "{}"
-      - name: Build wheels
-        uses: PyO3/maturin-action@v1
-        with:
-          target: ${{{{ matrix.target }}}}
-          args: --release --out dist --find-interpreter
-          sccache: 'true'
-      - name: Upload wheels
-        uses: actions/upload-artifact@v3
-        with:
-          name: wheels-macos-${{ matrix.target }}
-          path: dist
-  sdist:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build sdist
-        uses: PyO3/maturin-action@v1
-        with:
-          command: sdist
-          args: --out dist
-      - name: Upload sdist
-        uses: actions/upload-artifact@v3
-        with:
-          name: wheels-sdist
-          path: dist
-  release:
-    name: Release
-    runs-on: ubuntu-latest
-    if: "startsWith(github.ref, 'refs/tags/')"
-    needs: [linux, windows, macos, sdist]
-    steps:
-      - uses: actions/download-artifact@v4
-      - name: Publish to PyPI
-        uses: PyO3/maturin-action@v1
-        env:
-          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-        with:
-          command: upload
-          args: --non-interactive --skip-existing wheels-*/*
-"#,
-            &project_info.python_version,
-            &project_info.python_version,
-            &project_info.python_version
-        );
-
         save_pypi_publish_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
     fn test_save_release_drafter_file() {
-        let release_drafer_file_expected = r#"name: Release Drafter
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  update_release_draft:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: release-drafter/release-drafter@v5
-        with:
-          config-name: release_drafter_template.yml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-"#
-        .to_string();
-
-        let expected_release_drafter_template = r#"name-template: 'v$RESOLVED_VERSION'
-tag-template: 'v$RESOLVED_VERSION'
-exclude-labels:
-  - 'dependencies'
-  - 'skip-changelog'
-version-resolver:
-  minor:
-    labels:
-      - 'breaking-change'
-      - 'enhancement'
-  default: patch
-categories:
-  - title: 'Features'
-    labels:
-      - 'enhancement'
-  - title: 'Bug Fixes'
-    labels:
-      - 'bug'
-  - title: '⚠ Breaking changes'
-    label: 'breaking-change'
-change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
-template: |
-  ## Changes
-
-  $CHANGES
-"#
-        .to_string();
-
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
         let base = project_info.base_dir();
@@ -2099,14 +1287,11 @@ template: |
         let release_drafter_file_content =
             std::fs::read_to_string(expected_release_drafter_file).unwrap();
 
-        assert_eq!(release_drafter_file_content, release_drafer_file_expected);
+        assert_yaml_snapshot!(release_drafter_file_content);
 
         let release_drafter_file_template_content =
             std::fs::read_to_string(expected_release_drafter_template_file).unwrap();
 
-        assert_eq!(
-            release_drafter_file_template_content,
-            expected_release_drafter_template
-        );
+        assert_yaml_snapshot!(release_drafter_file_template_content);
     }
 }

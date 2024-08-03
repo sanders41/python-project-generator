@@ -1,0 +1,5 @@
+---
+source: src/python_files.rs
+expression: content
+---
+"from my_project import sum_as_string\n\n\ndef test_sum_as_string():\n    assert sum_as_string(2, 4) == \"6\"\n"

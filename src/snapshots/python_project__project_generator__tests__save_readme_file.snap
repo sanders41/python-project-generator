@@ -1,0 +1,5 @@
+---
+source: src/project_generator.rs
+expression: content
+---
+"# My project\n\nThis is a test\n"
