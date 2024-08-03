@@ -63,25 +63,43 @@ git pull upstream main --ff-only
 
 ### Code linting, formatting, and tests
 
-You can run linting on your code at any time with:
+#### Run linting
 
 ```sh
 cargo clippy --all-targets
 ```
 
-To format the code run:
+#### Run the code formater
 
 ```sh
-cargo fmt
+cargo fmt --all
+```
+
+#### Testing the code
+
+[insta](https://insta.rs") is used for snapshot testing. It is recommended
+to install [cargo-insta](https://github.com/mitsuhiko/insta/tree/master/cargo-insta) to run the
+tests
+
+```sh
+cargo install cargo-insta --locked
 ```
 
 To run the tests:
 
 ```sh
-cargo test
+cargo insta test
 ```
 
-To ensure the code compiles run:
+If the code change is expected to update a snapshot, for example when updating a default
+dependency, run the tests with the verify flat and check that the new snapshots are correct, then
+accept them.
+
+```sh
+cargo insta test --verify
+```
+
+#### Ensure the code compiles
 
 ```sh
 cargo check --all-targets
@@ -99,11 +117,16 @@ To run linting:
 just lint
 ```
 
-Using just to run the tests will start Meilisearch in a Docker container, run the tests, then stop
-the container.
+To run tests:
 
 ```sh
 just test
+```
+
+To run tests and review snapshots:
+
+```sh
+just test-review
 ```
 
 To see a full list of `just` commands run `just --list`
