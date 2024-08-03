@@ -635,9 +635,10 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::package_version::{default_pre_commit_rev, default_version, pre_commit_repo};
     use crate::project_info::{LicenseType, ProjectInfo};
+    use insta::assert_yaml_snapshot;
     use tempfile::tempdir;
+
     fn project_info_dummy() -> ProjectInfo {
         ProjectInfo {
             project_name: "My project".to_string(),
@@ -671,182 +672,8 @@ mod tests {
         }
     }
 
-    fn poetry_dependencies() -> String {
-        let mypy = default_version(&PythonPackage::MyPy);
-        let pytest = default_version(&PythonPackage::Pytest);
-        let pytest_cov = default_version(&PythonPackage::PytestCov);
-        let ruff = default_version(&PythonPackage::Ruff);
-        let tomli = default_version(&PythonPackage::Tomli);
-        format!(
-            r#"[tool.poetry.group.dev.dependencies]
-mypy = "{mypy}"
-pytest = "{pytest}"
-pytest-cov = "{pytest_cov}"
-ruff = "{ruff}"
-tomli = {{version = "{tomli}", python = "<3.11"}}"#
-        )
-    }
-
-    fn requirements_file() -> String {
-        let mypy = default_version(&PythonPackage::MyPy);
-        let pytest = default_version(&PythonPackage::Pytest);
-        let pytest_cov = default_version(&PythonPackage::PytestCov);
-        let ruff = default_version(&PythonPackage::Ruff);
-        let maturin = default_version(&PythonPackage::Maturin);
-        format!(
-            r#"mypy=={mypy}
-pytest=={pytest}
-pytest-cov=={pytest_cov}
-ruff=={ruff}
-maturin=={maturin}
--e .
-"#
-        )
-    }
-
     #[test]
     fn test_save_gitigngore_file() {
-        let expected = r#"
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# OS Files
-*.swp
-*.DS_Store
-
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# editors
-.idea
-.vscode
-"#
-        .to_string();
-
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
         let base = project_info.base_dir();
@@ -858,155 +685,11 @@ dmypy.json
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
     fn test_save_gitigngore_pyo3_file() {
-        let expected = r#"
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# OS Files
-*.swp
-*.DS_Store
-
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# editors
-.idea
-.vscode
-
-# Rust
-/target
-"#
-        .to_string();
-
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
         let base = project_info.base_dir();
@@ -1018,41 +701,11 @@ dmypy.json
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
     fn test_save_pre_commit_file() {
-        let mypy_rev = default_pre_commit_rev(&PreCommitHook::MyPy);
-        let mypy_repo = pre_commit_repo(&PreCommitHook::MyPy);
-        let pre_commit_rev = default_pre_commit_rev(&PreCommitHook::PreCommit);
-        let pc_repo = pre_commit_repo(&PreCommitHook::PreCommit);
-        let ruff_rev = default_pre_commit_rev(&PreCommitHook::Ruff);
-        let ruff_repo = pre_commit_repo(&PreCommitHook::Ruff);
-        let expected = format!(
-            r#"repos:
-  - repo: {pc_repo}
-    rev: {pre_commit_rev}
-    hooks:
-    - id: check-added-large-files
-    - id: check-toml
-    - id: check-yaml
-    - id: debug-statements
-    - id: end-of-file-fixer
-    - id: trailing-whitespace
-  - repo: {mypy_repo}
-    rev: {mypy_rev}
-    hooks:
-    - id: mypy
-  - repo: {ruff_repo}
-    rev: {ruff_rev}
-    hooks:
-    - id: ruff
-      args: [--fix, --exit-non-zero-on-fix]
-    - id: ruff-format
-"#
-        );
-
         let project_info = project_info_dummy();
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
@@ -1063,7 +716,7 @@ dmypy.json
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1075,85 +728,13 @@ dmypy.json
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("pyproject.toml");
-        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
-        let expected = format!(
-            r#"[tool.poetry]
-name = "{}"
-version = "{}"
-description = "{}"
-authors = ["{} <{}>"]
-license = "MIT"
-readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^{}"
-
-{}
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.mypy]
-check_untyped_defs = true
-disallow_untyped_defs = true
-
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-disallow_untyped_defs = false
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
-
-[tool.coverage.report]
-exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
-
-[tool.ruff]
-line-length = {}
-target-version = "py{}"
-fix = true
-
-[tool.ruff.lint]
-select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
-ignore=[
-  # Recommended ignores by ruff when using formatter
-  "E501",
-  "W191",
-  "E111",
-  "E114",
-  "E117",
-  "D206",
-  "D300",
-  "Q000",
-  "Q001",
-  "Q002",
-  "Q003",
-  "COM812",
-  "COM819",
-  "ISC001",
-  "ISC002",
-]
-"#,
-            project_info.source_dir.replace('_', "-"),
-            project_info.version,
-            project_info.project_description,
-            project_info.creator,
-            project_info.creator_email,
-            project_info.min_python_version,
-            poetry_dependencies(),
-            project_info.source_dir,
-            project_info.max_line_length,
-            pyupgrade_version,
-        );
-
         save_pyproject_toml_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1165,85 +746,13 @@ ignore=[
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("pyproject.toml");
-        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
-        let expected = format!(
-            r#"[tool.poetry]
-name = "{}"
-version = "{}"
-description = "{}"
-authors = ["{} <{}>"]
-license = "Apache-2.0"
-readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^{}"
-
-{}
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.mypy]
-check_untyped_defs = true
-disallow_untyped_defs = true
-
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-disallow_untyped_defs = false
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
-
-[tool.coverage.report]
-exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
-
-[tool.ruff]
-line-length = {}
-target-version = "py{}"
-fix = true
-
-[tool.ruff.lint]
-select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
-ignore=[
-  # Recommended ignores by ruff when using formatter
-  "E501",
-  "W191",
-  "E111",
-  "E114",
-  "E117",
-  "D206",
-  "D300",
-  "Q000",
-  "Q001",
-  "Q002",
-  "Q003",
-  "COM812",
-  "COM819",
-  "ISC001",
-  "ISC002",
-]
-"#,
-            project_info.source_dir.replace('_', "-"),
-            project_info.version,
-            project_info.project_description,
-            project_info.creator,
-            project_info.creator_email,
-            project_info.min_python_version,
-            poetry_dependencies(),
-            project_info.source_dir,
-            project_info.max_line_length,
-            pyupgrade_version,
-        );
-
         save_pyproject_toml_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1255,84 +764,13 @@ ignore=[
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("pyproject.toml");
-        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
-        let expected = format!(
-            r#"[tool.poetry]
-name = "{}"
-version = "{}"
-description = "{}"
-authors = ["{} <{}>"]
-readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^{}"
-
-{}
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.mypy]
-check_untyped_defs = true
-disallow_untyped_defs = true
-
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-disallow_untyped_defs = false
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
-
-[tool.coverage.report]
-exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
-
-[tool.ruff]
-line-length = {}
-target-version = "py{}"
-fix = true
-
-[tool.ruff.lint]
-select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
-ignore=[
-  # Recommended ignores by ruff when using formatter
-  "E501",
-  "W191",
-  "E111",
-  "E114",
-  "E117",
-  "D206",
-  "D300",
-  "Q000",
-  "Q001",
-  "Q002",
-  "Q003",
-  "COM812",
-  "COM819",
-  "ISC001",
-  "ISC002",
-]
-"#,
-            project_info.source_dir.replace('_', "-"),
-            project_info.version,
-            project_info.project_description,
-            project_info.creator,
-            project_info.creator_email,
-            project_info.min_python_version,
-            poetry_dependencies(),
-            project_info.source_dir,
-            project_info.max_line_length,
-            pyupgrade_version,
-        );
-
         save_pyproject_toml_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1344,85 +782,13 @@ ignore=[
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("pyproject.toml");
-        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
-        let expected = format!(
-            r#"[tool.poetry]
-name = "{}"
-version = "{}"
-description = "{}"
-authors = ["{} <{}>"]
-license = "MIT"
-readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^{}"
-
-{}
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.mypy]
-check_untyped_defs = true
-disallow_untyped_defs = true
-
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-disallow_untyped_defs = false
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
-
-[tool.coverage.report]
-exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
-
-[tool.ruff]
-line-length = {}
-target-version = "py{}"
-fix = true
-
-[tool.ruff.lint]
-select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
-ignore=[
-  # Recommended ignores by ruff when using formatter
-  "E501",
-  "W191",
-  "E111",
-  "E114",
-  "E117",
-  "D206",
-  "D300",
-  "Q000",
-  "Q001",
-  "Q002",
-  "Q003",
-  "COM812",
-  "COM819",
-  "ISC001",
-  "ISC002",
-]
-"#,
-            project_info.source_dir.replace('_', "-"),
-            project_info.version,
-            project_info.project_description,
-            project_info.creator,
-            project_info.creator_email,
-            project_info.min_python_version,
-            poetry_dependencies(),
-            project_info.source_dir,
-            project_info.max_line_length,
-            pyupgrade_version,
-        );
-
         save_pyproject_toml_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1434,83 +800,13 @@ ignore=[
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("pyproject.toml");
-        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
-        let expected = format!(
-            r#"[build-system]
-requires = ["maturin>=1.5,<2.0"]
-build-backend = "maturin"
-
-[project]
-name = "{}"
-description = "{}"
-authors = [{{name = "{}", email =  "{}"}}]
-license = "MIT"
-readme = "README.md"
-
-[tool.maturin]
-module-name = "{}._{}"
-binding = "pyo3"
-features = ["pyo3/extension-module"]
-
-[tool.mypy]
-check_untyped_defs = true
-disallow_untyped_defs = true
-
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-disallow_untyped_defs = false
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
-
-[tool.coverage.report]
-exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
-
-[tool.ruff]
-line-length = {}
-target-version = "py{}"
-fix = true
-
-[tool.ruff.lint]
-select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
-ignore=[
-  # Recommended ignores by ruff when using formatter
-  "E501",
-  "W191",
-  "E111",
-  "E114",
-  "E117",
-  "D206",
-  "D300",
-  "Q000",
-  "Q001",
-  "Q002",
-  "Q003",
-  "COM812",
-  "COM819",
-  "ISC001",
-  "ISC002",
-]
-"#,
-            project_info.source_dir.replace('_', "-"),
-            project_info.project_description,
-            project_info.creator,
-            project_info.creator_email,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.max_line_length,
-            pyupgrade_version,
-        );
-
         save_pyproject_toml_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1522,83 +818,13 @@ ignore=[
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("pyproject.toml");
-        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
-        let expected = format!(
-            r#"[build-system]
-requires = ["maturin>=1.5,<2.0"]
-build-backend = "maturin"
-
-[project]
-name = "{}"
-description = "{}"
-authors = [{{name = "{}", email =  "{}"}}]
-license = "Apache-2.0"
-readme = "README.md"
-
-[tool.maturin]
-module-name = "{}._{}"
-binding = "pyo3"
-features = ["pyo3/extension-module"]
-
-[tool.mypy]
-check_untyped_defs = true
-disallow_untyped_defs = true
-
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-disallow_untyped_defs = false
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
-
-[tool.coverage.report]
-exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
-
-[tool.ruff]
-line-length = {}
-target-version = "py{}"
-fix = true
-
-[tool.ruff.lint]
-select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
-ignore=[
-  # Recommended ignores by ruff when using formatter
-  "E501",
-  "W191",
-  "E111",
-  "E114",
-  "E117",
-  "D206",
-  "D300",
-  "Q000",
-  "Q001",
-  "Q002",
-  "Q003",
-  "COM812",
-  "COM819",
-  "ISC001",
-  "ISC002",
-]
-"#,
-            project_info.source_dir.replace('_', "-"),
-            project_info.project_description,
-            project_info.creator,
-            project_info.creator_email,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.max_line_length,
-            pyupgrade_version,
-        );
-
         save_pyproject_toml_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1610,82 +836,13 @@ ignore=[
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("pyproject.toml");
-        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
-        let expected = format!(
-            r#"[build-system]
-requires = ["maturin>=1.5,<2.0"]
-build-backend = "maturin"
-
-[project]
-name = "{}"
-description = "{}"
-authors = [{{name = "{}", email =  "{}"}}]
-readme = "README.md"
-
-[tool.maturin]
-module-name = "{}._{}"
-binding = "pyo3"
-features = ["pyo3/extension-module"]
-
-[tool.mypy]
-check_untyped_defs = true
-disallow_untyped_defs = true
-
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-disallow_untyped_defs = false
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
-
-[tool.coverage.report]
-exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
-
-[tool.ruff]
-line-length = {}
-target-version = "py{}"
-fix = true
-
-[tool.ruff.lint]
-select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
-ignore=[
-  # Recommended ignores by ruff when using formatter
-  "E501",
-  "W191",
-  "E111",
-  "E114",
-  "E117",
-  "D206",
-  "D300",
-  "Q000",
-  "Q001",
-  "Q002",
-  "Q003",
-  "COM812",
-  "COM819",
-  "ISC001",
-  "ISC002",
-]
-"#,
-            project_info.source_dir.replace('_', "-"),
-            project_info.project_description,
-            project_info.creator,
-            project_info.creator_email,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.max_line_length,
-            pyupgrade_version,
-        );
-
         save_pyproject_toml_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1697,93 +854,13 @@ ignore=[
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("pyproject.toml");
-        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
-        let expected = format!(
-            r#"[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "{}"
-description = "{}"
-authors = [
-  {{ name = "{}", email = "{}" }}
-]
-license = {{ text = "MIT" }}
-requires-python = ">={}"
-dynamic = ["version", "readme"]
-
-[tool.setuptools.dynamic]
-version = {{attr = "{}.__version__"}}
-readme = {{file = ["README.md"]}}
-
-[tool.setuptools.packages.find]
-include = ["{}*"]
-
-[tool.setuptools.package-data]
-{} = ["py.typed"]
-
-[tool.mypy]
-check_untyped_defs = true
-disallow_untyped_defs = true
-
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-disallow_untyped_defs = false
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
-
-[tool.coverage.report]
-exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
-
-[tool.ruff]
-line-length = {}
-target-version = "py{}"
-fix = true
-
-[tool.ruff.lint]
-select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
-ignore=[
-  # Recommended ignores by ruff when using formatter
-  "E501",
-  "W191",
-  "E111",
-  "E114",
-  "E117",
-  "D206",
-  "D300",
-  "Q000",
-  "Q001",
-  "Q002",
-  "Q003",
-  "COM812",
-  "COM819",
-  "ISC001",
-  "ISC002",
-]
-"#,
-            project_info.source_dir.replace('_', "-"),
-            project_info.project_description,
-            project_info.creator,
-            project_info.creator_email,
-            project_info.min_python_version,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.max_line_length,
-            pyupgrade_version,
-        );
-
         save_pyproject_toml_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1795,93 +872,13 @@ ignore=[
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("pyproject.toml");
-        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
-        let expected = format!(
-            r#"[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "{}"
-description = "{}"
-authors = [
-  {{ name = "{}", email = "{}" }}
-]
-license = {{ text = "Apache-2.0" }}
-requires-python = ">={}"
-dynamic = ["version", "readme"]
-
-[tool.setuptools.dynamic]
-version = {{attr = "{}.__version__"}}
-readme = {{file = ["README.md"]}}
-
-[tool.setuptools.packages.find]
-include = ["{}*"]
-
-[tool.setuptools.package-data]
-{} = ["py.typed"]
-
-[tool.mypy]
-check_untyped_defs = true
-disallow_untyped_defs = true
-
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-disallow_untyped_defs = false
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
-
-[tool.coverage.report]
-exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
-
-[tool.ruff]
-line-length = {}
-target-version = "py{}"
-fix = true
-
-[tool.ruff.lint]
-select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
-ignore=[
-  # Recommended ignores by ruff when using formatter
-  "E501",
-  "W191",
-  "E111",
-  "E114",
-  "E117",
-  "D206",
-  "D300",
-  "Q000",
-  "Q001",
-  "Q002",
-  "Q003",
-  "COM812",
-  "COM819",
-  "ISC001",
-  "ISC002",
-]
-"#,
-            project_info.source_dir.replace('_', "-"),
-            project_info.project_description,
-            project_info.creator,
-            project_info.creator_email,
-            project_info.min_python_version,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.max_line_length,
-            pyupgrade_version,
-        );
-
         save_pyproject_toml_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1893,92 +890,13 @@ ignore=[
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("pyproject.toml");
-        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
-        let expected = format!(
-            r#"[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "{}"
-description = "{}"
-authors = [
-  {{ name = "{}", email = "{}" }}
-]
-requires-python = ">={}"
-dynamic = ["version", "readme"]
-
-[tool.setuptools.dynamic]
-version = {{attr = "{}.__version__"}}
-readme = {{file = ["README.md"]}}
-
-[tool.setuptools.packages.find]
-include = ["{}*"]
-
-[tool.setuptools.package-data]
-{} = ["py.typed"]
-
-[tool.mypy]
-check_untyped_defs = true
-disallow_untyped_defs = true
-
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-disallow_untyped_defs = false
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
-
-[tool.coverage.report]
-exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
-
-[tool.ruff]
-line-length = {}
-target-version = "py{}"
-fix = true
-
-[tool.ruff.lint]
-select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
-ignore=[
-  # Recommended ignores by ruff when using formatter
-  "E501",
-  "W191",
-  "E111",
-  "E114",
-  "E117",
-  "D206",
-  "D300",
-  "Q000",
-  "Q001",
-  "Q002",
-  "Q003",
-  "COM812",
-  "COM819",
-  "ISC001",
-  "ISC002",
-]
-"#,
-            project_info.source_dir.replace('_', "-"),
-            project_info.project_description,
-            project_info.creator,
-            project_info.creator_email,
-            project_info.min_python_version,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.max_line_length,
-            pyupgrade_version,
-        );
-
         save_pyproject_toml_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1990,93 +908,13 @@ ignore=[
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("pyproject.toml");
-        let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
-        let expected = format!(
-            r#"[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "{}"
-description = "{}"
-authors = [
-  {{ name = "{}", email = "{}" }}
-]
-license = {{ text = "MIT" }}
-requires-python = ">={}"
-dynamic = ["version", "readme"]
-
-[tool.setuptools.dynamic]
-version = {{attr = "{}.__version__"}}
-readme = {{file = ["README.md"]}}
-
-[tool.setuptools.packages.find]
-include = ["{}*"]
-
-[tool.setuptools.package-data]
-{} = ["py.typed"]
-
-[tool.mypy]
-check_untyped_defs = true
-disallow_untyped_defs = true
-
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-disallow_untyped_defs = false
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "--cov={} --cov-report term-missing --no-cov-on-fail"
-
-[tool.coverage.report]
-exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
-
-[tool.ruff]
-line-length = {}
-target-version = "py{}"
-fix = true
-
-[tool.ruff.lint]
-select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
-ignore=[
-  # Recommended ignores by ruff when using formatter
-  "E501",
-  "W191",
-  "E111",
-  "E114",
-  "E117",
-  "D206",
-  "D300",
-  "Q000",
-  "Q001",
-  "Q002",
-  "Q003",
-  "COM812",
-  "COM819",
-  "ISC001",
-  "ISC002",
-]
-"#,
-            project_info.source_dir.replace('_', "-"),
-            project_info.project_description,
-            project_info.creator,
-            project_info.creator_email,
-            project_info.min_python_version,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.source_dir,
-            project_info.max_line_length,
-            pyupgrade_version,
-        );
-
         save_pyproject_toml_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -2093,7 +931,7 @@ ignore=[
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, requirements_file());
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -2110,7 +948,7 @@ ignore=[
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, requirements_file());
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -2127,7 +965,7 @@ ignore=[
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, requirements_file());
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -2144,7 +982,7 @@ ignore=[
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, requirements_file());
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -2155,71 +993,18 @@ ignore=[
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("justfile");
-        let expected = format!(
-            r#"@develop:
-  maturin develop
-
-@install: && develop
-  python -m pip install -r requirements-dev.txt
-
-@lint:
-  echo cargo check
-  just --justfile {{{{justfile()}}}} check
-  echo cargo clippy
-  just --justfile {{{{justfile()}}}} clippy
-  echo cargo fmt
-  just --justfile {{{{justfile()}}}} fmt
-  echo mypy
-  just --justfile {{{{justfile()}}}} mypy
-  echo ruff linting
-  just --justfile {{{{justfile()}}}} ruff
-  echo ruff formatting
-  just --justfile {{{{justfile()}}}} ruff-format
-
-@check:
-  cargo check
-
-@clippy:
-  cargo clippy --all-targets
-
-@fmt:
-  cargo fmt --all -- --check
-
-@mypy:
-  mypy .
-
-@ruff:
-  ruff check . --fix
-
-@ruff-format:
-  ruff format {} tests
-
-@test:
-  pytest
-"#,
-            &project_info.source_dir
-        );
-
         save_pyo3_justfile(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
     fn test_save_readme_file() {
         let project_info = project_info_dummy();
-        let expected = format!(
-            r#"# {}
-
-{}
-"#,
-            &project_info.project_name, &project_info.project_description
-        );
-
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("README.md");
@@ -2229,6 +1014,6 @@ ignore=[
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 }

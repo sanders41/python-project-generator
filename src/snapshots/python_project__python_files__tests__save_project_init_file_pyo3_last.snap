@@ -1,0 +1,5 @@
+---
+source: src/python_files.rs
+expression: content
+---
+"from z_my_project._version import VERSION\nfrom z_my_project._z_my_project import sum_as_string\n\n__version__ = VERSION\n\n\n__all__ = [\"sum_as_string\"]\n"

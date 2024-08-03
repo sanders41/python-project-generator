@@ -1,0 +1,5 @@
+---
+source: src/python_files.rs
+expression: content
+---
+"VERSION = \"0.1.0\"\n"

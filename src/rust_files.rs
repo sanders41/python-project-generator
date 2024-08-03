@@ -129,6 +129,7 @@ pub fn save_lib_file(project_info: &ProjectInfo) -> Result<()> {
 mod tests {
     use super::*;
     use crate::project_info::{LicenseType, ProjectInfo, ProjectManager};
+    use insta::assert_yaml_snapshot;
     use std::fs::create_dir_all;
     use tempfile::tempdir;
 
@@ -172,32 +173,13 @@ mod tests {
         let base = project_info.base_dir();
         create_dir_all(base.join(&project_info.project_slug)).unwrap();
         let expected_file = base.join("Cargo.toml");
-        let expected = format!(
-            r#"[package]
-name = "{}"
-version = "0.1.0"
-description = "{}"
-edition = "2021"
-license = "MIT"
-readme = "README.md"
-
-[lib]
-name = "_{}"
-crate-type = ["cdylib"]
-
-[dependencies]
-pyo3 = {{ version = "0.22.2", features = ["extension-module"] }}
-"#,
-            &project_info.project_slug, &project_info.project_description, &project_info.source_dir
-        );
-
         save_cargo_toml_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -206,30 +188,12 @@ pyo3 = {{ version = "0.22.2", features = ["extension-module"] }}
         let base = project_info.base_dir();
         create_dir_all(base.join("src")).unwrap();
         let expected_file = base.join("src/lib.rs");
-        let expected = format!(
-            r#"use pyo3::prelude::*;
-
-#[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String> {{
-    Ok((a + b).to_string())
-}}
-
-#[pymodule]
-fn _{}(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {{
-    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
-    Ok(())
-}}
-"#,
-            &project_info.source_dir
-        )
-        .to_string();
-
         save_lib_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_eq!(content, expected);
+        assert_yaml_snapshot!(content);
     }
 }

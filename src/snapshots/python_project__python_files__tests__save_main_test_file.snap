@@ -1,0 +1,5 @@
+---
+source: src/python_files.rs
+expression: content
+---
+"from my_project.main import main\n\n\ndef test_main():\n    assert main() == 0\n"

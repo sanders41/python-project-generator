@@ -19,4 +19,4 @@ fmt:
   cargo fmt --all
 
 test:
-  cargo test
+  cargo insta test --review

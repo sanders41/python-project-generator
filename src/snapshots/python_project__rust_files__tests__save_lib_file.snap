@@ -1,0 +1,5 @@
+---
+source: src/rust_files.rs
+expression: content
+---
+"use pyo3::prelude::*;\n\n#[pyfunction]\nfn sum_as_string(a: usize, b: usize) -> PyResult<String> {\n    Ok((a + b).to_string())\n}\n\n#[pymodule]\nfn _my_project(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {\n    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;\n    Ok(())\n}\n"

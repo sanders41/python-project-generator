@@ -1,0 +1,5 @@
+---
+source: src/python_files.rs
+expression: content
+---
+"import sys\nfrom pathlib import Path\n\nfrom my_project._version import VERSION\n\nif sys.version_info < (3, 11):\n    import tomli as tomllib\nelse:\n    import tomllib\n\n\ndef test_versions_match():\n    cargo = Path().absolute() / \"Cargo.toml\"\n    with open(cargo, \"rb\") as f:\n        data = tomllib.load(f)\n        cargo_version = data[\"package\"][\"version\"]\n\n    assert VERSION == cargo_version\n"

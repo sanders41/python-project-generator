@@ -1,0 +1,5 @@
+---
+source: src/github_actions.rs
+expression: content
+---
+"version: 2\nupdates:\n  - package-ecosystem: pip\n    directory: \"/\"\n    schedule:\n      interval: weekly\n      day: monday\n    labels:\n    - skip-changelog\n    - dependencies\n  - package-ecosystem: cargo\n    directory: \"/\"\n    schedule:\n      interval: weekly\n      day: monday\n    labels:\n    - skip-changelog\n    - dependencies\n  - package-ecosystem: github-actions\n    directory: '/'\n    schedule:\n      interval: weekly\n      day: monday\n    labels:\n    - skip-changelog\n    - dependencies\n"
