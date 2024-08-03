@@ -2,4 +2,4 @@
 source: src/project_generator.rs
 expression: content
 ---
-"mypy==1.11.1\npytest==8.3.2\npytest-cov==5.0.0\nruff==0.5.5\nmaturin==1.7.0\n-e .\n"
+"mypy==1.11.1\npytest==8.3.2\npytest-cov==5.0.0\nruff==0.5.6\nmaturin==1.7.0\n-e .\n"
