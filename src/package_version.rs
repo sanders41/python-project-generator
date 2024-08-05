@@ -164,7 +164,7 @@ pub fn default_version(package: &PythonPackage) -> String {
 pub fn default_pre_commit_rev(hook: &PreCommitHook) -> String {
     match hook {
         PreCommitHook::MyPy => "v1.11.1".to_string(),
-        PreCommitHook::PreCommit => "v4.7.1".to_string(),
+        PreCommitHook::PreCommit => "v4.6.0".to_string(),
         PreCommitHook::Ruff => "v0.5.6".to_string(),
     }
 }
