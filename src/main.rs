@@ -276,11 +276,10 @@ mod tests {
             copyright_year: Some("2023".to_string()),
             version: "0.1.0".to_string(),
             python_version: "3.12".to_string(),
-            min_python_version: "3.8".to_string(),
+            min_python_version: "3.9".to_string(),
             project_manager: ProjectManager::Poetry,
             is_application: true,
             github_actions_python_test_versions: vec![
-                "3.8".to_string(),
                 "3.9".to_string(),
                 "3.10".to_string(),
                 "3.11".to_string(),
