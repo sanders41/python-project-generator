@@ -467,7 +467,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
 
     let min_python_version_default = match config.min_python_version {
         Some(python) => python,
-        None => "3.8".to_string(),
+        None => "3.9".to_string(),
     };
     let min_python_version = if use_defaults {
         min_python_version_default
@@ -496,7 +496,6 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
                     }
                 } else {
                     vec![
-                        "3.8".to_string(),
                         "3.9".to_string(),
                         "3.10".to_string(),
                         "3.11".to_string(),
