@@ -7,6 +7,7 @@ use anyhow::Result;
 pub enum PythonPackage {
     Maturin,
     MyPy,
+    PreCommit,
     Pytest,
     PytestCov,
     Ruff,
@@ -18,6 +19,7 @@ impl fmt::Display for PythonPackage {
         match self {
             PythonPackage::Maturin => write!(f, "maturin"),
             PythonPackage::MyPy => write!(f, "mypy"),
+            PythonPackage::PreCommit => write!(f, "pre-commit"),
             PythonPackage::Pytest => write!(f, "pytest"),
             PythonPackage::PytestCov => write!(f, "pytest-cov"),
             PythonPackage::Ruff => write!(f, "ruff"),
@@ -98,6 +100,7 @@ impl LatestVersion for PythonPackageVersion {
     fn get_latest_version(&mut self) -> Result<()> {
         let name = self.package.to_string();
         let url = format!("https://pypi.org/pypi/{}/json", name);
+        println!("{url}");
         let client = reqwest::blocking::Client::new();
         let response = client
             .get(url)
@@ -150,6 +153,7 @@ pub fn default_version(package: &PythonPackage) -> String {
     match package {
         PythonPackage::Maturin => "1.7.0".to_string(),
         PythonPackage::MyPy => "1.11.1".to_string(),
+        PythonPackage::PreCommit => "3.8.0".to_string(),
         PythonPackage::Pytest => "8.3.2".to_string(),
         PythonPackage::PytestCov => "5.0.0".to_string(),
         PythonPackage::Ruff => "0.5.6".to_string(),

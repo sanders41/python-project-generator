@@ -272,6 +272,7 @@ fn build_latest_dev_dependencies(
     let mut version_string = String::new();
     let mut packages = vec![
         PythonPackageVersion::new(PythonPackage::MyPy),
+        PythonPackageVersion::new(PythonPackage::PreCommit),
         PythonPackageVersion::new(PythonPackage::Pytest),
         PythonPackageVersion::new(PythonPackage::PytestCov),
         PythonPackageVersion::new(PythonPackage::Ruff),
