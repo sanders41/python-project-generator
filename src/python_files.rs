@@ -7,7 +7,9 @@ use crate::project_info::{ProjectInfo, ProjectManager};
 
 fn create_dunder_main_file(module: &str) -> String {
     format!(
-        r#"from {module}.main import main  #  pragma: no cover
+        r#"from __future__ import annotations
+
+from {module}.main import main  #  pragma: no cover
 
 if __name__ == "__main__":
     raise SystemExit(main())
@@ -16,7 +18,10 @@ if __name__ == "__main__":
 }
 
 fn create_main_file() -> String {
-    r#"def main() -> int:
+    r#"from __future__ import annotations
+
+
+def main() -> int:
     print("Hello world!")  # noqa: T201
 
     return 0

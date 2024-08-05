@@ -2,4 +2,4 @@
 source: src/python_files.rs
 expression: main_content
 ---
-"def main() -> int:\n    print(\"Hello world!\")  # noqa: T201\n\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n"
+"from __future__ import annotations\n\n\ndef main() -> int:\n    print(\"Hello world!\")  # noqa: T201\n\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n"
