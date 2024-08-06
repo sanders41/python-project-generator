@@ -31,4 +31,4 @@ time = { version = "0.3.35", features = ["local-offset"] }
 
 [dev-dependencies]
 insta = { version = "1.39.0", features = ["yaml"] }
-tempfile = "3.11.0"
+tempfile = "3.12.0"
