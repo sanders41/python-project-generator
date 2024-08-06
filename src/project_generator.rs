@@ -480,6 +480,44 @@ fn save_dev_requirements(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
+fn create_justfile(module: &str) -> String {
+    format!(
+        r#"@lint:
+  echo mypy
+  just --justfile {{{{justfile()}}}} mypy
+  echo ruff
+  just --justfile {{{{justfile()}}}} ruff
+  echo ruff-format
+  just --justfile {{{{justfile()}}}} ruff-format
+
+@mypy:
+  poetry run mypy {module} tests
+
+@ruff:
+  poetry run ruff check {module} tests
+
+@ruff-format:
+  poetry run ruff format {module} tests
+
+@test:
+  -poetry run pytest -x
+
+@install:
+  poetry install
+"#
+    )
+}
+
+fn save_justfile(project_info: &ProjectInfo) -> Result<()> {
+    let module = project_info.source_dir.replace([' ', '-'], "_");
+    let file_path = project_info.base_dir().join("justfile");
+    let content = create_justfile(&module);
+
+    save_file_with_content(&file_path, &content)?;
+
+    Ok(())
+}
+
 fn create_pyo3_justfile(module: &str) -> String {
     format!(
         r#"@develop:
@@ -518,12 +556,11 @@ fn create_pyo3_justfile(module: &str) -> String {
   ruff check . --fix
 
 @ruff-format:
-  ruff format {} tests
+  ruff format {module} tests
 
 @test:
   pytest
-"#,
-        module
+"#
     )
 }
 
@@ -586,27 +623,37 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
         bail!("Error creating pyproject.toml file");
     }
 
-    if let ProjectManager::Maturin = &project_info.project_manager {
-        if save_dev_requirements(project_info).is_err() {
-            bail!("Error creating requirements-dev.txt file");
+    match &project_info.project_manager {
+        ProjectManager::Poetry => {
+            if save_justfile(project_info).is_err() {
+                bail!("Error creating justfile");
+            }
         }
+        ProjectManager::Maturin => {
+            if save_dev_requirements(project_info).is_err() {
+                bail!("Error creating requirements-dev.txt file");
+            }
 
-        if save_pyo3_justfile(project_info).is_err() {
-            bail!("Error creating justfile");
+            if save_pyo3_justfile(project_info).is_err() {
+                bail!("Error creating justfile");
+            }
+
+            if save_lib_file(project_info).is_err() {
+                bail!("Error creating Rust lib.rs file");
+            }
+
+            if save_cargo_toml_file(project_info).is_err() {
+                bail!("Error creating Rust lib.rs file");
+            }
         }
+        ProjectManager::Setuptools => {
+            if save_dev_requirements(project_info).is_err() {
+                bail!("Error creating requirements-dev.txt file");
+            }
 
-        if save_lib_file(project_info).is_err() {
-            bail!("Error creating Rust lib.rs file");
-        }
-
-        if save_cargo_toml_file(project_info).is_err() {
-            bail!("Error creating Rust lib.rs file");
-        }
-    }
-
-    if let ProjectManager::Setuptools = &project_info.project_manager {
-        if save_dev_requirements(project_info).is_err() {
-            bail!("Error creating requirements-dev.txt file");
+            if save_justfile(project_info).is_err() {
+                bail!("Error creating justfile");
+            }
         }
     }
 
@@ -987,7 +1034,39 @@ mod tests {
     }
 
     #[test]
-    fn test_save_pyo3_justfile() {
+    fn test_save_justfile_poetry() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("justfile");
+        save_justfile(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_justfile_setuptools() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Setuptools;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("justfile");
+        save_justfile(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_justfile_maturin() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
         project_info.is_application = false;
