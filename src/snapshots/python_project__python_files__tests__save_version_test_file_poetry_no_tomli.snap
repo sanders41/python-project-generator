@@ -1,0 +1,5 @@
+---
+source: src/python_files.rs
+expression: content
+---
+"import tomllib\nfrom pathlib import Path\n\nfrom my_project._version import VERSION\n\n\ndef test_versions_match():\n    pyproject = Path().absolute() / \"pyproject.toml\"\n    with open(pyproject, \"rb\") as f:\n        data = tomllib.load(f)\n        pyproject_version = data[\"tool\"][\"poetry\"][\"version\"]\n\n    assert VERSION == pyproject_version\n"
