@@ -100,7 +100,6 @@ impl LatestVersion for PythonPackageVersion {
     fn get_latest_version(&mut self) -> Result<()> {
         let name = self.package.to_string();
         let url = format!("https://pypi.org/pypi/{}/json", name);
-        println!("{url}");
         let client = reqwest::blocking::Client::new();
         let response = client
             .get(url)

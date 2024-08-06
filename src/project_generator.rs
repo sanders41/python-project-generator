@@ -17,6 +17,7 @@ use crate::package_version::{
 use crate::project_info::{ProjectInfo, ProjectManager};
 use crate::python_files::generate_python_files;
 use crate::rust_files::{save_cargo_toml_file, save_lib_file};
+use crate::utils::is_python_312_or_greater;
 
 fn create_directories(project_info: &ProjectInfo) -> Result<()> {
     let module = project_info.source_dir.replace([' ', '-'], "_");
@@ -268,7 +269,8 @@ fn save_pre_commit_file(project_info: &ProjectInfo) -> Result<()> {
 fn build_latest_dev_dependencies(
     download_latest_packages: bool,
     project_manager: &ProjectManager,
-) -> String {
+    min_python_version: &str,
+) -> Result<String> {
     let mut version_string = String::new();
     let mut packages = vec![
         PythonPackageVersion::new(PythonPackage::MyPy),
@@ -278,11 +280,17 @@ fn build_latest_dev_dependencies(
         PythonPackageVersion::new(PythonPackage::Ruff),
     ];
 
-    match project_manager {
-        ProjectManager::Maturin => packages.push(PythonPackageVersion::new(PythonPackage::Maturin)),
-        ProjectManager::Poetry => packages.push(PythonPackageVersion::new(PythonPackage::Tomli)),
-        ProjectManager::Setuptools => (),
-    };
+    if !is_python_312_or_greater(min_python_version)? {
+        match project_manager {
+            ProjectManager::Maturin => {
+                packages.push(PythonPackageVersion::new(PythonPackage::Maturin))
+            }
+            ProjectManager::Poetry => {
+                packages.push(PythonPackageVersion::new(PythonPackage::Tomli))
+            }
+            ProjectManager::Setuptools => (),
+        };
+    }
 
     if download_latest_packages {
         packages.par_iter_mut().for_each(|package| {
@@ -313,14 +321,14 @@ fn build_latest_dev_dependencies(
     }
 
     if let ProjectManager::Poetry = project_manager {
-        version_string.trim().to_string()
+        Ok(version_string.trim().to_string())
     } else {
         version_string.push_str("-e .\n");
-        version_string
+        Ok(version_string)
     }
 }
 
-fn create_pyproject_toml(project_info: &ProjectInfo) -> String {
+fn create_pyproject_toml(project_info: &ProjectInfo) -> Result<String> {
     let module = project_info.source_dir.replace([' ', '-'], "_");
     let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
     let license_text = license_str(&project_info.license);
@@ -442,7 +450,7 @@ ignore=[
 "#,
     );
 
-    render!(
+    Ok(render!(
         &pyproject,
         project_name => module.replace('_', "-"),
         version => project_info.version,
@@ -451,17 +459,17 @@ ignore=[
         creator_email => project_info.creator_email,
         license => license_text,
         min_python_version => project_info.min_python_version,
-        dev_dependencies => build_latest_dev_dependencies(project_info.download_latest_packages, &project_info.project_manager),
+        dev_dependencies => build_latest_dev_dependencies(project_info.download_latest_packages, &project_info.project_manager, &project_info.min_python_version)?,
         max_line_length => project_info.max_line_length,
         module => module,
         is_application => project_info.is_application,
         pyupgrade_version => pyupgrade_version,
-    )
+    ))
 }
 
 fn save_pyproject_toml_file(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info.base_dir().join("pyproject.toml");
-    let content = create_pyproject_toml(project_info);
+    let content = create_pyproject_toml(project_info)?;
 
     save_file_with_content(&file_path, &content)?;
 
@@ -473,7 +481,8 @@ fn save_dev_requirements(project_info: &ProjectInfo) -> Result<()> {
     let content = build_latest_dev_dependencies(
         project_info.download_latest_packages,
         &project_info.project_manager,
-    );
+        &project_info.min_python_version,
+    )?;
 
     save_file_with_content(&file_path, &content)?;
 

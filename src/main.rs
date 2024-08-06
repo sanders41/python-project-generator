@@ -8,6 +8,7 @@ mod project_generator;
 mod project_info;
 mod python_files;
 mod rust_files;
+mod utils;
 
 use std::fs::remove_dir_all;
 use std::process::exit;

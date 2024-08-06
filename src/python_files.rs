@@ -4,6 +4,7 @@ use anyhow::{bail, Result};
 
 use crate::file_manager::save_file_with_content;
 use crate::project_info::{ProjectInfo, ProjectManager};
+use crate::utils::is_python_312_or_greater;
 
 fn create_dunder_main_file(module: &str) -> String {
     format!(
@@ -200,7 +201,11 @@ fn save_version_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_version_test_file(module: &str, project_manager: &ProjectManager) -> String {
+fn create_version_test_file(
+    module: &str,
+    project_manager: &ProjectManager,
+    min_python_version: &str,
+) -> Result<String> {
     let version_test: &str = match project_manager {
         ProjectManager::Maturin => {
             r#"def test_versions_match():
@@ -221,18 +226,30 @@ fn create_version_test_file(module: &str, project_manager: &ProjectManager) -> S
     assert VERSION == pyproject_version"#
         }
         ProjectManager::Setuptools => {
-            return format!(
+            return Ok(format!(
                 r#"from {module}._version import VERSION
 
 def test_versions_match():
     assert VERSION == "0.1.0"
 "#
-            )
+            ))
         }
     };
 
-    format!(
-        r#"import sys
+    if is_python_312_or_greater(min_python_version)? {
+        Ok(format!(
+            r#"import tomllib
+from pathlib import Path
+
+from {module}._version import VERSION
+
+
+{version_test}
+"#
+        ))
+    } else {
+        Ok(format!(
+            r#"import sys
 from pathlib import Path
 
 from {module}._version import VERSION
@@ -245,13 +262,18 @@ else:
 
 {version_test}
 "#
-    )
+        ))
+    }
 }
 
 fn save_version_test_file(project_info: &ProjectInfo) -> Result<()> {
     let module = project_info.source_dir.replace([' ', '-'], "_");
     let file_path = project_info.base_dir().join("tests/test_version.py");
-    let content = create_version_test_file(&module, &project_info.project_manager);
+    let content = create_version_test_file(
+        &module,
+        &project_info.project_manager,
+        &project_info.min_python_version,
+    )?;
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
@@ -483,9 +505,26 @@ mod tests {
     }
 
     #[test]
-    fn test_save_version_test_file_poetry() {
+    fn test_save_version_test_file_poetry_tomli() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
+        let base = project_info.base_dir();
+        create_dir_all(base.join("tests")).unwrap();
+        let expected_file = base.join("tests/test_version.py");
+        save_version_test_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_version_test_file_poetry_no_tomli() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.min_python_version = "3.12".to_string();
         let base = project_info.base_dir();
         create_dir_all(base.join("tests")).unwrap();
         let expected_file = base.join("tests/test_version.py");
