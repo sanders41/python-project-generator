@@ -131,9 +131,9 @@ checksum = "8318a53db07bb3f8dca91a600466bdb3f2eaadeedfdbcf02e1accbad9271ba50"
 
 [[package]]
 name = "cc"
-version = "1.1.7"
+version = "1.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26a5c3fd7bfa1ce3897a3a3501d362b2d87b7f2583ebcb4a949ec25911025cbc"
+checksum = "504bdec147f2cc13c8b57ed9401fd8a147cc66b67ad5cb241394244f2c947549"
 
 [[package]]
 name = "cfg-if"
@@ -707,9 +707,9 @@ checksum = "6877bb514081ee2a7ff5ef9de3281f14a4dd4bceac4c09388074a6b5df8a139a"
 
 [[package]]
 name = "minijinja"
-version = "2.1.1"
+version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4bf71af278c578cbcc91d0b1ff092910208bc86f7b3750364642bd424e3dcd3"
+checksum = "bf369fce3289017a63e514dfca10a0a6f1a02216b21b588b79f6a1081eb999f5"
 dependencies = [
  "serde",
 ]
@@ -775,9 +775,9 @@ checksum = "830b246a0e5f20af87141b25c173cd1b609bd7779a4617d6ec582abaf90870f3"
 
 [[package]]
 name = "object"
-version = "0.36.2"
+version = "0.36.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f203fa8daa7bb185f760ae12bd8e097f63d17041dcdcaf675ac54cdf863170e"
+checksum = "27b64972346851a39438c60b341ebc01bba47464ae329e55cf343eb93964efd9"
 dependencies = [
  "memchr",
 ]
@@ -905,7 +905,7 @@ dependencies = [
 
 [[package]]
 name = "python-project-generator"
-version = "1.4.0"
+version = "1.4.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -1065,9 +1065,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-pki-types"
-version = "1.7.0"
+version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "976295e77ce332211c0d24d92c0e83e50f5c5f046d11082cea19f3df13a3562d"
+checksum = "fc0a2ce646f8655401bb81e7927b812614bd5d91dbc968696be50603510fcaf0"
 
 [[package]]
 name = "rustls-webpki"
