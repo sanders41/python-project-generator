@@ -2,4 +2,4 @@
 source: src/project_generator.rs
 expression: content
 ---
-"repos:\n  - repo: https://github.com/pre-commit/pre-commit-hooks\n    rev: v4.6.0\n    hooks:\n    - id: check-added-large-files\n    - id: check-toml\n    - id: check-yaml\n    - id: debug-statements\n    - id: end-of-file-fixer\n    - id: trailing-whitespace\n  - repo: https://github.com/pre-commit/mirrors-mypy\n    rev: v1.11.1\n    hooks:\n    - id: mypy\n  - repo: https://github.com/astral-sh/ruff-pre-commit\n    rev: v0.6.1\n    hooks:\n    - id: ruff\n      args: [--fix, --exit-non-zero-on-fix]\n    - id: ruff-format\n"
+"repos:\n  - repo: https://github.com/pre-commit/pre-commit-hooks\n    rev: v4.6.0\n    hooks:\n    - id: check-added-large-files\n    - id: check-toml\n    - id: check-yaml\n    - id: debug-statements\n    - id: end-of-file-fixer\n    - id: trailing-whitespace\n  - repo: https://github.com/pre-commit/mirrors-mypy\n    rev: v1.11.1\n    hooks:\n    - id: mypy\n  - repo: https://github.com/astral-sh/ruff-pre-commit\n    rev: v0.6.2\n    hooks:\n    - id: ruff\n      args: [--fix, --exit-non-zero-on-fix]\n    - id: ruff-format\n"
