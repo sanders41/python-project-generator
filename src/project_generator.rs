@@ -489,7 +489,7 @@ fn save_dev_requirements(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_justfile(module: &str) -> String {
+fn create_poetry_justfile(module: &str) -> String {
     format!(
         r#"@lint:
   echo mypy
@@ -515,16 +515,6 @@ fn create_justfile(module: &str) -> String {
   poetry install
 "#
     )
-}
-
-fn save_justfile(project_info: &ProjectInfo) -> Result<()> {
-    let module = project_info.source_dir.replace([' ', '-'], "_");
-    let file_path = project_info.base_dir().join("justfile");
-    let content = create_justfile(&module);
-
-    save_file_with_content(&file_path, &content)?;
-
-    Ok(())
 }
 
 fn create_pyo3_justfile(module: &str) -> String {
@@ -573,10 +563,42 @@ fn create_pyo3_justfile(module: &str) -> String {
     )
 }
 
-fn save_pyo3_justfile(project_info: &ProjectInfo) -> Result<()> {
+fn create_setuptools_justfile(module: &str) -> String {
+    format!(
+        r#"@lint:
+  echo mypy
+  just --justfile {{{{justfile()}}}} mypy
+  echo ruff
+  just --justfile {{{{justfile()}}}} ruff
+  echo ruff-format
+  just --justfile {{{{justfile()}}}} ruff-format
+
+@mypy:
+  python -m mypy {module} tests
+
+@ruff:
+  python -m ruff check {module} tests
+
+@ruff-format:
+  python -m ruff format {module} tests
+
+@test:
+  -python -m pytest -x
+
+@install:
+  python -m pip install -r requirements-dev.txt
+"#
+    )
+}
+
+fn save_justfile(project_info: &ProjectInfo) -> Result<()> {
     let module = project_info.source_dir.replace([' ', '-'], "_");
     let file_path = project_info.base_dir().join("justfile");
-    let content = create_pyo3_justfile(&module);
+    let content = match &project_info.project_manager {
+        ProjectManager::Poetry => create_poetry_justfile(&module),
+        ProjectManager::Maturin => create_pyo3_justfile(&module),
+        ProjectManager::Setuptools => create_setuptools_justfile(&module),
+    };
 
     save_file_with_content(&file_path, &content)?;
 
@@ -643,7 +665,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
                 bail!("Error creating requirements-dev.txt file");
             }
 
-            if save_pyo3_justfile(project_info).is_err() {
+            if save_justfile(project_info).is_err() {
                 bail!("Error creating justfile");
             }
 
@@ -1082,7 +1104,7 @@ mod tests {
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("justfile");
-        save_pyo3_justfile(&project_info).unwrap();
+        save_justfile(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
