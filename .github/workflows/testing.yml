@@ -238,13 +238,12 @@ jobs:
       - name: ruff
         working-directory: ${{ env.WORKING_DIR }}
         run: ruff check .
-  setuptools-test:
+  uv-linting:
     strategy:
       fail-fast: false
       matrix:
         project_type: ["application", "lib"]
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust
@@ -252,24 +251,25 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.7.3
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "${{ env.MIN_PYTHON_VERSION }}"
       - name: Build package
         run: cargo build --release
       - name: Run creation
         run: |
-          ./scripts/ci_run.sh ${{ matrix.project_type }} 3
+          ./scripts/ci_run.sh ${{ matrix.project_type }} 4
       - name: Install Dependencies
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          python -m pip install -U pip
-          pipx install pre-commit
-          python -m pip install -r requirements-dev.txt
-      - name: Pre-commit install
+          uv lock
+          uv sync --locked
+      - name: MyPy
         working-directory: ${{ env.WORKING_DIR }}
-        run: pre-commit install
-      - name: Test with pytest
+        run: uv run mypy .
+      - name: ruff
         working-directory: ${{ env.WORKING_DIR }}
-        run: pytest
+        run: uv run ruff check .
