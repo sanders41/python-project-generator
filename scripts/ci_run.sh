@@ -17,7 +17,7 @@ project_manager="1"
 
 # Check for user provided project manager input
 if [ $# -gt 1 ]; then
-  if [ $2 -lt 1 ] || [ $2 -gt 3 ]; then
+  if [ $2 -lt 1 ] || [ $2 -gt 4 ]; then
     echo "Invalid project_manager value"
     exit 1
   else

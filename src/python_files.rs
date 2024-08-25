@@ -205,51 +205,44 @@ fn create_version_test_file(
     module: &str,
     project_manager: &ProjectManager,
     min_python_version: &str,
-) -> Result<String> {
-    let version_test: &str = match project_manager {
-        ProjectManager::Maturin => {
+) -> Result<Option<String>> {
+    let version_test: Option<&str> = match project_manager {
+        ProjectManager::Maturin => Some(
             r#"def test_versions_match():
     cargo = Path().absolute() / "Cargo.toml"
     with open(cargo, "rb") as f:
         data = tomllib.load(f)
         cargo_version = data["package"]["version"]
 
-    assert VERSION == cargo_version"#
-        }
-        ProjectManager::Poetry => {
+    assert VERSION == cargo_version"#,
+        ),
+        ProjectManager::Poetry => Some(
             r#"def test_versions_match():
     pyproject = Path().absolute() / "pyproject.toml"
     with open(pyproject, "rb") as f:
         data = tomllib.load(f)
         pyproject_version = data["tool"]["poetry"]["version"]
 
-    assert VERSION == pyproject_version"#
-        }
-        ProjectManager::Setuptools => {
-            return Ok(format!(
-                r#"from {module}._version import VERSION
-
-def test_versions_match():
-    assert VERSION == "0.1.0"
-"#
-            ))
-        }
+    assert VERSION == pyproject_version"#,
+        ),
+        _ => None,
     };
 
-    if is_python_312_or_greater(min_python_version)? {
-        Ok(format!(
-            r#"import tomllib
+    if let Some(v) = version_test {
+        if is_python_312_or_greater(min_python_version)? {
+            Ok(Some(format!(
+                r#"import tomllib
 from pathlib import Path
 
 from {module}._version import VERSION
 
 
-{version_test}
+{v}
 "#
-        ))
-    } else {
-        Ok(format!(
-            r#"import sys
+            )))
+        } else {
+            Ok(Some(format!(
+                r#"import sys
 from pathlib import Path
 
 from {module}._version import VERSION
@@ -260,9 +253,12 @@ else:
     import tomllib
 
 
-{version_test}
+{v}
 "#
-        ))
+            )))
+        }
+    } else {
+        Ok(None)
     }
 }
 
@@ -274,7 +270,10 @@ fn save_version_test_file(project_info: &ProjectInfo) -> Result<()> {
         &project_info.project_manager,
         &project_info.min_python_version,
     )?;
-    save_file_with_content(&file_path, &content)?;
+
+    if let Some(c) = content {
+        save_file_with_content(&file_path, &c)?;
+    }
 
     Ok(())
 }
@@ -562,10 +561,18 @@ mod tests {
         let expected_file = base.join("tests/test_version.py");
         save_version_test_file(&project_info).unwrap();
 
-        assert!(expected_file.is_file());
+        assert!(!expected_file.is_file());
+    }
 
-        let content = std::fs::read_to_string(expected_file).unwrap();
+    #[test]
+    fn test_save_version_test_file_uv() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        let base = project_info.base_dir();
+        create_dir_all(base.join("tests")).unwrap();
+        let expected_file = base.join("tests/test_version.py");
+        save_version_test_file(&project_info).unwrap();
 
-        assert_yaml_snapshot!(content);
+        assert!(!expected_file.is_file());
     }
 }

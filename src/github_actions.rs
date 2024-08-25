@@ -135,6 +135,84 @@ jobs:
     )
 }
 
+fn create_uv_ci_testing_linux_only_file(
+    source_dir: &str,
+    min_python_version: &str,
+    github_action_python_test_versions: &[String],
+) -> String {
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+
+    format!(
+        r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  UV_CACHE_DIR: /tmp/.uv-cache
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "{min_python_version}"
+    - name: Restore uv cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.UV_CACHE_DIR }}
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          uv-${{ runner.os }}
+    - name: Install Dependencies
+      run: uv sync --locked
+    - name: Ruff format check
+      run: uv run ruff format {source_dir} tests --check
+    - name: Lint with ruff
+      run: uv run ruff check .
+    - name: mypy check
+      run: uv run mypy .
+    - name: Minimize uv cache
+      run: uv cache prune --ci
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+    - name: Restore uv cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.UV_CACHE_DIR }}
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          uv-${{ runner.os }}
+    - name: Install Dependencies
+      run: uv sync --locked
+    - name: Test with pytest
+      run: uv run pytest
+    - name: Minimize uv cache
+      run: uv cache prune --ci
+"#
+    )
+}
+
 fn create_ci_testing_linux_only_file_pyo3(
     source_dir: &str,
     min_python_version: &str,
@@ -243,6 +321,11 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
             &project_info.github_actions_python_test_versions,
         ),
         ProjectManager::Setuptools => create_setuptools_ci_testing_linux_only_file(
+            &project_info.source_dir,
+            &project_info.min_python_version,
+            &project_info.github_actions_python_test_versions,
+        ),
+        ProjectManager::Uv => create_uv_ci_testing_linux_only_file(
             &project_info.source_dir,
             &project_info.min_python_version,
             &project_info.github_actions_python_test_versions,
@@ -473,6 +556,90 @@ jobs:
     )
 }
 
+fn create_uv_ci_testing_multi_os_file(
+    source_dir: &str,
+    min_python_version: &str,
+    github_action_python_test_versions: &[String],
+) -> String {
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+
+    format!(
+        r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  UV_CACHE_DIR: /tmp/.uv-cache
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "{min_python_version}"
+    - name: Restore uv cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.UV_CACHE_DIR }}
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          uv-${{ runner.os }}
+    - name: Install Dependencies
+      run: uv sync --locked
+    - name: Ruff format check
+      run: uv run ruff format {source_dir} tests --check
+    - name: Lint with ruff
+      run: uv run ruff check .
+    - name: mypy check
+      run: uv run mypy .
+    - name: Minimize uv cache
+      run: uv cache prune --ci
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{{{ matrix.os }}}}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up uv ubuntu/mac
+        if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest' }}
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+    - name: Set up uv windows
+      if: ${{ matrix.os == 'windows-latest' }}
+      run: irm https://astral.sh/uv/install.ps1 | iex
+      shell: powershell
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+    - name: Restore uv cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.UV_CACHE_DIR }}
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          uv-${{ runner.os }}
+    - name: Install Dependencies
+      run: uv sync --locked
+    - name: Test with pytest
+      run: uv run pytest
+    - name: Minimize uv cache
+      run: uv cache prune --ci
+"#
+    )
+}
+
 pub fn save_ci_testing_multi_os_file(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info
         .base_dir()
@@ -489,6 +656,11 @@ pub fn save_ci_testing_multi_os_file(project_info: &ProjectInfo) -> Result<()> {
             &project_info.github_actions_python_test_versions,
         ),
         ProjectManager::Setuptools => create_setuptools_ci_testing_multi_os_file(
+            &project_info.source_dir,
+            &project_info.min_python_version,
+            &project_info.github_actions_python_test_versions,
+        ),
+        ProjectManager::Uv => create_uv_ci_testing_multi_os_file(
             &project_info.source_dir,
             &project_info.min_python_version,
             &project_info.github_actions_python_test_versions,
@@ -791,13 +963,44 @@ jobs:
         python -m pip install -U pip
         python -m pip -r requirements-dev.txt
         python -m pip install build setuptools wheel twine
-    - name: Publish package
+    - name: Build and publish package
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{{{ secrets.PYPI_API_KEY }}}}
       run: |
         python -m build
         twine upload dist/*
+"#
+    )
+}
+
+fn create_uv_pypi_publish_file(python_version: &str) -> String {
+    format!(
+        r#"name: PyPi Publish
+on:
+  release:
+    types:
+    - published
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "{python_version}"
+    - name: Install Dependencies
+        run: uv sync --frozen
+    - name: Build and publish package
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{{{ secrets.PYPI_API_KEY }}}}
+      run: |
+        uvx --from build pyproject-build --installer uv
+        uvx twine upload dist/*
 "#
     )
 }
@@ -812,6 +1015,7 @@ pub fn save_pypi_publish_file(project_info: &ProjectInfo) -> Result<()> {
         ProjectManager::Setuptools => {
             create_setuptools_pypi_publish_file(&project_info.python_version)
         }
+        ProjectManager::Uv => create_uv_pypi_publish_file(&project_info.python_version),
     };
 
     save_file_with_content(&file_path, &content)?;
@@ -990,6 +1194,23 @@ mod tests {
     }
 
     #[test]
+    fn test_save_uv_ci_testing_linux_only_file() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        project_info.use_multi_os_ci = false;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        save_ci_testing_linux_only_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
     fn test_save_poetry_ci_testing_multi_os_file() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
@@ -1027,6 +1248,23 @@ mod tests {
     fn test_save_ci_testing_multi_os_file_pyo3() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
+        project_info.use_multi_os_ci = true;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        save_ci_testing_multi_os_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_uv_ci_testing_multi_os_file() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
         project_info.use_multi_os_ci = true;
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();

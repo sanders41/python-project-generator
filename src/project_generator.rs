@@ -288,7 +288,7 @@ fn build_latest_dev_dependencies(
             ProjectManager::Poetry => {
                 packages.push(PythonPackageVersion::new(PythonPackage::Tomli))
             }
-            ProjectManager::Setuptools => (),
+            _ => (),
         };
     }
 
@@ -304,27 +304,41 @@ fn build_latest_dev_dependencies(
         })
     }
 
+    if let ProjectManager::Uv = project_manager {
+        version_string.push_str("[\n");
+    }
+
     for package in packages {
-        if let ProjectManager::Poetry = project_manager {
-            if package.package == PythonPackage::Tomli {
-                version_string.push_str(&format!(
-                    "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
-                    package.package, package.version
-                ));
-            } else {
-                version_string
-                    .push_str(&format!("{} = \"{}\"\n", package.package, package.version));
+        match project_manager {
+            ProjectManager::Poetry => {
+                if package.package == PythonPackage::Tomli {
+                    version_string.push_str(&format!(
+                        "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
+                        package.package, package.version
+                    ));
+                } else {
+                    version_string
+                        .push_str(&format!("{} = \"{}\"\n", package.package, package.version));
+                }
             }
-        } else {
-            version_string.push_str(&format!("{}=={}\n", package.package, package.version));
+            ProjectManager::Uv => version_string.push_str(&format!(
+                "  \"{}=={}\",\n",
+                package.package, package.version
+            )),
+            _ => version_string.push_str(&format!("{}=={}\n", package.package, package.version)),
         }
     }
 
-    if let ProjectManager::Poetry = project_manager {
-        Ok(version_string.trim().to_string())
-    } else {
-        version_string.push_str("-e .\n");
-        Ok(version_string)
+    match project_manager {
+        ProjectManager::Poetry => Ok(version_string.trim().to_string()),
+        ProjectManager::Uv => {
+            version_string.push(']');
+            Ok(version_string)
+        }
+        _ => {
+            version_string.push_str("-e .\n");
+            Ok(version_string)
+        }
     }
 }
 
@@ -400,6 +414,32 @@ include = ["{{ module }}*"]
 
 [tool.setuptools.package-data]
 {{ module }} = ["py.typed"]
+
+"#
+        .to_string(),
+        ProjectManager::Uv => r#"[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "{{ project_name }}"
+description = "{{ project_description }}"
+authors = [
+  { name = "{{ creator }}", email = "{{ creator_email }}" }
+]
+{% if license != "NoLicense" -%}
+license = { file = "LICENSE" }
+{% endif -%}
+readme = "README.md"
+requires-python = ">={{ min_python_version }}"
+dynamic = ["version"]
+dependencies = []
+
+[tool.uv]
+dev-dependencies = {{ dev_dependencies }}
+
+[tool.hatch.version]
+path = "{{ module }}/_version.py"
 
 "#
         .to_string(),
@@ -591,6 +631,37 @@ fn create_setuptools_justfile(module: &str) -> String {
     )
 }
 
+fn create_uv_justfile(module: &str) -> String {
+    format!(
+        r#"@lint:
+  echo mypy
+  just --justfile {{{{justfile()}}}} mypy
+  echo ruff
+  just --justfile {{{{justfile()}}}} ruff
+  echo ruff-format
+  just --justfile {{{{justfile()}}}} ruff-format
+
+@mypy:
+  uv run mypy {module} tests
+
+@ruff:
+  uv run ruff check {module} tests
+
+@ruff-format:
+  uv run ruff format {module} tests
+
+@test:
+  -uv run pytest -x
+
+@lock:
+  uv lock
+
+@install:
+  uv sync --locked --all-extras
+"#
+    )
+}
+
 fn save_justfile(project_info: &ProjectInfo) -> Result<()> {
     let module = project_info.source_dir.replace([' ', '-'], "_");
     let file_path = project_info.base_dir().join("justfile");
@@ -598,6 +669,7 @@ fn save_justfile(project_info: &ProjectInfo) -> Result<()> {
         ProjectManager::Poetry => create_poetry_justfile(&module),
         ProjectManager::Maturin => create_pyo3_justfile(&module),
         ProjectManager::Setuptools => create_setuptools_justfile(&module),
+        ProjectManager::Uv => create_uv_justfile(&module),
     };
 
     save_file_with_content(&file_path, &content)?;
@@ -682,6 +754,11 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
                 bail!("Error creating requirements-dev.txt file");
             }
 
+            if save_justfile(project_info).is_err() {
+                bail!("Error creating justfile");
+            }
+        }
+        ProjectManager::Uv => {
             if save_justfile(project_info).is_err() {
                 bail!("Error creating justfile");
             }
@@ -983,6 +1060,78 @@ mod tests {
         let mut project_info = project_info_dummy();
         project_info.license = LicenseType::Mit;
         project_info.project_manager = ProjectManager::Setuptools;
+        project_info.is_application = false;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_uv_pyproject_toml_file_mit_application() {
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::Mit;
+        project_info.project_manager = ProjectManager::Uv;
+        project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_uv_pyproject_toml_file_apache_application() {
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::Apache2;
+        project_info.project_manager = ProjectManager::Uv;
+        project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_uv_pyproject_toml_file_no_license_application() {
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::NoLicense;
+        project_info.project_manager = ProjectManager::Uv;
+        project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_create_uv_pyproject_toml_mit_lib() {
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::Mit;
+        project_info.project_manager = ProjectManager::Uv;
         project_info.is_application = false;
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
