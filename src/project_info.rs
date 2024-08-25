@@ -75,6 +75,7 @@ pub enum ProjectManager {
     Maturin,
     Poetry,
     Setuptools,
+    Uv,
 }
 
 impl fmt::Display for ProjectManager {
@@ -83,6 +84,7 @@ impl fmt::Display for ProjectManager {
             ProjectManager::Maturin => write!(f, "Maturin"),
             ProjectManager::Poetry => write!(f, "Poetry"),
             ProjectManager::Setuptools => write!(f, "Setuptools"),
+            ProjectManager::Uv => write!(f, "uv"),
         }
     }
 }
@@ -270,11 +272,12 @@ fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectMana
             ProjectManager::Maturin => "2".to_string(),
             ProjectManager::Poetry => "1".to_string(),
             ProjectManager::Setuptools => "3".to_string(),
+            ProjectManager::Uv => "4".to_string(),
         },
         None => "poetry".to_string(),
     };
     let prompt_text =
-        "Project Manager\n  1 - Poetry\n  2 - Maturin\n  3 - setuptools\n  Choose from[1, 2, 3]"
+        "Project Manager\n  1 - Poetry\n  2 - Maturin\n  3 - setuptools\n  4 - uv\n  Choose from[1, 2, 3, 4]"
             .to_string();
     let prompt = Prompt {
         prompt_text,
@@ -288,6 +291,8 @@ fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectMana
         Ok(ProjectManager::Maturin)
     } else if input == "3" {
         Ok(ProjectManager::Setuptools)
+    } else if input == "4" {
+        Ok(ProjectManager::Uv)
     } else {
         bail!("Invalid selection");
     }
