@@ -657,7 +657,7 @@ fn create_uv_justfile(module: &str) -> String {
   uv lock
 
 @install:
-  uv sync --locked --all-extras
+  uv sync --frozen --all-extras
 "#
     )
 }

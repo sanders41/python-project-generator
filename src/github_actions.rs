@@ -172,7 +172,7 @@ jobs:
           uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
           uv-${{ runner.os }}
     - name: Install Dependencies
-      run: uv sync --locked
+      run: uv sync --frozen
     - name: Ruff format check
       run: uv run ruff format {source_dir} tests --check
     - name: Lint with ruff
@@ -204,7 +204,7 @@ jobs:
           uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
           uv-${{ runner.os }}
     - name: Install Dependencies
-      run: uv sync --locked
+      run: uv sync --frozen
     - name: Test with pytest
       run: uv run pytest
     - name: Minimize uv cache
@@ -593,7 +593,7 @@ jobs:
           uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
           uv-${{ runner.os }}
     - name: Install Dependencies
-      run: uv sync --locked
+      run: uv sync --frozen
     - name: Ruff format check
       run: uv run ruff format {source_dir} tests --check
     - name: Lint with ruff
@@ -631,7 +631,7 @@ jobs:
           uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
           uv-${{ runner.os }}
     - name: Install Dependencies
-      run: uv sync --locked
+      run: uv sync --frozen
     - name: Test with pytest
       run: uv run pytest
     - name: Minimize uv cache
