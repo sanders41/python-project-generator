@@ -26,6 +26,8 @@ on:
     branches:
     - main
   pull_request:
+env:
+  PYTHON_VERSION: "{min_python_version}"
 jobs:
   linting:
     runs-on: ubuntu-latest
@@ -40,7 +42,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "{min_python_version}"
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
         cache: "poetry"
     - name: Install Dependencies
       run: poetry install
@@ -92,6 +94,8 @@ on:
     branches:
     - main
   pull_request:
+env:
+  PYTHON_VERSION: "{min_python_version}"
 jobs:
   linting:
     runs-on: ubuntu-latest
@@ -100,7 +104,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "{min_python_version}"
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
         cache: "pip"
     - name: Install Dependencies
       run: |
@@ -152,6 +156,7 @@ on:
   pull_request:
 env:
   UV_CACHE_DIR: /tmp/.uv-cache
+  PYTHON_VERSION: "{min_python_version}"
 jobs:
   linting:
     runs-on: ubuntu-latest
@@ -162,7 +167,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "{min_python_version}"
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
     - name: Restore uv cache
       uses: actions/cache@v4
       with:
@@ -232,6 +237,7 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   RUSTFLAGS: "-D warnings"
+  PYTHON_VERSION: "{min_python_version}"
 jobs:
   clippy:
     name: Clippy
@@ -264,7 +270,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "{min_python_version}"
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
         cache: "pip"
     - name: Install Dependencies
       run: |
@@ -352,6 +358,8 @@ on:
     branches:
     - main
   pull_request:
+env:
+  PYTHON_VERSION: "{min_python_version}"
 jobs:
   linting:
     runs-on: ubuntu-latest
@@ -366,7 +374,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "{min_python_version}"
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
         cache: "poetry"
     - name: Install Dependencies
       run: poetry install
@@ -419,6 +427,8 @@ on:
     branches:
     - main
   pull_request:
+env:
+  PYTHON_VERSION: "{min_python_version}"
 jobs:
   linting:
     runs-on: ubuntu-latest
@@ -427,7 +437,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "{min_python_version}"
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
         cache: "pip"
     - name: Install Dependencies
       run: |
@@ -482,6 +492,7 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   RUSTFLAGS: "-D warnings"
+  PYTHON_VERSION: "{min_python_version}"
 jobs:
   clippy:
     name: Clippy
@@ -514,7 +525,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "{min_python_version}"
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
         cache: "pip"
     - name: Install Dependencies
       run: |
@@ -573,6 +584,7 @@ on:
   pull_request:
 env:
   UV_CACHE_DIR: /tmp/.uv-cache
+  PYTHON_VERSION: "{min_python_version}"
 jobs:
   linting:
     runs-on: ubuntu-latest
@@ -583,7 +595,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "{min_python_version}"
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
     - name: Restore uv cache
       uses: actions/cache@v4
       with:
