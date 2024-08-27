@@ -13,6 +13,7 @@ For package managment choose between:
 
 - [poetry](https://python-poetry.org/)
 - [setuptools](https://github.com/pypa/setuptools)
+- [uv](https://docs.astral.sh/uv/)
 
 Dev packages:
 
@@ -84,13 +85,13 @@ After running the generator a new directory will be created with the name you us
 
 ### Pure Python Projects
 
-Install the Python dependencies when using Poetry.
+#### Install the Python dependencies when using Poetry.
 
 ```sh
 poetry install
 ```
 
-Install the Python dependencies when using setuptools.
+#### Install the Python dependencies when using setuptools.
 
 First create a virtual environment and activate it.
 
@@ -101,6 +102,27 @@ python -m venv .venv
 
 ```sh
 python -m pip install -r requirements-dev.txt
+```
+
+#### Install the Python dependencies when using uv.
+
+First create a virtual environment and activate it.
+
+```sh
+uv venv
+. .venv/bin/activate
+```
+
+Next create a lock file
+
+```sh
+uv lock
+```
+
+Then install the dependencies
+
+```sh
+uv sync --frozen
 ```
 
 Install the pre-commit hooks.
