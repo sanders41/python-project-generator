@@ -2,4 +2,4 @@
 source: src/project_generator.rs
 expression: content
 ---
-"mypy==1.11.2\npre-commit==3.8.0\npytest==8.3.2\npytest-cov==5.0.0\nruff==0.6.3\nmaturin==1.7.1\n-e .\n"
+"mypy==1.11.2\npre-commit==3.8.0\npytest==8.3.2\npytest-cov==5.0.0\nruff==0.6.4\nmaturin==1.7.1\n-e .\n"
