@@ -297,11 +297,7 @@ impl Config {
     }
 
     pub fn show() {
-        let config = match Config::load_config() {
-            Ok(c) => c,
-            Err(_) => Config::default(),
-        };
-
+        let config = Config::load_config().unwrap_or_default();
         let creator_label = "Creator";
         if let Some(creator) = config.creator {
             println!("{}: {creator}", creator_label.blue());

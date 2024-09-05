@@ -350,10 +350,7 @@ fn copyright_year_prompt(license: &LicenseType, default: Option<String>) -> Resu
 }
 
 pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
-    let config = match Config::load_config() {
-        Ok(c) => c,
-        Err(_) => Config::default(),
-    };
+    let config = Config::load_config().unwrap_or_default();
     let project_name_prompt = Prompt {
         prompt_text: "Project Name".to_string(),
         default: None,
@@ -527,31 +524,19 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     };
 
     let is_application = if use_defaults {
-        if let Some(app) = config.is_application {
-            app
-        } else {
-            true
-        }
+        config.is_application.unwrap_or(true)
     } else {
         is_application_prompt(config.is_application)?
     };
 
     let max_line_length = if use_defaults {
-        if let Some(max) = config.max_line_length {
-            max
-        } else {
-            100
-        }
+        config.max_line_length.unwrap_or(100)
     } else {
         max_line_length_prompt(config.max_line_length)?
     };
 
     let use_dependabot = if use_defaults {
-        if let Some(dependabot) = config.use_dependabot {
-            dependabot
-        } else {
-            true
-        }
+        config.use_dependabot.unwrap_or(true)
     } else {
         boolean_prompt(
             "Use Dependabot\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
@@ -594,11 +579,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     };
 
     let use_continuous_deployment = if use_defaults {
-        if let Some(deploy) = config.use_continuous_deployment {
-            deploy
-        } else {
-            true
-        }
+        config.use_continuous_deployment.unwrap_or(true)
     } else {
         boolean_prompt(
             "Use Continuous Deployment\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
@@ -607,11 +588,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     };
 
     let use_release_drafter = if use_defaults {
-        if let Some(drafter) = config.use_release_drafter {
-            drafter
-        } else {
-            true
-        }
+        config.use_release_drafter.unwrap_or(true)
     } else {
         boolean_prompt(
             "Use Release Drafter\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
@@ -620,11 +597,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     };
 
     let use_multi_os_ci = if use_defaults {
-        if let Some(multi_os) = config.use_multi_os_ci {
-            multi_os
-        } else {
-            true
-        }
+        config.use_multi_os_ci.unwrap_or(true)
     } else {
         boolean_prompt(
             "Use Multi OS CI\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
