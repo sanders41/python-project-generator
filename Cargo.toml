@@ -30,5 +30,5 @@ serde_json = "1.0.126"
 time = { version = "0.3.35", features = ["local-offset"] }
 
 [dev-dependencies]
-insta = { version = "1.39.0", features = ["yaml"] }
+insta = { version = "1.40.0", features = ["yaml"] }
 tempfile = "3.12.0"
