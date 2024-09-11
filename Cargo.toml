@@ -17,7 +17,7 @@ name = "python-project"
 path = "src/main.rs"
 
 [dependencies]
-anyhow = "1.0.87"
+anyhow = "1.0.88"
 clap = { version = "4.5.17", features = ["color", "suggestions", "derive"] }
 colored = "2.0.4"
 dirs = "5.0.1"
