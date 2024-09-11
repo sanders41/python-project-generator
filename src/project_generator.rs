@@ -562,7 +562,13 @@ fn create_pyo3_justfile(module: &str) -> String {
         r#"@develop:
   maturin develop
 
+@develop-release:
+  maturin develop -r
+
 @install: && develop
+  python -m pip install -r requirements-dev.txt
+
+@install-release: && develop-release
   python -m pip install -r requirements-dev.txt
 
 @lint:
