@@ -467,7 +467,16 @@ target-version = "py{{ pyupgrade_version }}"
 fix = true
 
 [tool.ruff.lint]
-select = ["E", "B", "F", "UP", "I001", "T201", "T203"]
+select = [
+  "E",  # pycodestyle
+  "B",  # flake8-bugbear
+  "W",  # Warning
+  "F",  # pyflakes
+  "UP",  # pyupgrade
+  "I001",  # unsorted-imports
+  "T201",  # print found
+  "T203"  # pprint found
+]
 ignore=[
   # Recommended ignores by ruff when using formatter
   "E501",
