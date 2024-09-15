@@ -2,4 +2,4 @@
 source: src/project_generator.rs
 expression: content
 ---
-"@lint:\n  echo mypy\n  just --justfile {{justfile()}} mypy\n  echo ruff\n  just --justfile {{justfile()}} ruff\n  echo ruff-format\n  just --justfile {{justfile()}} ruff-format\n\n@mypy:\n  python -m mypy my_project tests\n\n@ruff:\n  python -m ruff check my_project tests\n\n@ruff-format:\n  python -m ruff format my_project tests\n\n@test:\n  -python -m pytest -x\n\n@install:\n  python -m pip install -r requirements-dev.txt\n"
+"@_default:\n  just --list\n\n@lint:\n  echo mypy\n  just --justfile {{justfile()}} mypy\n  echo ruff\n  just --justfile {{justfile()}} ruff\n  echo ruff-format\n  just --justfile {{justfile()}} ruff-format\n\n@mypy:\n  python -m mypy my_project tests\n\n@ruff:\n  python -m ruff check my_project tests\n\n@ruff-format:\n  python -m ruff format my_project tests\n\n@test:\n  -python -m pytest -x\n\n@install:\n  python -m pip install -r requirements-dev.txt\n"
