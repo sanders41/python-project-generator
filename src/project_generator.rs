@@ -540,7 +540,10 @@ fn save_dev_requirements(project_info: &ProjectInfo) -> Result<()> {
 
 fn create_poetry_justfile(module: &str) -> String {
     format!(
-        r#"@lint:
+        r#"@_default:
+  just --list
+
+@lint:
   echo mypy
   just --justfile {{{{justfile()}}}} mypy
   echo ruff
@@ -568,7 +571,10 @@ fn create_poetry_justfile(module: &str) -> String {
 
 fn create_pyo3_justfile(module: &str) -> String {
     format!(
-        r#"@develop:
+        r#"@_default:
+  just --list
+
+@develop:
   maturin develop
 
 @develop-release:
@@ -620,7 +626,10 @@ fn create_pyo3_justfile(module: &str) -> String {
 
 fn create_setuptools_justfile(module: &str) -> String {
     format!(
-        r#"@lint:
+        r#"@_default:
+  just --list
+
+@lint:
   echo mypy
   just --justfile {{{{justfile()}}}} mypy
   echo ruff
@@ -648,7 +657,10 @@ fn create_setuptools_justfile(module: &str) -> String {
 
 fn create_uv_justfile(module: &str) -> String {
     format!(
-        r#"@lint:
+        r#"@_default:
+  just --list
+
+@lint:
   echo mypy
   just --justfile {{{{justfile()}}}} mypy
   echo ruff
