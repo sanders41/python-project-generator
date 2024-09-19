@@ -635,6 +635,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         min_python_version,
         project_manager,
         is_application,
+        is_pixi_project,
         github_actions_python_test_versions,
         max_line_length,
         use_dependabot,
