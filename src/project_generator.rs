@@ -499,7 +499,7 @@ ignore=[
 "#,
     );
 
-    if &project_info.is_pixi_project {
+    if project_info.is_pixi_project {
         pyproject.push_str(
             r#"[tool.pixi.project]
 channels = ["conda-forge"]

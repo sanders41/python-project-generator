@@ -18,6 +18,7 @@ pub struct Config {
     pub min_python_version: Option<String>,
     pub project_manager: Option<ProjectManager>,
     pub is_application: Option<bool>,
+    pub is_pixi_project: Option<bool>,
     pub github_actions_python_test_versions: Option<Vec<String>>,
     pub max_line_length: Option<u8>,
     pub use_dependabot: Option<bool>,
