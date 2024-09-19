@@ -499,6 +499,16 @@ ignore=[
 "#,
     );
 
+    if &project_info.is_pixi_project {
+        pyproject.push_str(
+            r#"[tool.pixi.project]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+
+"#,
+        )
+    };
+
     Ok(render!(
         &pyproject,
         project_name => module.replace('_', "-"),
@@ -512,6 +522,7 @@ ignore=[
         max_line_length => project_info.max_line_length,
         module => module,
         is_application => project_info.is_application,
+        is_pixi_project => project_info.is_pixi_project,
         pyupgrade_version => pyupgrade_version,
     ))
 }
@@ -837,6 +848,7 @@ mod tests {
             min_python_version: "3.9".to_string(),
             project_manager: ProjectManager::Poetry,
             is_application: true,
+            is_pixi_project: false,
             github_actions_python_test_versions: vec![
                 "3.9".to_string(),
                 "3.10".to_string(),

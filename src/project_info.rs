@@ -140,6 +140,7 @@ pub struct ProjectInfo {
     pub min_python_version: String,
     pub project_manager: ProjectManager,
     pub is_application: bool,
+    pub is_pixi_project: bool,
     pub github_actions_python_test_versions: Vec<String>,
     pub max_line_length: u8,
     pub use_dependabot: bool,
@@ -260,6 +261,15 @@ fn dependabot_schedule_prompt(
 fn is_application_prompt(default: Option<bool>) -> Result<bool> {
     let prompt_text =
         "Application or Library\n  1 - Application\n  2 - Library\n  Choose from [1, 2]"
+            .to_string();
+    let value = boolean_prompt(prompt_text, default)?;
+
+    Ok(value)
+}
+
+fn is_pixi_project_prompt(default: Option<bool>) -> Result<bool> {
+    let prompt_text =
+        "Pixi project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]"
             .to_string();
     let value = boolean_prompt(prompt_text, default)?;
 
@@ -527,6 +537,12 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         config.is_application.unwrap_or(true)
     } else {
         is_application_prompt(config.is_application)?
+    };
+
+    let is_pixi_project = if use_defaults {
+        config.is_pixi_project.unwrap_or(false)
+    } else {
+        is_pixi_project_prompt(config.is_application)?
     };
 
     let max_line_length = if use_defaults {
