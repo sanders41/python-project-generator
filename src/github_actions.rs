@@ -278,7 +278,6 @@ jobs:
         python -m pip install -r requirements-dev.txt
         python -m pip install -e .
         maturin build --out dist
-        python -m pip install --no-index --find-links=dist/ prelude-parser
     - name: Ruff format check
       run: ruff format {source_dir} tests --check
     - name: Lint with ruff
@@ -304,7 +303,6 @@ jobs:
         python -m pip install -r requirements-dev.txt
         python -m pip install -e .
         maturin build --out dist
-        python -m pip install --no-index --find-links=dist/ prelude-parser
     - name: Test with pytest
       run: pytest
 "#
@@ -533,7 +531,6 @@ jobs:
         python -m pip install -r requirements-dev.txt
         python -m pip install -e .
         maturin build --out dist
-        python -m pip install --no-index --find-links=dist/ prelude-parser
     - name: Ruff format check
       run: ruff format {source_dir} tests --check
     - name: Lint with ruff
