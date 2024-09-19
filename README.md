@@ -187,10 +187,12 @@ python-project config reset
 
 The [release drafter](https://github.com/release-drafter/release-drafter) action automatically adds
 the tile of the PR, who created it, and it's PR number to a draft GitHub release. By default the
-release will get a patch version update. Adding an `enhancement` label to a PR will create a release
-with a minor version bump, and a `breaking-change` label will create a major version bump. The draft
-release will get the release version tag for the highest label applied to the merged PRs in the
-release. PRs can be excluded from the release notes by applying a `skip-changelog` label to the PR.
+release will get a patch version update. Adding a `bug` label will get a patch version update and
+add it to the `Bug` section of the release notes. Adding an `enhancement` label to a PR will create
+a release with a minor version bump, and a `breaking-change` label will create a major version bump.
+The draft release will get the release version tag for the highest label applied to the merged PRs
+in the release. PRs can be excluded from the release notes by applying a `skip-changelog` label to
+the PR.
 
 ## Contributing
 
