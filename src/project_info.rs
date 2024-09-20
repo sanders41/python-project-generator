@@ -268,9 +268,7 @@ fn is_application_prompt(default: Option<bool>) -> Result<bool> {
 }
 
 fn is_pixi_project_prompt(default: Option<bool>) -> Result<bool> {
-    let prompt_text =
-        "Pixi project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]"
-            .to_string();
+    let prompt_text = "Pixi project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string();
     let value = boolean_prompt(prompt_text, default)?;
 
     Ok(value)
@@ -542,7 +540,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     let is_pixi_project = if use_defaults {
         config.is_pixi_project.unwrap_or(false)
     } else {
-        is_pixi_project_prompt(config.is_application)?
+        is_pixi_project_prompt(config.is_pixi_project)?
     };
 
     let max_line_length = if use_defaults {

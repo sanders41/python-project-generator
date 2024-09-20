@@ -147,6 +147,20 @@ fn main() {
                     }
                 }
             },
+            Param::PixiProject { value } => match value {
+                BooleanChoice::True => {
+                    if let Err(e) = Config::save_is_pixi_project(true) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
+                BooleanChoice::False => {
+                    if let Err(e) = Config::save_is_pixi_project(false) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
+            },
             Param::GithubActionPythonTestVersions { value } => {
                 if let Err(e) = Config::save_github_actions_python_test_versions(value) {
                     print_error(e);

@@ -155,6 +155,19 @@ impl Config {
         Ok(())
     }
 
+    pub fn save_is_pixi_project(value: bool) -> Result<()> {
+        if let Ok(mut config) = Config::load_config() {
+            config.is_pixi_project = Some(value);
+            if config.save().is_err() {
+                raise_error()?;
+            };
+        } else {
+            raise_error()?;
+        }
+
+        Ok(())
+    }
+
     pub fn save_is_application(value: bool) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.is_application = Some(value);

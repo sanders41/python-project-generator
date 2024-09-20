@@ -93,6 +93,12 @@ pub enum Param {
         value: ApplicationOrLib,
     },
 
+    /// Save a default value for Is Pixi Project
+    PixiProject {
+        #[clap(help = "Default value for Pixi project")]
+        value: BooleanChoice,
+    },
+
     /// Save default Python versions for GitHub Action testing
     GithubActionPythonTestVersions {
         #[clap(help = "Default Python versions for GitHub Action testing")]
