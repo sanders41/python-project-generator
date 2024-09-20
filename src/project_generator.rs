@@ -445,6 +445,16 @@ path = "{{ module }}/_version.py"
         .to_string(),
     };
 
+    if project_info.is_pixi_project {
+        pyproject.push_str(
+            r#"[tool.pixi.project]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+
+"#,
+        )
+    };
+
     pyproject.push_str(
         r#"[tool.mypy]
 check_untyped_defs = true
@@ -498,16 +508,6 @@ ignore=[
 
 "#,
     );
-
-    if project_info.is_pixi_project {
-        pyproject.push_str(
-            r#"[tool.pixi.project]
-channels = ["conda-forge"]
-platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
-
-"#,
-        )
-    };
 
     Ok(render!(
         &pyproject,
