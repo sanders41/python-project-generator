@@ -269,8 +269,12 @@ fn is_application_prompt(default: Option<bool>) -> Result<bool> {
 
 fn is_pixi_project_prompt(default: Option<bool>) -> Result<bool> {
     let prompt_text = "Pixi project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string();
+    let default = if default.is_some() {
+        default
+    } else {
+        Some(false)
+    };
     let value = boolean_prompt(prompt_text, default)?;
-
     Ok(value)
 }
 
