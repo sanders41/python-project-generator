@@ -80,9 +80,6 @@ packages will be be created with default versions.
 python-project create -s
 ```
 
-After running the generator a new directory will be created with the name you used for the
-`Project Slug`. Change to this directory then install the python packages and pre-commit hooks.
-
 #### Options
 
 - License
@@ -147,6 +144,9 @@ After running the generator a new directory will be created with the name you us
 
   Choosing yes will setup CI to run tests on Linux, Mac, and Windows. If no is chosen tests will
   only run on Linux in CI.
+
+After running the generator a new directory will be created with the name you used for the
+`Project Slug`. Change to this directory then install the python packages and pre-commit hooks.
 
 ### Pure Python Projects
 
@@ -289,6 +289,15 @@ You can also run all 3 with 1 `just` command:
 ```sh
 just lint
 ```
+
+### pre-commit
+
+[pre-commit](https://pre-commit.com/) runs linting and formatting on your code (as defined in the
+provided .pre-commit-config.yaml file) every time you make a commit to your code. If any of the
+lints fail pre-commit will cancel the commit. When possible, pre-commit will also automatically
+fix any errors that fail. For example pre-commit can automatically apply changes that fail ruff
+fromatting. pre-commit caches information and only runs on files that have changed so it is fast
+and doesn't slow down your work flow will preventing you from forgetting to run checks.
 
 ## Contributing
 
