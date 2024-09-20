@@ -83,6 +83,71 @@ python-project create -s
 After running the generator a new directory will be created with the name you used for the
 `Project Slug`. Change to this directory then install the python packages and pre-commit hooks.
 
+#### Options
+
+- License
+
+  Choose from MIT, Apache 2, or no license.
+
+- Python Version
+
+  This will be the default Python version used. For example when releasing the project this is the
+  version of Python that will be used.
+
+- Minimum Python Version
+
+  This is the minimum supported Python version for the project. This is also the version that is
+  used for ruff's upgrade target version.
+
+- Python Versions for Github Actions Testing
+
+  Versions listed here will be the versions used for testing in CI.
+
+- Project Manager
+
+  Specifies how project dependencies and builds should be handled
+
+- Application or Library
+
+  Choosing application will create `main.py` and `__main__.py` files. Choosing library will omit
+  these files.
+
+- Max Line Length
+
+  This controls how long the ruff formatter will use for line wrapping.
+
+- Use Dependabot
+
+  Dependabot can be used to keep dependencies up to date. If enabled dependabot will automatically
+  create PRs to update dependencies when they are available.
+
+- Dependabot Schedule
+
+  When dependabot is enabed the schedule controls how often dependabot will check for updates and
+  create PRs.
+
+- Use Continuous Deployment
+
+  This will create a GitHub Action to deploy the project to pypi when a new release is created.
+  Note that for this to work you will need to get an API token for the project from pypi and add it
+  to as a new repsitory secret called `PYPI_API_KEY` in the GitHub project.
+
+- Release Drafter
+
+  Choosing yes will create a [release drafter](https://github.com/release-drafter/release-drafter)
+  action automatically adds the tile of the PR, who created it, and it's PR number to a draft
+  GitHub release. By default the release will get a patch version update. Adding a `bug` label will
+  get a patch version update and add it to the `Bug` section of the release notes. Adding an
+  `enhancement` label to a PR will create a release with a minor version bump, and a
+  `breaking-change` label will create a major version bump. The draft release will get the release
+  version tag for the highest label applied to the merged PRs in the release. PRs can be excluded
+  from the release notes by applying a `skip-changelog` label to the PR.
+
+- Use Multi OS CI
+
+  Choosing yes will setup CI to run tests on Linux, Mac, and Windows. If no is chosen tests will
+  only run on Linux in CI.
+
 ### Pure Python Projects
 
 #### Install the Python dependencies when using Poetry.
@@ -224,17 +289,6 @@ You can also run all 3 with 1 `just` command:
 ```sh
 just lint
 ```
-
-### Relase Drafter
-
-The [release drafter](https://github.com/release-drafter/release-drafter) action automatically adds
-the tile of the PR, who created it, and it's PR number to a draft GitHub release. By default the
-release will get a patch version update. Adding a `bug` label will get a patch version update and
-add it to the `Bug` section of the release notes. Adding an `enhancement` label to a PR will create
-a release with a minor version bump, and a `breaking-change` label will create a major version bump.
-The draft release will get the release version tag for the highest label applied to the merged PRs
-in the release. PRs can be excluded from the release notes by applying a `skip-changelog` label to
-the PR.
 
 ## Contributing
 
