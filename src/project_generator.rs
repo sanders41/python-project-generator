@@ -304,7 +304,7 @@ fn build_latest_dev_dependencies(
         })
     }
 
-    if let ProjectManager::Uv = project_manager {
+    if let ProjectManager::Uv | ProjectManager::Pixi = project_manager {
         version_string.push_str("[\n");
     }
 
@@ -321,7 +321,7 @@ fn build_latest_dev_dependencies(
                         .push_str(&format!("{} = \"{}\"\n", package.package, package.version));
                 }
             }
-            ProjectManager::Uv => version_string.push_str(&format!(
+            ProjectManager::Uv | ProjectManager::Pixi => version_string.push_str(&format!(
                 "  \"{}=={}\",\n",
                 package.package, package.version
             )),
@@ -332,6 +332,10 @@ fn build_latest_dev_dependencies(
     match project_manager {
         ProjectManager::Poetry => Ok(version_string.trim().to_string()),
         ProjectManager::Uv => {
+            version_string.push(']');
+            Ok(version_string)
+        }
+        ProjectManager::Pixi => {
             version_string.push(']');
             Ok(version_string)
         }
@@ -437,6 +441,46 @@ dependencies = []
 
 [tool.uv]
 dev-dependencies = {{ dev_dependencies }}
+
+[tool.hatch.version]
+path = "{{ module }}/_version.py"
+
+"#
+        .to_string(),
+        ProjectManager::Pixi => r#"[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "{{ project_name }}"
+description = "{{ project_description }}"
+authors = [
+  { name = "{{ creator }}", email = "{{ creator_email }}" }
+]
+{% if license != "NoLicense" -%}
+license = { file = "LICENSE" }
+{% endif -%}
+readme = "README.md"
+requires-python = ">={{ min_python_version }}"
+dynamic = ["version"]
+dependencies = []
+
+[tool.pixi.project]
+channels = ["conda-forge", "bioconda"]
+platforms = ["osx-64"]
+
+[tool.pixi.feature.dev.tasks]
+mypy = "mypy {{ module }} tests"
+ruff-check = "ruff check {{ module }} tests"
+ruff-format = "ruff format {{ module }} tests"
+pytest = "pytest -x"
+
+[project.optional-dependencies]
+dev = {{ dev_dependencies }}
+
+[tool.pixi.environments]
+default = {features = [], solve-group = "default"}
+dev = {features = ["dev"], solve-group = "default"}
 
 [tool.hatch.version]
 path = "{{ module }}/_version.py"
@@ -689,6 +733,37 @@ fn create_uv_justfile(module: &str) -> String {
     )
 }
 
+fn create_pixi_justfile() -> String {
+    format!(
+        r#"@_default:
+  just --list
+
+@lint:
+  echo mypy
+  just --justfile {{{{justfile()}}}} mypy
+  echo ruff
+  just --justfile {{{{justfile()}}}} ruff
+  echo ruff-format
+  just --justfile {{{{justfile()}}}} ruff-format
+
+@mypy:
+  pixi run mypy
+
+@ruff:
+  pixi run ruff-check
+
+@ruff-format:
+  pixi run ruff-format
+
+@test:
+  -pixi run pytest
+
+@install:
+  pixi install
+"#
+    )
+}
+
 fn save_justfile(project_info: &ProjectInfo) -> Result<()> {
     let module = project_info.source_dir.replace([' ', '-'], "_");
     let file_path = project_info.base_dir().join("justfile");
@@ -697,6 +772,7 @@ fn save_justfile(project_info: &ProjectInfo) -> Result<()> {
         ProjectManager::Maturin => create_pyo3_justfile(&module),
         ProjectManager::Setuptools => create_setuptools_justfile(&module),
         ProjectManager::Uv => create_uv_justfile(&module),
+        ProjectManager::Pixi => create_pixi_justfile(),
     };
 
     save_file_with_content(&file_path, &content)?;
@@ -786,6 +862,11 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
             }
         }
         ProjectManager::Uv => {
+            if save_justfile(project_info).is_err() {
+                bail!("Error creating justfile");
+            }
+        }
+        ProjectManager::Pixi => {
             if save_justfile(project_info).is_err() {
                 bail!("Error creating justfile");
             }
@@ -1159,6 +1240,78 @@ mod tests {
         let mut project_info = project_info_dummy();
         project_info.license = LicenseType::Mit;
         project_info.project_manager = ProjectManager::Uv;
+        project_info.is_application = false;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pixi_pyproject_toml_file_mit_application() {
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::Mit;
+        project_info.project_manager = ProjectManager::Pixi;
+        project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pixi_pyproject_toml_file_apache_application() {
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::Apache2;
+        project_info.project_manager = ProjectManager::Pixi;
+        project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pixi_pyproject_toml_file_no_license_application() {
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::NoLicense;
+        project_info.project_manager = ProjectManager::Pixi;
+        project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_create_pixi_pyproject_toml_mit_lib() {
+        let mut project_info = project_info_dummy();
+        project_info.license = LicenseType::Mit;
+        project_info.project_manager = ProjectManager::Pixi;
         project_info.is_application = false;
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
