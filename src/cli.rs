@@ -87,6 +87,9 @@ pub enum Param {
         value: ProjectManager,
     },
 
+    /// Save a default value for is async project
+    IsAsyncProject { value: BooleanChoice },
+
     /// Save a default value for Is Application
     ApplicationOrLibrary {
         #[clap(help = "Default Is Application value")]

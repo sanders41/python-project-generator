@@ -1,0 +1,5 @@
+---
+source: src/python_files.rs
+expression: main_content
+---
+"from __future__ import annotations\n\nimport asyncio\n\n\nasync def main() -> int:\n    # TODO: This is placeholder code, remove and replace with your code.\n    await asyncio.sleep(1)\n    print(\"Hello world!\")  # noqa: T201\n\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(asyncio.run(main()))\n"

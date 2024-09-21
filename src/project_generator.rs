@@ -269,27 +269,38 @@ fn save_pre_commit_file(project_info: &ProjectInfo) -> Result<()> {
 fn build_latest_dev_dependencies(
     download_latest_packages: bool,
     project_manager: &ProjectManager,
+    is_async_project: bool,
     min_python_version: &str,
 ) -> Result<String> {
     let mut version_string = String::new();
-    let mut packages = vec![
-        PythonPackageVersion::new(PythonPackage::MyPy),
-        PythonPackageVersion::new(PythonPackage::PreCommit),
-        PythonPackageVersion::new(PythonPackage::Pytest),
-        PythonPackageVersion::new(PythonPackage::PytestCov),
-        PythonPackageVersion::new(PythonPackage::Ruff),
-    ];
+    let mut packages = if !is_python_312_or_greater(min_python_version)?
+        && matches!(project_manager, ProjectManager::Maturin)
+    {
+        vec![
+            PythonPackageVersion::new(PythonPackage::Maturin),
+            PythonPackageVersion::new(PythonPackage::MyPy),
+            PythonPackageVersion::new(PythonPackage::PreCommit),
+            PythonPackageVersion::new(PythonPackage::Pytest),
+        ]
+    } else {
+        vec![
+            PythonPackageVersion::new(PythonPackage::MyPy),
+            PythonPackageVersion::new(PythonPackage::PreCommit),
+            PythonPackageVersion::new(PythonPackage::Pytest),
+        ]
+    };
 
-    if !is_python_312_or_greater(min_python_version)? {
-        match project_manager {
-            ProjectManager::Maturin => {
-                packages.push(PythonPackageVersion::new(PythonPackage::Maturin))
-            }
-            ProjectManager::Poetry => {
-                packages.push(PythonPackageVersion::new(PythonPackage::Tomli))
-            }
-            _ => (),
-        };
+    if is_async_project {
+        packages.push(PythonPackageVersion::new(PythonPackage::PytestAsyncio));
+    }
+
+    packages.push(PythonPackageVersion::new(PythonPackage::PytestCov));
+    packages.push(PythonPackageVersion::new(PythonPackage::Ruff));
+
+    if !is_python_312_or_greater(min_python_version)?
+        && matches!(project_manager, ProjectManager::Poetry)
+    {
+        packages.push(PythonPackageVersion::new(PythonPackage::Tomli));
     }
 
     if download_latest_packages {
@@ -501,6 +512,9 @@ disallow_untyped_defs = false
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "--cov={{ module }} --cov-report term-missing --no-cov-on-fail"
+{%- if is_async_project %}
+asyncio_mode = "auto"
+{%- endif %}
 
 [tool.coverage.report]
 exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
@@ -552,10 +566,11 @@ ignore=[
         creator_email => project_info.creator_email,
         license => license_text,
         min_python_version => project_info.min_python_version,
-        dev_dependencies => build_latest_dev_dependencies(project_info.download_latest_packages, &project_info.project_manager, &project_info.min_python_version)?,
+        dev_dependencies => build_latest_dev_dependencies(project_info.download_latest_packages, &project_info.project_manager, project_info.is_async_project, &project_info.min_python_version)?,
         max_line_length => project_info.max_line_length,
         module => module,
         is_application => project_info.is_application,
+        is_async_project => project_info.is_async_project,
         pyupgrade_version => pyupgrade_version,
     ))
 }
@@ -574,6 +589,7 @@ fn save_dev_requirements(project_info: &ProjectInfo) -> Result<()> {
     let content = build_latest_dev_dependencies(
         project_info.download_latest_packages,
         &project_info.project_manager,
+        project_info.is_async_project,
         &project_info.min_python_version,
     )?;
 
@@ -917,6 +933,7 @@ mod tests {
             min_python_version: "3.9".to_string(),
             project_manager: ProjectManager::Poetry,
             is_application: true,
+            is_async_project: false,
             github_actions_python_test_versions: vec![
                 "3.9".to_string(),
                 "3.10".to_string(),
@@ -1312,6 +1329,22 @@ mod tests {
         project_info.license = LicenseType::Mit;
         project_info.project_manager = ProjectManager::Pixi;
         project_info.is_application = false;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_create_pyproject_toml_async_project() {
+        let mut project_info = project_info_dummy();
+        project_info.is_async_project = true;
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("pyproject.toml");

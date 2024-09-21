@@ -110,6 +110,12 @@ python-project create -s
   Choosing application will create `main.py` and `__main__.py` files. Choosing library will omit
   these files.
 
+- Async Project
+
+  Selecting yes for this option will add [pytest-asyncio](https://github.com/pytest-dev/pytest-asyncio)
+  to the dev dependencies. Additionally if the project is an application the `main` function will
+  be maid async.
+
 - Max Line Length
 
   This controls how long the ruff formatter will use for line wrapping.
