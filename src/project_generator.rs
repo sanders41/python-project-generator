@@ -467,7 +467,7 @@ dependencies = []
 
 [tool.pixi.project]
 channels = ["conda-forge", "bioconda"]
-platforms = ["osx-64"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
 [tool.pixi.feature.dev.tasks]
 run-mypy = "mypy {{ module }} tests"
