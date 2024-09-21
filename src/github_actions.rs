@@ -239,7 +239,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - Install Pixi
+    - name: Install Pixi
       uses: prefix-dev/setup-pixi@v0.8.1
       with:
         pixi-version: v0.30.0
@@ -260,7 +260,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - Install Pixi
+    - name: Install Pixi
       uses: prefix-dev/setup-pixi@v0.8.1
       with:
         pixi-version: v0.30.0
@@ -728,7 +728,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - Install Pixi
+    - name: Install Pixi
       uses: prefix-dev/setup-pixi@v0.8.1
       with:
         pixi-version: v0.30.0
@@ -750,7 +750,7 @@ jobs:
     runs-on: ${{{{ matrix.os }}}}
     steps:
     - uses: actions/checkout@v4
-    - Install Pixi
+    - name: Install Pixi
       uses: prefix-dev/setup-pixi@v0.8.1
       with:
         pixi-version: v0.30.0
@@ -1144,7 +1144,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - Install Pixi
+    - name: Install Pixi
       uses: prefix-dev/setup-pixi@v0.8.1
       with:
         pixi-version: v0.30.0
