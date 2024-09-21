@@ -470,10 +470,10 @@ channels = ["conda-forge", "bioconda"]
 platforms = ["osx-64"]
 
 [tool.pixi.feature.dev.tasks]
-mypy = "mypy {{ module }} tests"
-ruff-check = "ruff check {{ module }} tests"
-ruff-format = "ruff format {{ module }} tests"
-pytest = "pytest -x"
+run-mypy = "mypy {{ module }} tests"
+run-ruff-check = "ruff check {{ module }} tests"
+run-ruff-format = "ruff format {{ module }} tests"
+run-pytest = "pytest -x"
 
 [project.optional-dependencies]
 dev = {{ dev_dependencies }}
@@ -746,16 +746,16 @@ fn create_pixi_justfile() -> String {
   just --justfile {{{{justfile()}}}} ruff-format
 
 @mypy:
-  pixi run mypy
+  pixi run run-mypy
 
 @ruff:
-  pixi run ruff-check
+  pixi run run-ruff-check
 
 @ruff-format:
-  pixi run ruff-format
+  pixi run run-ruff-format
 
 @test:
-  -pixi run pytest
+  -pixi run run-pytest
 
 @install:
   pixi install

@@ -247,11 +247,11 @@ jobs:
     - name: Set up Python
       run: pixi add python=="${{{{ env.PYTHON_VERSION }}}}.*"
     - name: Ruff format check
-      run: pixi run ruff-format
+      run: pixi run run-ruff-format
     - name: Lint with ruff
-      run: pixi run ruff-check
+      run: pixi run run-ruff-check
     - name: mypy check
-      run: pixi run mypy
+      run: pixi run run-mypy
   testing:
     strategy:
       fail-fast: false
@@ -268,7 +268,7 @@ jobs:
     - name: Set up Python ${{{{ matrix.python-version }}}}
       run: pixi add python=="${{{{ matrix.python-version }}}}.*"
     - name: Test with pytest
-      run: pixi run pytest
+      run: pixi run run-pytest
 "#
     )
 }
@@ -736,11 +736,11 @@ jobs:
     - name: Set up Python
       run: pixi add python=="${{{{ env.PYTHON_VERSION }}}}.*"
     - name: Ruff format check
-      run: pixi run ruff-formar
+      run: pixi run run-ruff-formar
     - name: Lint with ruff
-      run: pixi run ruff-check
+      run: pixi run run-ruff-check
     - name: mypy check
-      run: pixi run mypy
+      run: pixi run run-mypy
   testing:
     strategy:
       fail-fast: false
@@ -758,7 +758,7 @@ jobs:
     - name: Set up Python ${{{{ matrix.python-version }}}}
       run: pixi add python=="${{{{ matrix.python-version }}}}.*"
     - name: Test with pytest
-      run: pixi run -e dev pytest
+      run: pixi run run-pytest
 "#
     )
 }
