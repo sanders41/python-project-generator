@@ -18,7 +18,6 @@ pub struct Config {
     pub min_python_version: Option<String>,
     pub project_manager: Option<ProjectManager>,
     pub is_application: Option<bool>,
-    pub is_pixi_project: Option<bool>,
     pub github_actions_python_test_versions: Option<Vec<String>>,
     pub max_line_length: Option<u8>,
     pub use_dependabot: Option<bool>,
@@ -148,19 +147,6 @@ impl Config {
             if config.save().is_err() {
                 raise_error()?;
             }
-        } else {
-            raise_error()?;
-        }
-
-        Ok(())
-    }
-
-    pub fn save_is_pixi_project(value: bool) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.is_pixi_project = Some(value);
-            if config.save().is_err() {
-                raise_error()?;
-            };
         } else {
             raise_error()?;
         }

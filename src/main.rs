@@ -147,20 +147,6 @@ fn main() {
                     }
                 }
             },
-            Param::PixiProject { value } => match value {
-                BooleanChoice::True => {
-                    if let Err(e) = Config::save_is_pixi_project(true) {
-                        print_error(e);
-                        exit(1);
-                    }
-                }
-                BooleanChoice::False => {
-                    if let Err(e) = Config::save_is_pixi_project(false) {
-                        print_error(e);
-                        exit(1);
-                    }
-                }
-            },
             Param::GithubActionPythonTestVersions { value } => {
                 if let Err(e) = Config::save_github_actions_python_test_versions(value) {
                     print_error(e);
@@ -294,7 +280,6 @@ mod tests {
             min_python_version: "3.9".to_string(),
             project_manager: ProjectManager::Poetry,
             is_application: true,
-            is_pixi_project: true,
             github_actions_python_test_versions: vec![
                 "3.9".to_string(),
                 "3.10".to_string(),

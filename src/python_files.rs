@@ -341,7 +341,6 @@ mod tests {
             min_python_version: "3.9".to_string(),
             project_manager: ProjectManager::Maturin,
             is_application: true,
-            is_pixi_project: true,
             github_actions_python_test_versions: vec![
                 "3.9".to_string(),
                 "3.10".to_string(),
