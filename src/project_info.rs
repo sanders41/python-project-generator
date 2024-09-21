@@ -141,6 +141,7 @@ pub struct ProjectInfo {
     pub python_version: String,
     pub min_python_version: String,
     pub project_manager: ProjectManager,
+    pub is_async_project: bool,
     pub is_application: bool,
     pub github_actions_python_test_versions: Vec<String>,
     pub max_line_length: u8,
@@ -263,6 +264,18 @@ fn is_application_prompt(default: Option<bool>) -> Result<bool> {
     let prompt_text =
         "Application or Library\n  1 - Application\n  2 - Library\n  Choose from [1, 2]"
             .to_string();
+    let value = boolean_prompt(prompt_text, default)?;
+
+    Ok(value)
+}
+
+fn is_async_project_prompt(default: Option<bool>) -> Result<bool> {
+    let default = if default.is_some() {
+        default
+    } else {
+        Some(false)
+    };
+    let prompt_text = "Async Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string();
     let value = boolean_prompt(prompt_text, default)?;
 
     Ok(value)
@@ -534,6 +547,12 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         is_application_prompt(config.is_application)?
     };
 
+    let is_async_project = if use_defaults {
+        config.is_async_project.unwrap_or(false)
+    } else {
+        is_async_project_prompt(config.is_async_project)?
+    };
+
     let max_line_length = if use_defaults {
         config.max_line_length.unwrap_or(100)
     } else {
@@ -624,6 +643,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         min_python_version,
         project_manager,
         is_application,
+        is_async_project,
         github_actions_python_test_versions,
         max_line_length,
         use_dependabot,

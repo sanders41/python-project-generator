@@ -1,0 +1,5 @@
+---
+source: src/python_files.rs
+expression: content
+---
+"from my_project.main import main\n\n\nasync def test_main():\n    assert await main() == 0\n"

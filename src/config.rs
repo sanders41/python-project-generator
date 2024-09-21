@@ -17,6 +17,7 @@ pub struct Config {
     pub python_version: Option<String>,
     pub min_python_version: Option<String>,
     pub project_manager: Option<ProjectManager>,
+    pub is_async_project: Option<bool>,
     pub is_application: Option<bool>,
     pub github_actions_python_test_versions: Option<Vec<String>>,
     pub max_line_length: Option<u8>,
@@ -147,6 +148,19 @@ impl Config {
             if config.save().is_err() {
                 raise_error()?;
             }
+        } else {
+            raise_error()?;
+        }
+
+        Ok(())
+    }
+
+    pub fn save_is_async_project(value: bool) -> Result<()> {
+        if let Ok(mut config) = Config::load_config() {
+            config.is_async_project = Some(value);
+            if config.save().is_err() {
+                raise_error()?;
+            };
         } else {
             raise_error()?;
         }
@@ -357,6 +371,13 @@ impl Config {
             println!("{}: {}", project_manager_label.blue(), project_manager);
         } else {
             println!("{}: null", project_manager_label.blue());
+        }
+
+        let async_label = "Async Project";
+        if let Some(is_async_project) = config.is_async_project {
+            println!("{}: {}", async_label.blue(), is_async_project);
+        } else {
+            println!("{}: null", async_label.blue());
         }
 
         let max_line_length_label = "Max Line Length";

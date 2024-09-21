@@ -1,0 +1,5 @@
+---
+source: src/python_files.rs
+expression: dunder_main_content
+---
+"from __future__ import annotations\n\nimport asyncio\n\nfrom my_project.main import main  #  pragma: no cover\n\nif __name__ == \"__main__\":\n    raise SystemExit(asyncio.run(main()))\n"

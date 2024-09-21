@@ -6,20 +6,53 @@ use crate::file_manager::save_file_with_content;
 use crate::project_info::{ProjectInfo, ProjectManager};
 use crate::utils::is_python_312_or_greater;
 
-fn create_dunder_main_file(module: &str) -> String {
-    format!(
-        r#"from __future__ import annotations
+fn create_dunder_main_file(module: &str, is_async_project: bool) -> String {
+    if is_async_project {
+        format!(
+            r#"from __future__ import annotations
+
+import asyncio
+
+from {module}.main import main  #  pragma: no cover
+
+if __name__ == "__main__":
+    raise SystemExit(asyncio.run(main()))
+"#
+        )
+    } else {
+        format!(
+            r#"from __future__ import annotations
 
 from {module}.main import main  #  pragma: no cover
 
 if __name__ == "__main__":
     raise SystemExit(main())
 "#
-    )
+        )
+    }
 }
 
-fn create_main_file() -> String {
-    r#"from __future__ import annotations
+fn create_main_file(is_async_project: bool) -> String {
+    if is_async_project {
+        r#"from __future__ import annotations
+
+import asyncio
+
+
+async def main() -> int:
+    # TODO: This is placeholder code, remove and replace with your code.
+    await asyncio.sleep(1)
+    print("Hello world!")  # noqa: T201
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(asyncio.run(main()))
+"#
+        .to_string()
+    } else {
+        r#"from __future__ import annotations
 
 
 def main() -> int:
@@ -31,40 +64,52 @@ def main() -> int:
 if __name__ == "__main__":
     raise SystemExit(main())
 "#
-    .to_string()
+        .to_string()
+    }
 }
 
 fn save_main_files(project_info: &ProjectInfo) -> Result<()> {
     let module = project_info.source_dir.replace([' ', '-'], "_");
     let src = project_info.base_dir().join(&module);
     let main = src.join("main.py");
-    let main_content = create_main_file();
+    let main_content = create_main_file(project_info.is_async_project);
 
     save_file_with_content(&main, &main_content)?;
 
     let main_dunder = src.join("__main__.py");
-    let main_dunder_content = create_dunder_main_file(&module);
+    let main_dunder_content = create_dunder_main_file(&module, project_info.is_async_project);
 
     save_file_with_content(&main_dunder, &main_dunder_content)?;
 
     Ok(())
 }
 
-fn create_main_test_file(module: &str) -> String {
-    format!(
-        r#"from {module}.main import main
+fn create_main_test_file(module: &str, is_async_project: bool) -> String {
+    if is_async_project {
+        format!(
+            r#"from {module}.main import main
+
+
+async def test_main():
+    assert await main() == 0
+"#
+        )
+    } else {
+        format!(
+            r#"from {module}.main import main
 
 
 def test_main():
     assert main() == 0
 "#
-    )
+        )
+    }
 }
 
 fn save_main_test_file(project_info: &ProjectInfo) -> Result<()> {
     let module = project_info.source_dir.replace([' ', '-'], "_");
     let file_path = project_info.base_dir().join("tests/test_main.py");
-    let content = create_main_test_file(&module);
+    let content = create_main_test_file(&module, project_info.is_async_project);
 
     save_file_with_content(&file_path, &content)?;
 
@@ -341,6 +386,7 @@ mod tests {
             min_python_version: "3.9".to_string(),
             project_manager: ProjectManager::Maturin,
             is_application: true,
+            is_async_project: false,
             github_actions_python_test_versions: vec![
                 "3.9".to_string(),
                 "3.10".to_string(),
@@ -434,10 +480,53 @@ mod tests {
     }
 
     #[test]
+    fn test_save_main_files_is_async_project() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.is_application = true;
+        project_info.is_async_project = true;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(&project_info.source_dir)).unwrap();
+        let expected_dunder_main_file =
+            base.join(format!("{}/__main__.py", &project_info.source_dir));
+        let expected_main_file = base.join(format!("{}/main.py", &project_info.source_dir));
+        save_main_files(&project_info).unwrap();
+
+        assert!(expected_dunder_main_file.is_file());
+        assert!(expected_main_file.is_file());
+
+        let dunder_main_content = std::fs::read_to_string(expected_dunder_main_file).unwrap();
+
+        assert_yaml_snapshot!(dunder_main_content);
+
+        let main_content = std::fs::read_to_string(expected_main_file).unwrap();
+
+        assert_yaml_snapshot!(main_content);
+    }
+
+    #[test]
     fn test_save_main_test_file() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
         project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(base.join("tests")).unwrap();
+        let expected_file = base.join("tests/test_main.py");
+        save_main_test_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_main_test_file_is_async_project() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.is_application = true;
+        project_info.is_async_project = true;
         let base = project_info.base_dir();
         create_dir_all(base.join("tests")).unwrap();
         let expected_file = base.join("tests/test_main.py");
