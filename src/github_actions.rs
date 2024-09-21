@@ -1156,8 +1156,8 @@ jobs:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{{{ secrets.PYPI_API_KEY }}}}
       run: |
-        pixi exec --spec python=={python_version} --spec python-build pyproject-build
-        pixi exec --spec python=={python_version} --spec twine twine upload dist/*
+        pixi exec --spec python=="{python_version}.*" --spec python-build pyproject-build
+        pixi exec --spec python=="{python_version}.*" --spec twine twine upload dist/*
 "#
     )
 }
