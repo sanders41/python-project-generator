@@ -218,6 +218,59 @@ jobs:
     )
 }
 
+fn create_pixi_ci_testing_linux_only_file(
+    min_python_version: &str,
+    github_action_python_test_versions: &[String],
+) -> String {
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+
+    format!(
+        r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  PYTHON_VERSION: "{min_python_version}"
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Pixi
+      uses: prefix-dev/setup-pixi@v0.8.1
+      with:
+        pixi-version: v0.30.0
+    - name: Set up Python
+      run: pixi add python=="${{{{ env.PYTHON_VERSION }}}}.*"
+    - name: Ruff format check
+      run: pixi run run-ruff-format
+    - name: Lint with ruff
+      run: pixi run run-ruff-check
+    - name: mypy check
+      run: pixi run run-mypy
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Pixi
+      uses: prefix-dev/setup-pixi@v0.8.1
+      with:
+        pixi-version: v0.30.0
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      run: pixi add python=="${{{{ matrix.python-version }}}}.*"
+    - name: Test with pytest
+      run: pixi run run-pytest
+"#
+    )
+}
+
 fn create_ci_testing_linux_only_file_pyo3(
     source_dir: &str,
     min_python_version: &str,
@@ -331,6 +384,10 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
         ),
         ProjectManager::Uv => create_uv_ci_testing_linux_only_file(
             &project_info.source_dir,
+            &project_info.min_python_version,
+            &project_info.github_actions_python_test_versions,
+        ),
+        ProjectManager::Pixi => create_pixi_ci_testing_linux_only_file(
             &project_info.min_python_version,
             &project_info.github_actions_python_test_versions,
         ),
@@ -648,6 +705,60 @@ jobs:
     )
 }
 
+fn create_pixi_ci_testing_multi_os_file(
+    min_python_version: &str,
+    github_action_python_test_versions: &[String],
+) -> String {
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+
+    format!(
+        r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  PYTHON_VERSION: "{min_python_version}"
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Pixi
+      uses: prefix-dev/setup-pixi@v0.8.1
+      with:
+        pixi-version: v0.30.0
+    - name: Set up Python
+      run: pixi add python=="${{{{ env.PYTHON_VERSION }}}}.*"
+    - name: Ruff format check
+      run: pixi run run-ruff-formar
+    - name: Lint with ruff
+      run: pixi run run-ruff-check
+    - name: mypy check
+      run: pixi run run-mypy
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{{{ matrix.os }}}}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Pixi
+      uses: prefix-dev/setup-pixi@v0.8.1
+      with:
+        pixi-version: v0.30.0
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      run: pixi add python=="${{{{ matrix.python-version }}}}.*"
+    - name: Test with pytest
+      run: pixi run run-pytest
+"#
+    )
+}
+
 pub fn save_ci_testing_multi_os_file(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info
         .base_dir()
@@ -670,6 +781,10 @@ pub fn save_ci_testing_multi_os_file(project_info: &ProjectInfo) -> Result<()> {
         ),
         ProjectManager::Uv => create_uv_ci_testing_multi_os_file(
             &project_info.source_dir,
+            &project_info.min_python_version,
+            &project_info.github_actions_python_test_versions,
+        ),
+        ProjectManager::Pixi => create_pixi_ci_testing_multi_os_file(
             &project_info.min_python_version,
             &project_info.github_actions_python_test_versions,
         ),
@@ -1013,6 +1128,35 @@ jobs:
     )
 }
 
+fn create_pixi_pypi_publish_file(python_version: &str) -> String {
+    format!(
+        r#"name: PyPi Publish
+on:
+  release:
+    types:
+    - published
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Pixi
+      uses: prefix-dev/setup-pixi@v0.8.1
+      with:
+        pixi-version: v0.30.0
+    - name: Set up Python
+      run: pixi add python=="{python_version}.*"
+    - name: Build and publish package
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{{{ secrets.PYPI_API_KEY }}}}
+      run: |
+        pixi exec --spec python=="{python_version}.*" --spec python-build pyproject-build
+        pixi exec --spec python=="{python_version}.*" --spec twine twine upload dist/*
+"#
+    )
+}
+
 pub fn save_pypi_publish_file(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info
         .base_dir()
@@ -1024,6 +1168,7 @@ pub fn save_pypi_publish_file(project_info: &ProjectInfo) -> Result<()> {
             create_setuptools_pypi_publish_file(&project_info.python_version)
         }
         ProjectManager::Uv => create_uv_pypi_publish_file(&project_info.python_version),
+        ProjectManager::Pixi => create_pixi_pypi_publish_file(&project_info.python_version),
     };
 
     save_file_with_content(&file_path, &content)?;
@@ -1219,6 +1364,23 @@ mod tests {
     }
 
     #[test]
+    fn test_save_pixi_ci_testing_linux_only_file() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Pixi;
+        project_info.use_multi_os_ci = false;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        save_ci_testing_linux_only_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
     fn test_save_poetry_ci_testing_multi_os_file() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
@@ -1273,6 +1435,23 @@ mod tests {
     fn test_save_uv_ci_testing_multi_os_file() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Uv;
+        project_info.use_multi_os_ci = true;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        save_ci_testing_multi_os_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pixi_ci_testing_multi_os_file() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Pixi;
         project_info.use_multi_os_ci = true;
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
