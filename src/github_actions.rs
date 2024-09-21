@@ -243,7 +243,6 @@ jobs:
       uses: prefix-dev/setup-pixi@v0.8.1
       with:
         pixi-version: v0.30.0
-        cache: true
     - name: Set up Python
       run: pixi add python=="${{{{ env.PYTHON_VERSION }}}}.*"
     - name: Ruff format check
@@ -264,7 +263,6 @@ jobs:
       uses: prefix-dev/setup-pixi@v0.8.1
       with:
         pixi-version: v0.30.0
-        cache: true
     - name: Set up Python ${{{{ matrix.python-version }}}}
       run: pixi add python=="${{{{ matrix.python-version }}}}.*"
     - name: Test with pytest
@@ -732,7 +730,6 @@ jobs:
       uses: prefix-dev/setup-pixi@v0.8.1
       with:
         pixi-version: v0.30.0
-        cache: true
     - name: Set up Python
       run: pixi add python=="${{{{ env.PYTHON_VERSION }}}}.*"
     - name: Ruff format check
@@ -754,7 +751,6 @@ jobs:
       uses: prefix-dev/setup-pixi@v0.8.1
       with:
         pixi-version: v0.30.0
-        cache: true
     - name: Set up Python ${{{{ matrix.python-version }}}}
       run: pixi add python=="${{{{ matrix.python-version }}}}.*"
     - name: Test with pytest
@@ -1148,7 +1144,6 @@ jobs:
       uses: prefix-dev/setup-pixi@v0.8.1
       with:
         pixi-version: v0.30.0
-        cache: true
     - name: Set up Python
       run: pixi add python=="{python_version}.*"
     - name: Build and publish package

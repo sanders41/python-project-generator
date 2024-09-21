@@ -290,14 +290,14 @@ jobs:
         uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.30.0
-          cache: true
-      - name: Set up Python
-        run: pixi add python=="${{ env.MIN_PYTHON_VERSION }}.*"
       - name: Build package
         run: cargo build --release
       - name: Run creation
         run: |
           ./scripts/ci_run.sh ${{ matrix.project_type }} 5
+      - name: Set up Python
+        working-directory: ${{ env.WORKING_DIR }}
+        run: pixi add python=="${{ env.MIN_PYTHON_VERSION }}.*"
       - name: MyPy
         working-directory: ${{ env.WORKING_DIR }}
         run: pixi run -e dev mypy .
