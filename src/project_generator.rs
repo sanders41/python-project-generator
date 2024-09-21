@@ -734,7 +734,7 @@ fn create_uv_justfile(module: &str) -> String {
 }
 
 fn create_pixi_justfile() -> String {
-    format!(
+    (
         r#"@_default:
   just --list
 
@@ -761,7 +761,7 @@ fn create_pixi_justfile() -> String {
 @install:
   pixi install
 "#
-    )
+    ).to_string()
 }
 
 fn save_justfile(project_info: &ProjectInfo) -> Result<()> {
