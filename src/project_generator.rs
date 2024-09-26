@@ -273,9 +273,7 @@ fn build_latest_dev_dependencies(
     min_python_version: &str,
 ) -> Result<String> {
     let mut version_string = String::new();
-    let mut packages = if !is_python_312_or_greater(min_python_version)?
-        && matches!(project_manager, ProjectManager::Maturin)
-    {
+    let mut packages = if matches!(project_manager, ProjectManager::Maturin) {
         vec![
             PythonPackageVersion::new(PythonPackage::Maturin),
             PythonPackageVersion::new(PythonPackage::MyPy),
