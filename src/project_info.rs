@@ -200,6 +200,16 @@ fn boolean_prompt(
     }
 }
 
+fn string_prompt(prompt_text: String, default: Option<String>) -> Result<String> {
+    let prompt = Prompt {
+        prompt_text,
+        default,
+    };
+    let value = prompt.show_prompt()?;
+
+    Ok(value)
+}
+
 fn dependabot_day_prompt(default: Option<Day>) -> Result<Option<Day>> {
     let default_str = match default {
         Some(s) => match s {
@@ -384,56 +394,23 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     let source_dir = if use_defaults {
         source_dir_default
     } else {
-        let source_dir_prompt = Prompt {
-            prompt_text: "Source Directory".to_string(),
-            default: Some(source_dir_default),
-        };
-        source_dir_prompt.show_prompt()?
+        string_prompt("Source Directory".to_string(), Some(source_dir_default))?
     };
+    let project_description = string_prompt("Project Description".to_string(), None)?;
 
-    let project_description_prompt = Prompt {
-        prompt_text: "Project Description".to_string(),
-        default: None,
-    };
-    let project_description = project_description_prompt.show_prompt()?;
-
-    let creator = if use_defaults {
-        if let Some(creator) = config.creator {
-            creator
-        } else {
-            let creator_prompt = Prompt {
-                prompt_text: "Creator".to_string(),
-                default: config.creator,
-            };
-            creator_prompt.show_prompt()?
-        }
+    let creator = if use_defaults && config.creator.is_some() {
+        config.creator.unwrap()
     } else {
-        let creator_prompt = Prompt {
-            prompt_text: "Creator".to_string(),
-            default: config.creator,
-        };
-        creator_prompt.show_prompt()?
+        string_prompt("Creator".to_string(), config.creator)?
     };
 
-    let creator_email = if use_defaults {
-        if let Some(creator_email) = config.creator_email {
-            creator_email
-        } else {
-            let creator_email_prompt = Prompt {
-                prompt_text: "Creator Email".to_string(),
-                default: config.creator_email,
-            };
-            creator_email_prompt.show_prompt()?
-        }
+    let creator_email = if use_defaults && config.creator_email.is_some() {
+        config.creator_email.unwrap()
     } else {
-        let creator_email_prompt = Prompt {
-            prompt_text: "Creator Email".to_string(),
-            default: config.creator_email,
-        };
-        creator_email_prompt.show_prompt()?
+        string_prompt("Creator Email".to_string(), config.creator_email)?
     };
 
-    let license = if use_defaults {
+    let license = if use_defaults && config.license.is_some() {
         if let Some(l) = config.license {
             l
         } else {
@@ -459,11 +436,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     let version = if use_defaults {
         default_version
     } else {
-        let version_prompt = Prompt {
-            prompt_text: "Version".to_string(),
-            default: Some(default_version),
-        };
-        version_prompt.show_prompt()?
+        string_prompt("Version".to_string(), Some(default_version))?
     };
 
     let python_version_default = match config.python_version {
