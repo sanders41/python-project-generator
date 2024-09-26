@@ -316,6 +316,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "exponential-backoff"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ffb309d235a642598183aeda8925e871e85dd5a433c2c877e69ff0a960f4c02"
+dependencies = [
+ "fastrand",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -887,6 +896,7 @@ dependencies = [
  "clap",
  "colored",
  "dirs",
+ "exponential-backoff",
  "indicatif",
  "insta",
  "minijinja",
