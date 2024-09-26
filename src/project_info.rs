@@ -164,6 +164,8 @@ impl ProjectInfo {
     }
 }
 
+/// `selected_default` is the value passed from the saved `default` values. default is used if
+/// `selected_default` is None.
 fn boolean_prompt(
     prompt_text: String,
     selected_default: Option<bool>,
