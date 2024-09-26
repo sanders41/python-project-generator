@@ -164,13 +164,23 @@ impl ProjectInfo {
     }
 }
 
-fn boolean_prompt(prompt_text: String, default: Option<bool>) -> Result<bool> {
-    let default_str = match default {
+fn boolean_prompt(
+    prompt_text: String,
+    selected_default: Option<bool>,
+    default: bool,
+) -> Result<bool> {
+    let default_str = match selected_default {
         Some(d) => match d {
             true => "1".to_string(),
             false => "2".to_string(),
         },
-        None => "1".to_string(),
+        None => {
+            if default {
+                "1".to_string()
+            } else {
+                "2".to_string()
+            }
+        }
     };
 
     let prompt = Prompt {
@@ -258,27 +268,6 @@ fn dependabot_schedule_prompt(
     } else {
         bail!("Invalid selection");
     }
-}
-
-fn is_application_prompt(default: Option<bool>) -> Result<bool> {
-    let prompt_text =
-        "Application or Library\n  1 - Application\n  2 - Library\n  Choose from [1, 2]"
-            .to_string();
-    let value = boolean_prompt(prompt_text, default)?;
-
-    Ok(value)
-}
-
-fn is_async_project_prompt(default: Option<bool>) -> Result<bool> {
-    let default = if default.is_some() {
-        default
-    } else {
-        Some(false)
-    };
-    let prompt_text = "Async Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string();
-    let value = boolean_prompt(prompt_text, default)?;
-
-    Ok(value)
 }
 
 fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectManager> {
@@ -544,13 +533,22 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     let is_application = if use_defaults {
         config.is_application.unwrap_or(true)
     } else {
-        is_application_prompt(config.is_application)?
+        boolean_prompt(
+            "Application or Library\n  1 - Application\n  2 - Library\n  Choose from [1, 2]"
+                .to_string(),
+            config.is_application,
+            true,
+        )?
     };
 
     let is_async_project = if use_defaults {
         config.is_async_project.unwrap_or(false)
     } else {
-        is_async_project_prompt(config.is_async_project)?
+        boolean_prompt(
+            "Async Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+            config.is_async_project,
+            false,
+        )?
     };
 
     let max_line_length = if use_defaults {
@@ -565,6 +563,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         boolean_prompt(
             "Use Dependabot\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
             config.use_dependabot,
+            true,
         )?
     };
 
@@ -608,6 +607,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         boolean_prompt(
             "Use Continuous Deployment\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
             config.use_continuous_deployment,
+            true,
         )?
     };
 
@@ -617,6 +617,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         boolean_prompt(
             "Use Release Drafter\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
             config.use_release_drafter,
+            true,
         )?
     };
 
@@ -626,6 +627,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         boolean_prompt(
             "Use Multi OS CI\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
             config.use_multi_os_ci,
+            true,
         )?
     };
 
