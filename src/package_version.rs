@@ -1,7 +1,7 @@
-use std::fmt;
-use std::time::Duration;
+use std::{fmt, thread, time::Duration};
 
-use anyhow::Result;
+use anyhow::{bail, Result};
+use exponential_backoff::Backoff;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum PythonPackage {
@@ -61,26 +61,43 @@ pub struct PreCommitHookVersion {
 impl LatestVersion for PreCommitHookVersion {
     fn get_latest_version(&mut self) -> Result<()> {
         let client = reqwest::blocking::Client::new();
+        let attempts = 3;
+        let min = Duration::from_millis(100); // 10ms
+        let max = Duration::from_secs(1);
+        let backoff = Backoff::new(attempts, min, max);
         let api_url = format!(
             "{}/releases",
             self.repo
                 .replace("https://github.com", "https://api.github.com/repos")
         );
-        let response = client
-            .get(api_url)
-            .header(reqwest::header::USER_AGENT, "python-project-generator")
-            .timeout(Duration::new(5, 0))
-            .send()?
-            .text()?;
-        let info: Vec<serde_json::Value> = serde_json::from_str(&response)?;
-        for i in info {
-            if i["draft"] == false && i["prerelease"] == false {
-                self.rev = i["tag_name"].to_string().replace('"', "");
-                break;
+
+        for duration in backoff {
+            let response = client
+                .get(&api_url)
+                .header(reqwest::header::USER_AGENT, "python-project-generator")
+                .timeout(Duration::new(5, 0))
+                .send();
+
+            match response {
+                Ok(r) => {
+                    let result = r.text()?;
+                    let info: Vec<serde_json::Value> = serde_json::from_str(&result)?;
+                    for i in info {
+                        if i["draft"] == false && i["prerelease"] == false {
+                            self.rev = i["tag_name"].to_string().replace('"', "");
+                            break;
+                        }
+                    }
+
+                    return Ok(());
+                }
+                Err(e) => match duration {
+                    Some(duration) => thread::sleep(duration),
+                    None => bail!("{e}"),
+                },
             }
         }
-
-        Ok(())
+        bail!("Error retrieving latest version");
     }
 }
 
@@ -103,15 +120,29 @@ impl LatestVersion for PythonPackageVersion {
         let name = self.package.to_string();
         let url = format!("https://pypi.org/pypi/{}/json", name);
         let client = reqwest::blocking::Client::new();
-        let response = client
-            .get(url)
-            .timeout(Duration::new(5, 0))
-            .send()?
-            .text()?;
-        let info: serde_json::Value = serde_json::from_str(&response)?;
-        self.version = info["info"]["version"].to_string().replace('"', "");
+        let attempts = 3;
+        let min = Duration::from_millis(100); // 10ms
+        let max = Duration::from_secs(1);
+        let backoff = Backoff::new(attempts, min, max);
 
-        Ok(())
+        for duration in backoff {
+            let response = client.get(&url).timeout(Duration::new(5, 0)).send();
+
+            match response {
+                Ok(r) => {
+                    let result = r.text()?;
+                    let info: serde_json::Value = serde_json::from_str(&result)?;
+                    self.version = info["info"]["version"].to_string().replace('"', "");
+
+                    return Ok(());
+                }
+                Err(e) => match duration {
+                    Some(duration) => thread::sleep(duration),
+                    None => bail!("{e}"),
+                },
+            }
+        }
+        bail!("Error retrieving latest version");
     }
 }
 
