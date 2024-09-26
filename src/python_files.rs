@@ -7,29 +7,26 @@ use crate::project_info::{ProjectInfo, ProjectManager};
 use crate::utils::is_python_312_or_greater;
 
 fn create_dunder_main_file(module: &str, is_async_project: bool) -> String {
+    let mut file = "from __future__ import annotations\n\n".to_string();
+
     if is_async_project {
-        format!(
-            r#"from __future__ import annotations
-
-import asyncio
-
-from {module}.main import main  #  pragma: no cover
-
-if __name__ == "__main__":
-    raise SystemExit(asyncio.run(main()))
-"#
-        )
-    } else {
-        format!(
-            r#"from __future__ import annotations
-
-from {module}.main import main  #  pragma: no cover
-
-if __name__ == "__main__":
-    raise SystemExit(main())
-"#
-        )
+        file.push_str("import asyncio\n\n");
     }
+
+    file.push_str(&format!(
+        r#"from {module}.main import main  #  pragma: no cover
+
+if __name__ == "__main__":
+"#
+    ));
+
+    if is_async_project {
+        file.push_str("    raise SystemExit(asyncio.run(main()))\n");
+    } else {
+        file.push_str("    raise SystemExit(main())\n");
+    }
+
+    file
 }
 
 fn create_main_file(is_async_project: bool) -> String {
@@ -142,6 +139,7 @@ fn save_pyo3_test_file(project_info: &ProjectInfo) -> Result<()> {
 fn create_project_init_file(module: &str, project_manager: &ProjectManager) -> String {
     match project_manager {
         ProjectManager::Maturin => {
+            // 118 = the letter v
             let v_ascii: u8 = 118;
             if let Some(first_char) = module.chars().next() {
                 if (first_char as u8) < v_ascii {
