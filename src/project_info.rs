@@ -410,7 +410,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         string_prompt("Creator Email".to_string(), config.creator_email)?
     };
 
-    let license = if use_defaults && config.license.is_some() {
+    let license = if use_defaults {
         if let Some(l) = config.license {
             l
         } else {

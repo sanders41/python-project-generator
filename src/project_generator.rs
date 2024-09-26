@@ -842,19 +842,14 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
         bail!("Error creating pyproject.toml file");
     }
 
+    if save_justfile(project_info).is_err() {
+        bail!("Error creating justfile");
+    }
+
     match &project_info.project_manager {
-        ProjectManager::Poetry => {
-            if save_justfile(project_info).is_err() {
-                bail!("Error creating justfile");
-            }
-        }
         ProjectManager::Maturin => {
             if save_dev_requirements(project_info).is_err() {
                 bail!("Error creating requirements-dev.txt file");
-            }
-
-            if save_justfile(project_info).is_err() {
-                bail!("Error creating justfile");
             }
 
             if save_lib_file(project_info).is_err() {
@@ -869,21 +864,8 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
             if save_dev_requirements(project_info).is_err() {
                 bail!("Error creating requirements-dev.txt file");
             }
-
-            if save_justfile(project_info).is_err() {
-                bail!("Error creating justfile");
-            }
         }
-        ProjectManager::Uv => {
-            if save_justfile(project_info).is_err() {
-                bail!("Error creating justfile");
-            }
-        }
-        ProjectManager::Pixi => {
-            if save_justfile(project_info).is_err() {
-                bail!("Error creating justfile");
-            }
-        }
+        _ => {}
     }
 
     if project_info.use_continuous_deployment && save_pypi_publish_file(project_info).is_err() {
