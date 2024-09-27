@@ -865,7 +865,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
                 bail!("Error creating requirements-dev.txt file");
             }
         }
-        _ => {}
+        _ => (),
     }
 
     if project_info.use_continuous_deployment && save_pypi_publish_file(project_info).is_err() {
