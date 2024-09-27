@@ -1,5 +1,8 @@
-use std::fs::{create_dir_all, read_to_string, File};
-use std::path::PathBuf;
+use std::{
+    fmt::Display,
+    fs::{create_dir_all, read_to_string, File},
+    path::PathBuf,
+};
 
 use anyhow::{bail, Result};
 use colored::*;
@@ -65,12 +68,12 @@ impl Config {
                         serde_json::to_writer(config_file, &self)?;
                     }
                     None => {
-                        bail!("Unable to save config file.");
+                        bail!("Error saving config file");
                     }
                 }
             }
             None => {
-                bail!("Unable to save config file.");
+                bail!("Error saving config file");
             }
         }
 
@@ -80,9 +83,7 @@ impl Config {
     pub fn save_creator(value: String) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.creator = Some(value);
-            if config.save().is_err() {
-                raise_error()?;
-            };
+            config.save()?;
         } else {
             raise_error()?;
         }
@@ -93,9 +94,7 @@ impl Config {
     pub fn save_creator_email(value: String) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.creator_email = Some(value);
-            if config.save().is_err() {
-                raise_error()?;
-            };
+            config.save()?;
         } else {
             raise_error()?;
         }
@@ -106,9 +105,7 @@ impl Config {
     pub fn save_license(value: LicenseType) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.license = Some(value);
-            if config.save().is_err() {
-                raise_error()?;
-            };
+            config.save()?;
         } else {
             raise_error()?;
         }
@@ -119,9 +116,7 @@ impl Config {
     pub fn save_python_version(value: String) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.python_version = Some(value);
-            if config.save().is_err() {
-                raise_error()?;
-            };
+            config.save()?;
         } else {
             raise_error()?;
         }
@@ -132,9 +127,7 @@ impl Config {
     pub fn save_min_python_version(value: String) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.min_python_version = Some(value);
-            if config.save().is_err() {
-                raise_error()?;
-            };
+            config.save()?;
         } else {
             raise_error()?;
         }
@@ -158,9 +151,7 @@ impl Config {
     pub fn save_is_async_project(value: bool) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.is_async_project = Some(value);
-            if config.save().is_err() {
-                raise_error()?;
-            };
+            config.save()?;
         } else {
             raise_error()?;
         }
@@ -171,9 +162,7 @@ impl Config {
     pub fn save_is_application(value: bool) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.is_application = Some(value);
-            if config.save().is_err() {
-                raise_error()?;
-            };
+            config.save()?;
         } else {
             raise_error()?;
         }
@@ -196,9 +185,7 @@ impl Config {
 
         if let Ok(mut config) = Config::load_config() {
             config.github_actions_python_test_versions = Some(versions);
-            if config.save().is_err() {
-                raise_error()?;
-            };
+            config.save()?;
         } else {
             raise_error()?;
         }
@@ -209,9 +196,7 @@ impl Config {
     pub fn save_max_line_length(value: u8) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.max_line_length = Some(value);
-            if config.save().is_err() {
-                raise_error()?;
-            };
+            config.save()?;
         } else {
             raise_error()?;
         }
@@ -222,9 +207,7 @@ impl Config {
     pub fn save_use_dependabot(value: bool) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.use_dependabot = Some(value);
-            if config.save().is_err() {
-                raise_error()?;
-            };
+            config.save()?;
         } else {
             raise_error()?;
         }
@@ -235,9 +218,7 @@ impl Config {
     pub fn save_dependabot_schedule(value: DependabotSchedule) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.dependabot_schedule = Some(value);
-            if config.save().is_err() {
-                raise_error()?;
-            };
+            config.save()?;
         } else {
             raise_error()?;
         }
@@ -248,9 +229,7 @@ impl Config {
     pub fn save_dependabot_day(value: Day) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.dependabot_day = Some(value);
-            if config.save().is_err() {
-                raise_error()?;
-            };
+            config.save()?;
         } else {
             raise_error()?;
         }
@@ -261,9 +240,7 @@ impl Config {
     pub fn save_use_continuous_deployment(value: bool) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.use_continuous_deployment = Some(value);
-            if config.save().is_err() {
-                raise_error()?;
-            };
+            config.save()?;
         } else {
             raise_error()?;
         }
@@ -274,9 +251,7 @@ impl Config {
     pub fn save_use_release_drafter(value: bool) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.use_release_drafter = Some(value);
-            if config.save().is_err() {
-                raise_error()?;
-            };
+            config.save()?;
         } else {
             raise_error()?;
         }
@@ -287,9 +262,7 @@ impl Config {
     pub fn save_use_multi_os_ci(value: bool) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.use_multi_os_ci = Some(value);
-            if config.save().is_err() {
-                raise_error()?;
-            };
+            config.save()?;
         } else {
             raise_error()?;
         }
@@ -300,9 +273,7 @@ impl Config {
     pub fn save_download_latest_packages(value: bool) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.download_latest_packages = Some(value);
-            if config.save().is_err() {
-                raise_error()?;
-            };
+            config.save()?;
         } else {
             raise_error()?;
         }
@@ -312,40 +283,11 @@ impl Config {
 
     pub fn show() {
         let config = Config::load_config().unwrap_or_default();
-        let creator_label = "Creator";
-        if let Some(creator) = config.creator {
-            println!("{}: {creator}", creator_label.blue());
-        } else {
-            println!("{}: null", creator_label.blue());
-        }
-
-        let creator_email_label = "Creator Email";
-        if let Some(creator_email) = config.creator_email {
-            println!("{}: {creator_email}", creator_email_label.blue());
-        } else {
-            println!("{}: null", creator_email_label.blue());
-        }
-
-        let license_label = "License";
-        if let Some(license) = config.license {
-            println!("{}: {}", license_label.blue(), license);
-        } else {
-            println!("{}: null", license_label.blue());
-        }
-
-        let python_version_label = "Python Version";
-        if let Some(python_version) = config.python_version {
-            println!("{}: {python_version}", python_version_label.blue());
-        } else {
-            println!("{}: null", python_version_label.blue());
-        }
-
-        let min_python_version_label = "Min Python Version";
-        if let Some(min_python_version) = config.min_python_version {
-            println!("{}: {min_python_version}", min_python_version_label.blue());
-        } else {
-            println!("{}: null", min_python_version_label.blue());
-        }
+        print_config_value("Creator", &config.creator);
+        print_config_value("Creator Email", &config.creator_email);
+        print_config_value("License", &config.license);
+        print_config_value("Python Version", &config.python_version);
+        print_config_value("Min Python Version", &config.min_python_version);
 
         let is_application_label = "Application or Library";
         if let Some(is_application) = config.is_application {
@@ -366,88 +308,19 @@ impl Config {
             println!("{}: null", gha_python_label.blue());
         }
 
-        let project_manager_label = "Project Manager";
-        if let Some(project_manager) = config.project_manager {
-            println!("{}: {}", project_manager_label.blue(), project_manager);
-        } else {
-            println!("{}: null", project_manager_label.blue());
-        }
-
-        let async_label = "Async Project";
-        if let Some(is_async_project) = config.is_async_project {
-            println!("{}: {}", async_label.blue(), is_async_project);
-        } else {
-            println!("{}: null", async_label.blue());
-        }
-
-        let max_line_length_label = "Max Line Length";
-        if let Some(max_line_length) = config.max_line_length {
-            println!("{}: {max_line_length}", max_line_length_label.blue());
-        } else {
-            println!("{}: null", max_line_length_label.blue());
-        }
-
-        let use_dependabot_label = "Use Dependabot";
-        if let Some(use_dependabot) = config.use_dependabot {
-            println!("{}: {use_dependabot}", use_dependabot_label.blue());
-        } else {
-            println!("{}: null", use_dependabot_label.blue());
-        }
-
-        let dependabot_schedule_label = "Dependabot Schedule";
-        if let Some(dependabot_schedule) = config.dependabot_schedule {
-            println!(
-                "{}: {}",
-                dependabot_schedule_label.blue(),
-                dependabot_schedule
-            );
-        } else {
-            println!("{}: null", dependabot_schedule_label.blue());
-        }
-
-        let dependabot_day_label = "Dependabot Day";
-        if let Some(dependabot_day) = config.dependabot_day {
-            println!("{}: {}", dependabot_day_label.blue(), dependabot_day);
-        } else {
-            println!("{}: null", dependabot_day_label.blue());
-        }
-
-        let use_continuous_deployment_label = "Use Continuous Deployment";
-        if let Some(use_continuous_deployment) = config.use_continuous_deployment {
-            println!(
-                "{}: {use_continuous_deployment}",
-                use_continuous_deployment_label.blue()
-            );
-        } else {
-            println!("{}: null", use_continuous_deployment_label.blue());
-        }
-
-        let use_release_drafter_label = "Use Release Drafter";
-        if let Some(use_release_drafter) = config.use_release_drafter {
-            println!(
-                "{}: {use_release_drafter}",
-                use_release_drafter_label.blue()
-            );
-        } else {
-            println!("{}: null", use_release_drafter_label.blue());
-        }
-
-        let use_multi_os_ci_label = "Use Multi OS CI";
-        if let Some(use_multi_os_ci) = config.use_multi_os_ci {
-            println!("{}: {use_multi_os_ci}", use_multi_os_ci_label.blue());
-        } else {
-            println!("{}: null", use_multi_os_ci_label.blue());
-        }
-
-        let download_latest_packages_label = "Download Latest Packages";
-        if let Some(download_latest_packages) = config.download_latest_packages {
-            println!(
-                "{}: {download_latest_packages}",
-                download_latest_packages_label.blue()
-            );
-        } else {
-            println!("{}: null", download_latest_packages_label.blue());
-        }
+        print_config_value("Project Manager", &config.project_manager);
+        print_config_value("Async Project", &config.is_async_project);
+        print_config_value("Max Line Length", &config.max_line_length);
+        print_config_value("Use Dependabot", &config.use_dependabot);
+        print_config_value("Dependabot Schedule", &config.dependabot_schedule);
+        print_config_value("Dependabot Day", &config.dependabot_day);
+        print_config_value(
+            "Use Continuous Deployment",
+            &config.use_continuous_deployment,
+        );
+        print_config_value("Use Release Drafter", &config.use_release_drafter);
+        print_config_value("Use Multi OS CI", &config.use_multi_os_ci);
+        print_config_value("Download Latest Packages", &config.download_latest_packages);
     }
 }
 
@@ -473,6 +346,14 @@ fn config_file_path() -> Option<PathBuf> {
 
 fn raise_error() -> Result<()> {
     bail!("Error saving config")
+}
+
+fn print_config_value<T: Display>(label: &str, value: &Option<T>) {
+    if let Some(v) = value {
+        println!("{}: {}", label.blue(), v);
+    } else {
+        println!("{}: null", label.blue());
+    }
 }
 
 #[cfg(test)]
