@@ -6,6 +6,9 @@ use exponential_backoff::Backoff;
 #[derive(Debug, PartialEq, Eq)]
 pub enum PythonPackage {
     Maturin,
+    Mkdocs,
+    MkdocsMaterial,
+    Mkdocstrings,
     MyPy,
     PreCommit,
     Pytest,
@@ -19,6 +22,9 @@ impl fmt::Display for PythonPackage {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             PythonPackage::Maturin => write!(f, "maturin"),
+            PythonPackage::Mkdocs => write!(f, "mkdocs"),
+            PythonPackage::MkdocsMaterial => write!(f, "mkdocs-material"),
+            PythonPackage::Mkdocstrings => write!(f, "mkdocstrings"),
             PythonPackage::MyPy => write!(f, "mypy"),
             PythonPackage::PreCommit => write!(f, "pre-commit"),
             PythonPackage::Pytest => write!(f, "pytest"),
@@ -184,6 +190,9 @@ impl LatestVersion for RustPackageVersion {
 pub fn default_version(package: &PythonPackage) -> String {
     match package {
         PythonPackage::Maturin => "1.7.4".to_string(),
+        PythonPackage::Mkdocs => "1.6.1".to_string(),
+        PythonPackage::MkdocsMaterial => "9.5.38".to_string(),
+        PythonPackage::Mkdocstrings => "0.26.1".to_string(),
         PythonPackage::MyPy => "1.11.2".to_string(),
         PythonPackage::PreCommit => "3.8.0".to_string(),
         PythonPackage::Pytest => "8.3.3".to_string(),

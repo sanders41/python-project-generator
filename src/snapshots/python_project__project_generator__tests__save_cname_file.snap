@@ -1,0 +1,5 @@
+---
+source: src/project_generator.rs
+expression: content
+---
+"https://mytest.com\n"

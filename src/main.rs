@@ -241,7 +241,20 @@ fn main() {
                     }
                 }
             },
-
+            Param::IncludeDocs { value } => match value {
+                BooleanChoice::True => {
+                    if let Err(e) = Config::save_include_docs(true) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
+                BooleanChoice::False => {
+                    if let Err(e) = Config::save_include_docs(false) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
+            },
             Param::DownloadLatestPackages { value } => match value {
                 BooleanChoice::True => {
                     if let Err(e) = Config::save_download_latest_packages(true) {
@@ -308,6 +321,8 @@ mod tests {
             use_continuous_deployment: true,
             use_release_drafter: true,
             use_multi_os_ci: true,
+            include_docs: false,
+            docs_info: None,
             download_latest_packages: false,
             project_root_dir: Some(base),
         };

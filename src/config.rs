@@ -30,6 +30,7 @@ pub struct Config {
     pub use_continuous_deployment: Option<bool>,
     pub use_release_drafter: Option<bool>,
     pub use_multi_os_ci: Option<bool>,
+    pub include_docs: Option<bool>,
     pub download_latest_packages: Option<bool>,
 }
 
@@ -270,6 +271,17 @@ impl Config {
         Ok(())
     }
 
+    pub fn save_include_docs(value: bool) -> Result<()> {
+        if let Ok(mut config) = Config::load_config() {
+            config.include_docs = Some(value);
+            config.save()?;
+        } else {
+            raise_error()?;
+        }
+
+        Ok(())
+    }
+
     pub fn save_download_latest_packages(value: bool) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.download_latest_packages = Some(value);
@@ -320,6 +332,7 @@ impl Config {
         );
         print_config_value("Use Release Drafter", &config.use_release_drafter);
         print_config_value("Use Multi OS CI", &config.use_multi_os_ci);
+        print_config_value("Include Docs", &config.include_docs);
         print_config_value("Download Latest Packages", &config.download_latest_packages);
     }
 }

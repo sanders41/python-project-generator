@@ -128,6 +128,16 @@ impl PromptInput for Prompt {
 }
 
 #[derive(Debug)]
+pub struct DocsInfo {
+    pub site_name: String,
+    pub site_description: String,
+    pub site_url: String,
+    pub locale: String,
+    pub repo_name: String,
+    pub repo_url: String,
+}
+
+#[derive(Debug)]
 pub struct ProjectInfo {
     pub project_name: String,
     pub project_slug: String,
@@ -151,6 +161,8 @@ pub struct ProjectInfo {
     pub use_continuous_deployment: bool,
     pub use_release_drafter: bool,
     pub use_multi_os_ci: bool,
+    pub include_docs: bool,
+    pub docs_info: Option<DocsInfo>,
     pub download_latest_packages: bool,
     pub project_root_dir: Option<PathBuf>,
 }
@@ -606,6 +618,56 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         )?
     };
 
+    let include_docs = if use_defaults {
+        config.include_docs.unwrap_or(false)
+    } else {
+        boolean_prompt(
+            "Include Docs\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+            config.include_docs,
+            false,
+        )?
+    };
+
+    let docs_info = if include_docs {
+        let site_name = string_prompt("Docs Site Name".to_string(), None)?;
+        if site_name.is_empty() {
+            bail!("A site name is required for docs");
+        }
+
+        let site_description = string_prompt("Docs Site Description".to_string(), None)?;
+        if site_description.is_empty() {
+            bail!("A site description is required for docs");
+        }
+
+        let site_url = string_prompt("Docs Site Url".to_string(), None)?;
+        if site_url.is_empty() {
+            bail!("A site url is required for docs");
+        }
+
+        let locale = string_prompt("Docs Locale".to_string(), Some("en".to_string()))?;
+
+        let repo_name = string_prompt("Docs Repo Name".to_string(), None)?;
+        if repo_name.is_empty() {
+            bail!("A repo name is required for docs");
+        }
+
+        let repo_url = string_prompt("Docs Repo Url".to_string(), None)?;
+        if repo_url.is_empty() {
+            bail!("A repo url is required for docs");
+        }
+
+        Some(DocsInfo {
+            site_name,
+            site_description,
+            site_url,
+            locale,
+            repo_name,
+            repo_url,
+        })
+    } else {
+        None
+    };
+
     Ok(ProjectInfo {
         project_name,
         project_slug,
@@ -629,6 +691,8 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         use_continuous_deployment,
         use_release_drafter,
         use_multi_os_ci,
+        include_docs,
+        docs_info,
         download_latest_packages: false,
         project_root_dir: None,
     })
