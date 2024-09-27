@@ -139,9 +139,7 @@ impl Config {
     pub fn save_project_manager(value: ProjectManager) -> Result<()> {
         if let Ok(mut config) = Config::load_config() {
             config.project_manager = Some(value);
-            if config.save().is_err() {
-                raise_error()?;
-            }
+            config.save()?;
         } else {
             raise_error()?;
         }
