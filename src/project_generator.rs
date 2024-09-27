@@ -36,6 +36,11 @@ fn create_directories(project_info: &ProjectInfo) -> Result<()> {
         create_dir_all(rust_src)?;
     }
 
+    if project_info.include_docs {
+        let docs_css_dir = base.join("docs/css");
+        create_dir_all(docs_css_dir)?;
+    }
+
     Ok(())
 }
 
@@ -266,42 +271,38 @@ fn save_pre_commit_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn build_latest_dev_dependencies(
-    download_latest_packages: bool,
-    project_manager: &ProjectManager,
-    is_async_project: bool,
-    min_python_version: &str,
-) -> Result<String> {
+fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
     let mut version_string = String::new();
-    let mut packages = if matches!(project_manager, ProjectManager::Maturin) {
-        vec![
-            PythonPackageVersion::new(PythonPackage::Maturin),
-            PythonPackageVersion::new(PythonPackage::MyPy),
-            PythonPackageVersion::new(PythonPackage::PreCommit),
-            PythonPackageVersion::new(PythonPackage::Pytest),
-        ]
+    let mut packages = if matches!(project_info.project_manager, ProjectManager::Maturin) {
+        vec![PythonPackageVersion::new(PythonPackage::Maturin)]
     } else {
-        vec![
-            PythonPackageVersion::new(PythonPackage::MyPy),
-            PythonPackageVersion::new(PythonPackage::PreCommit),
-            PythonPackageVersion::new(PythonPackage::Pytest),
-        ]
+        Vec::new()
     };
 
-    if is_async_project {
+    if project_info.include_docs {
+        packages.push(PythonPackageVersion::new(PythonPackage::Mkdocs));
+        packages.push(PythonPackageVersion::new(PythonPackage::MkdocsMaterial));
+        packages.push(PythonPackageVersion::new(PythonPackage::Mkdocstrings));
+    }
+
+    packages.push(PythonPackageVersion::new(PythonPackage::MyPy));
+    packages.push(PythonPackageVersion::new(PythonPackage::PreCommit));
+    packages.push(PythonPackageVersion::new(PythonPackage::Pytest));
+
+    if project_info.is_async_project {
         packages.push(PythonPackageVersion::new(PythonPackage::PytestAsyncio));
     }
 
     packages.push(PythonPackageVersion::new(PythonPackage::PytestCov));
     packages.push(PythonPackageVersion::new(PythonPackage::Ruff));
 
-    if !is_python_312_or_greater(min_python_version)?
-        && matches!(project_manager, ProjectManager::Poetry)
+    if !is_python_312_or_greater(&project_info.min_python_version)?
+        && matches!(project_info.project_manager, ProjectManager::Poetry)
     {
         packages.push(PythonPackageVersion::new(PythonPackage::Tomli));
     }
 
-    if download_latest_packages {
+    if project_info.download_latest_packages {
         packages.par_iter_mut().for_each(|package| {
             if package.get_latest_version().is_err() {
                 let error_message = format!(
@@ -313,16 +314,21 @@ fn build_latest_dev_dependencies(
         })
     }
 
-    if let ProjectManager::Uv | ProjectManager::Pixi = project_manager {
+    if let ProjectManager::Uv | ProjectManager::Pixi = project_info.project_manager {
         version_string.push_str("[\n");
     }
 
     for package in packages {
-        match project_manager {
+        match project_info.project_manager {
             ProjectManager::Poetry => {
                 if package.package == PythonPackage::Tomli {
                     version_string.push_str(&format!(
                         "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
+                        package.package, package.version
+                    ));
+                } else if package.package == PythonPackage::Mkdocstrings {
+                    version_string.push_str(&format!(
+                        "{} = {{version = \"{}\", extras = [\"python\"]}}\n",
                         package.package, package.version
                     ));
                 } else {
@@ -330,15 +336,33 @@ fn build_latest_dev_dependencies(
                         .push_str(&format!("{} = \"{}\"\n", package.package, package.version));
                 }
             }
-            ProjectManager::Uv | ProjectManager::Pixi => version_string.push_str(&format!(
-                "  \"{}=={}\",\n",
-                package.package, package.version
-            )),
-            _ => version_string.push_str(&format!("{}=={}\n", package.package, package.version)),
+            ProjectManager::Uv | ProjectManager::Pixi => {
+                if package.package == PythonPackage::Mkdocstrings {
+                    version_string.push_str(&format!(
+                        "  \"{}[python]=={}\",\n",
+                        package.package, package.version
+                    ));
+                } else {
+                    version_string.push_str(&format!(
+                        "  \"{}=={}\",\n",
+                        package.package, package.version
+                    ));
+                }
+            }
+            _ => {
+                if package.package == PythonPackage::Mkdocstrings {
+                    version_string.push_str(&format!(
+                        "{}[python]=={}\n",
+                        package.package, package.version
+                    ));
+                } else {
+                    version_string.push_str(&format!("{}=={}\n", package.package, package.version));
+                }
+            }
         }
     }
 
-    match project_manager {
+    match project_info.project_manager {
         ProjectManager::Poetry => Ok(version_string.trim().to_string()),
         ProjectManager::Uv => {
             version_string.push(']');
@@ -483,6 +507,9 @@ run-mypy = "mypy {{ module }} tests"
 run-ruff-check = "ruff check {{ module }} tests"
 run-ruff-format = "ruff format {{ module }} tests"
 run-pytest = "pytest -x"
+{% if include_docs -%}
+run-deploy-docs = "mkdocs gh-deploy --force"
+{%- endif %}
 
 [project.optional-dependencies]
 dev = {{ dev_dependencies }}
@@ -564,11 +591,12 @@ ignore=[
         creator_email => project_info.creator_email,
         license => license_text,
         min_python_version => project_info.min_python_version,
-        dev_dependencies => build_latest_dev_dependencies(project_info.download_latest_packages, &project_info.project_manager, project_info.is_async_project, &project_info.min_python_version)?,
+        dev_dependencies => build_latest_dev_dependencies(project_info)?,
         max_line_length => project_info.max_line_length,
         module => module,
         is_application => project_info.is_application,
         is_async_project => project_info.is_async_project,
+        include_docs => project_info.include_docs,
         pyupgrade_version => pyupgrade_version,
     ))
 }
@@ -584,12 +612,120 @@ fn save_pyproject_toml_file(project_info: &ProjectInfo) -> Result<()> {
 
 fn save_dev_requirements(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info.base_dir().join("requirements-dev.txt");
-    let content = build_latest_dev_dependencies(
-        project_info.download_latest_packages,
-        &project_info.project_manager,
-        project_info.is_async_project,
-        &project_info.min_python_version,
-    )?;
+    let content = build_latest_dev_dependencies(project_info)?;
+
+    save_file_with_content(&file_path, &content)?;
+
+    Ok(())
+}
+
+fn build_mkdocs_yaml(project_info: &ProjectInfo) -> Result<String> {
+    if let Some(docs_info) = &project_info.docs_info {
+        Ok(format!(
+            r#"site_name: {}
+site_description: {}
+site_url: {}
+
+theme:
+  name: material
+  locale: {}
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - scheme: slate
+      primary: green
+      accent: blue
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to dark mode
+    - scheme: default
+      primary: green
+      accent: blue
+      toggle:
+        icon: material/lightbulb
+        name: Switch to light mode
+  features:
+    - search.suggest
+    - search.highlight
+repo_name: {}
+repo_url: {}
+
+nav:
+  - Home: index.md
+
+plugins:
+  - mkdocstrings
+  - search
+"#,
+            docs_info.site_name,
+            docs_info.site_description,
+            docs_info.site_url,
+            docs_info.locale,
+            docs_info.repo_name,
+            docs_info.repo_url,
+        ))
+    } else {
+        bail!("No docs info provided");
+    }
+}
+
+fn save_mkdocs_yaml(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info.base_dir().join("mkdocs.yml");
+    let content = build_mkdocs_yaml(project_info)?;
+
+    save_file_with_content(&file_path, &content)?;
+
+    Ok(())
+}
+
+fn save_docs_cname(project_info: &ProjectInfo) -> Result<()> {
+    if let Some(docs_info) = &project_info.docs_info {
+        let file_path = project_info.base_dir().join("docs/CNAME");
+        let content = format!("{}\n", &docs_info.site_url);
+
+        save_file_with_content(&file_path, &content)?;
+
+        Ok(())
+    } else {
+        bail!("No doc info provided");
+    }
+}
+
+fn save_docs_index_md(project_info: &ProjectInfo) -> Result<()> {
+    if let Some(docs_info) = &project_info.docs_info {
+        let file_path = project_info.base_dir().join("docs/index.md");
+        let content = format!("# {}\n", docs_info.site_description);
+
+        save_file_with_content(&file_path, &content)?;
+
+        Ok(())
+    } else {
+        bail!("No doc info provided");
+    }
+}
+
+fn build_docs_css() -> String {
+    r#".md-source__repository {
+  overflow: visible;
+}
+
+div.autodoc-docstring {
+  padding-left: 20px;
+  margin-bottom: 30px;
+  border-left: 5px solid rgba(230, 230, 230);
+}
+
+div.autodoc-members {
+  padding-left: 20px;
+  margin-bottom: 15px;
+}
+"#
+    .to_string()
+}
+
+fn save_docs_css(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info.base_dir().join("docs/css/custom.css");
+    let content = build_docs_css();
 
     save_file_with_content(&file_path, &content)?;
 
@@ -880,6 +1016,24 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
         bail!("Error creating CI teesting file");
     }
 
+    if project_info.include_docs {
+        if save_mkdocs_yaml(project_info).is_err() {
+            bail!("Error creating mkdocs.yml file");
+        }
+
+        if save_docs_cname(project_info).is_err() {
+            bail!("Error creating CNAME file for docs");
+        }
+
+        if save_docs_index_md(project_info).is_err() {
+            bail!("Error index.md file for docs");
+        }
+
+        if save_docs_css(project_info).is_err() {
+            bail!("Error saving docs css file");
+        }
+    }
+
     if project_info.use_dependabot && save_dependabot_file(project_info).is_err() {
         bail!("Error creating dependabot file");
     }
@@ -894,7 +1048,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project_info::{LicenseType, ProjectInfo};
+    use crate::project_info::{DocsInfo, LicenseType, ProjectInfo};
     use insta::assert_yaml_snapshot;
     use tempfile::tempdir;
 
@@ -927,8 +1081,21 @@ mod tests {
             use_continuous_deployment: true,
             use_release_drafter: true,
             use_multi_os_ci: true,
+            include_docs: false,
+            docs_info: None,
             download_latest_packages: false,
             project_root_dir: Some(tempdir().unwrap().path().to_path_buf()),
+        }
+    }
+
+    fn docs_info_dummy() -> DocsInfo {
+        DocsInfo {
+            site_name: "Test Repo".to_string(),
+            site_description: "Dummy data for testing".to_string(),
+            site_url: "https://mytest.com".to_string(),
+            locale: "en".to_string(),
+            repo_name: "sanders41/python-project-generator".to_string(),
+            repo_url: "https://github.com/sanders41/python-project-generator".to_string(),
         }
     }
 
@@ -1402,6 +1569,70 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_mkdocs_yaml() {
+        let mut project_info = project_info_dummy();
+        project_info.include_docs = true;
+        project_info.docs_info = Some(docs_info_dummy());
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("mkdocs.yml");
+        save_mkdocs_yaml(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_cname_file() {
+        let mut project_info = project_info_dummy();
+        project_info.include_docs = true;
+        project_info.docs_info = Some(docs_info_dummy());
+        let base = project_info.base_dir().join("docs");
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("CNAME");
+        save_docs_cname(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_index_md_file() {
+        let mut project_info = project_info_dummy();
+        project_info.include_docs = true;
+        project_info.docs_info = Some(docs_info_dummy());
+        let base = project_info.base_dir().join("docs");
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("index.md");
+        save_docs_index_md(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_docs_css_file() {
+        let mut project_info = project_info_dummy();
+        project_info.include_docs = true;
+        project_info.docs_info = Some(docs_info_dummy());
+        let base = project_info.base_dir().join("docs/css");
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("custom.css");
+        save_docs_css(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
         assert_yaml_snapshot!(content);
     }
 

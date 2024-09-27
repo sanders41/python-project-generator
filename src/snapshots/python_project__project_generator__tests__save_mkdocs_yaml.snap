@@ -1,0 +1,5 @@
+---
+source: src/project_generator.rs
+expression: mkdocs_content
+---
+"site_name: Test Repo\nsite_description: Dummy data for testing\nsite_url: https://mytest.com\n\ntheme:\n  name: material\n  locale: en\n  icon:\n    repo: fontawesome/brands/github\n  palette:\n    - scheme: slate\n      primary: green\n      accent: blue\n      toggle:\n        icon: material/lightbulb-outline\n        name: Switch to dark mode\n    - scheme: default\n      primary: green\n      accent: blue\n      toggle:\n        icon: material/lightbulb\n        name: Switch to light mode\n  features:\n    - search.suggest\n    - search.highlight\nrepo_name: sanders41/python-project-generator\nrepo_url: https://github.com/sanders41/python-project-generator\n\nnav:\n  - Home: index.md\n\nplugins:\n  - mkdocstrings\n  - search\n"

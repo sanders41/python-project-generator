@@ -926,8 +926,8 @@ pub fn save_dependabot_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_poetry_pypi_publish_file(python_version: &str) -> String {
-    format!(
+fn create_poetry_pypi_publish_file(python_version: &str, include_docs: bool) -> String {
+    let mut yml = format!(
         r#"name: PyPi Publish
 on:
   release:
@@ -954,11 +954,21 @@ jobs:
     - name: Publish package
       run: poetry publish --build
 "#
-    )
+    );
+
+    if include_docs {
+        yml.push_str(
+            r#"    - name: Deploy Docs
+      run: poetry run mkdocs gh-deploy --force
+"#,
+        );
+    }
+
+    yml
 }
 
-fn create_pypi_publish_file_pyo3(python_version: &str) -> String {
-    format!(
+fn create_pypi_publish_file_pyo3(python_version: &str, include_docs: bool) -> String {
+    let mut yml = format!(
         r#"name: PyPi Publish
 on:
   release:
@@ -1061,11 +1071,21 @@ jobs:
           command: upload
           args: --non-interactive --skip-existing wheels-*/*
 "#
-    )
+    );
+
+    if include_docs {
+        yml.push_str(
+            r#"    - name: Deploy Docs
+      run: mkdocs gh-deploy --force
+"#,
+        );
+    }
+
+    yml
 }
 
-fn create_setuptools_pypi_publish_file(python_version: &str) -> String {
-    format!(
+fn create_setuptools_pypi_publish_file(python_version: &str, include_docs: bool) -> String {
+    let mut yml = format!(
         r#"name: PyPi Publish
 on:
   release:
@@ -1094,11 +1114,21 @@ jobs:
         python -m build
         twine upload dist/*
 "#
-    )
+    );
+
+    if include_docs {
+        yml.push_str(
+            r#"    - name: Deploy Docs
+      run: mkdocs gh-deploy --force
+"#,
+        );
+    }
+
+    yml
 }
 
-fn create_uv_pypi_publish_file(python_version: &str) -> String {
-    format!(
+fn create_uv_pypi_publish_file(python_version: &str, include_docs: bool) -> String {
+    let mut yml = format!(
         r#"name: PyPi Publish
 on:
   release:
@@ -1125,11 +1155,21 @@ jobs:
         uvx --from build pyproject-build --installer uv
         uvx twine upload dist/*
 "#
-    )
+    );
+
+    if include_docs {
+        yml.push_str(
+            r#"    - name: Deploy Docs
+      run: mkdocs gh-deploy --force
+"#,
+        );
+    }
+
+    yml
 }
 
-fn create_pixi_pypi_publish_file(python_version: &str) -> String {
-    format!(
+fn create_pixi_pypi_publish_file(python_version: &str, include_docs: bool) -> String {
+    let mut yml = format!(
         r#"name: PyPi Publish
 on:
   release:
@@ -1154,7 +1194,17 @@ jobs:
         pixi exec --spec python=="{python_version}.*" --spec python-build pyproject-build
         pixi exec --spec python=="{python_version}.*" --spec twine twine upload dist/*
 "#
-    )
+    );
+
+    if include_docs {
+        yml.push_str(
+            r#"    - name: Deploy Docs
+      run: pixi run run-deploy-docs
+"#,
+        );
+    }
+
+    yml
 }
 
 pub fn save_pypi_publish_file(project_info: &ProjectInfo) -> Result<()> {
@@ -1162,13 +1212,22 @@ pub fn save_pypi_publish_file(project_info: &ProjectInfo) -> Result<()> {
         .base_dir()
         .join(".github/workflows/pypi_publish.yml");
     let content = match &project_info.project_manager {
-        ProjectManager::Maturin => create_pypi_publish_file_pyo3(&project_info.python_version),
-        ProjectManager::Poetry => create_poetry_pypi_publish_file(&project_info.python_version),
-        ProjectManager::Setuptools => {
-            create_setuptools_pypi_publish_file(&project_info.python_version)
+        ProjectManager::Maturin => {
+            create_pypi_publish_file_pyo3(&project_info.python_version, project_info.include_docs)
         }
-        ProjectManager::Uv => create_uv_pypi_publish_file(&project_info.python_version),
-        ProjectManager::Pixi => create_pixi_pypi_publish_file(&project_info.python_version),
+        ProjectManager::Poetry => {
+            create_poetry_pypi_publish_file(&project_info.python_version, project_info.include_docs)
+        }
+        ProjectManager::Setuptools => create_setuptools_pypi_publish_file(
+            &project_info.python_version,
+            project_info.include_docs,
+        ),
+        ProjectManager::Uv => {
+            create_uv_pypi_publish_file(&project_info.python_version, project_info.include_docs)
+        }
+        ProjectManager::Pixi => {
+            create_pixi_pypi_publish_file(&project_info.python_version, project_info.include_docs)
+        }
     };
 
     save_file_with_content(&file_path, &content)?;
@@ -1245,7 +1304,7 @@ pub fn save_release_drafter_file(project_info: &ProjectInfo) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project_info::{LicenseType, ProjectInfo, ProjectManager};
+    use crate::project_info::{DocsInfo, LicenseType, ProjectInfo, ProjectManager};
     use insta::assert_yaml_snapshot;
     use std::fs::create_dir_all;
     use tempfile::tempdir;
@@ -1279,8 +1338,21 @@ mod tests {
             use_continuous_deployment: true,
             use_release_drafter: true,
             use_multi_os_ci: true,
+            include_docs: false,
+            docs_info: None,
             download_latest_packages: false,
             project_root_dir: Some(tempdir().unwrap().path().to_path_buf()),
+        }
+    }
+
+    fn docs_info_dummy() -> DocsInfo {
+        DocsInfo {
+            site_name: "Test Repo".to_string(),
+            site_description: "Dummy data for testing".to_string(),
+            site_url: "https://mytest.com".to_string(),
+            locale: "en".to_string(),
+            repo_name: "sanders41/python-project-generator".to_string(),
+            repo_url: "https://github.com/sanders41/python-project-generator".to_string(),
         }
     }
 
@@ -1662,9 +1734,27 @@ mod tests {
     }
 
     #[test]
-    fn test_save_pypi_publish_file() {
+    fn test_save_pypi_publish_file_poetry() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/pypi_publish.yml");
+        save_pypi_publish_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pypi_publish_file_poetry_docs() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.include_docs = true;
+        project_info.docs_info = Some(docs_info_dummy());
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
         let expected_file = base.join(".github/workflows/pypi_publish.yml");
@@ -1681,6 +1771,126 @@ mod tests {
     fn test_save_pypi_publish_file_pyo3() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/pypi_publish.yml");
+        save_pypi_publish_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pypi_publish_file_pyo3_docs() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.include_docs = true;
+        project_info.docs_info = Some(docs_info_dummy());
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/pypi_publish.yml");
+        save_pypi_publish_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pypi_publish_file_setuptools() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Setuptools;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/pypi_publish.yml");
+        save_pypi_publish_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pypi_publish_file_setuptools_docs() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Setuptools;
+        project_info.include_docs = true;
+        project_info.docs_info = Some(docs_info_dummy());
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/pypi_publish.yml");
+        save_pypi_publish_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pypi_publish_file_uv() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/pypi_publish.yml");
+        save_pypi_publish_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pypi_publish_file_uv_docs() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        project_info.include_docs = true;
+        project_info.docs_info = Some(docs_info_dummy());
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/pypi_publish.yml");
+        save_pypi_publish_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pypi_publish_file_pixi() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Pixi;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/pypi_publish.yml");
+        save_pypi_publish_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pypi_publish_file_pixi_docs() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Pixi;
+        project_info.include_docs = true;
+        project_info.docs_info = Some(docs_info_dummy());
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
         let expected_file = base.join(".github/workflows/pypi_publish.yml");

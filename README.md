@@ -34,6 +34,16 @@ Dev packages:
 - [justfile](https://github.com/casey/just) for running commands (to use this you will need to
   install just)
 
+## Docs
+
+If you chose to include docs then additional dev packages will be included for docs.
+
+- [mkdocs](index_md) for creating the docs
+- [mkdocs-material](index_md) for theming the docs
+- [mkdocstrings](index_md) for automatically creating API docs
+
+Additionally the `pypi_publish.yml` workflow will also be setup to deploy the doc on release.
+
 ## Installation
 
 Install with `cargo`:
@@ -151,6 +161,42 @@ python-project create -s
 
   Choosing yes will setup CI to run tests on Linux, Mac, and Windows. If no is chosen tests will
   only run on Linux in CI.
+
+- Include Docs
+
+  Choosing yes will add additional packages and base setup for creating documents with mkdocs.
+
+- Docs Site Name
+
+  This quesion will only show if you chose `yes` for `Include Docs`. This value sets the site name
+  field for mkdocs.
+
+- Docs Site Description
+
+  This quesion will only show if you chose `yes` for `Include Docs`. This value provides a
+  a description of the repo to use in the docs.
+
+- Docs Site URL
+
+  This quesion will only show if you chose `yes` for `Include Docs`. This is the URL where the docs
+  will be hosted.
+
+- Docs Locale
+
+  This quesion will only show if you chose `yes` for `Include Docs`, and controls the language of
+  the docs.
+
+- Repo Name
+
+  This quesion will only show if you chose `yes` for `Include Docs`. This is the name of the repo
+  the docs are referencing. For example in this repository the repo name would be
+  `sanders41/python-project-generator`.
+
+- Repo URL
+
+  This quesion will only show if you chose `yes` for `Include Docs`. This is URL for the repo the
+  docs are referencing. For example in this repository the repo url would be
+  `https://github.com/sanders41/python-project-generator`
 
 After running the generator a new directory will be created with the name you used for the
 `Project Slug`. Change to this directory then install the python packages and pre-commit hooks.

@@ -1,0 +1,5 @@
+---
+source: src/github_actions.rs
+expression: content
+---
+"name: PyPi Publish\non:\n  release:\n    types:\n    - published\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v4\n    - name: Install uv\n        run: curl -LsSf https://astral.sh/uv/install.sh | sh\n    - name: Set up Python\n      uses: actions/setup-python@v5\n      with:\n        python-version: \"3.12\"\n    - name: Install Dependencies\n        run: uv sync --frozen\n    - name: Build and publish package\n      env:\n        TWINE_USERNAME: __token__\n        TWINE_PASSWORD: ${{ secrets.PYPI_API_KEY }}\n      run: |\n        uvx --from build pyproject-build --installer uv\n        uvx twine upload dist/*\n"

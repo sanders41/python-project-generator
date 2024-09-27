@@ -99,6 +99,9 @@ pub enum Param {
     /// Save a default value for Use Multi OS CI
     UseMultiOsCi { value: BooleanChoice },
 
+    /// Setup docs
+    IncludeDocs { value: BooleanChoice },
+
     /// Save a default value for Download Latest Packages
     DownloadLatestPackages { value: BooleanChoice },
 

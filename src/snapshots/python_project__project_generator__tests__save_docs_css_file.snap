@@ -1,0 +1,5 @@
+---
+source: src/project_generator.rs
+expression: content
+---
+".md-source__repository {\n  overflow: visible;\n}\n\ndiv.autodoc-docstring {\n  padding-left: 20px;\n  margin-bottom: 30px;\n  border-left: 5px solid rgba(230, 230, 230);\n}\n\ndiv.autodoc-members {\n  padding-left: 20px;\n  margin-bottom: 15px;\n}\n"
