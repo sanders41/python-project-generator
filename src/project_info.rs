@@ -96,11 +96,7 @@ struct Prompt {
     default: Option<String>,
 }
 
-trait PromptInput {
-    fn show_prompt(&self) -> Result<String>;
-}
-
-impl PromptInput for Prompt {
+impl Prompt {
     fn show_prompt(&self) -> Result<String> {
         let mut input = String::new();
 
