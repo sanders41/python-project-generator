@@ -382,20 +382,12 @@ fn copyright_year_prompt(license: &LicenseType, default: Option<String>) -> Resu
 
 pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     let config = Config::load_config();
-    let project_name_prompt = Prompt {
-        prompt_text: "Project Name".to_string(),
-        default: None,
-    };
-    let project_name = project_name_prompt.show_prompt()?;
+    let project_name = string_prompt("Project Name".to_string(), None)?;
     let project_slug_default = project_name.replace(' ', "-").to_lowercase();
     let project_slug = if use_defaults {
         project_slug_default
     } else {
-        let project_slug_prompt = Prompt {
-            prompt_text: "Project Slug".to_string(),
-            default: Some(project_slug_default),
-        };
-        project_slug_prompt.show_prompt()?
+        string_prompt("Project Slug".to_string(), Some(project_slug_default))?
     };
 
     if Path::new(&project_slug).exists() {
@@ -630,31 +622,11 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
 
     let docs_info = if include_docs {
         let site_name = string_prompt("Docs Site Name".to_string(), None)?;
-        if site_name.is_empty() {
-            bail!("A site name is required for docs");
-        }
-
         let site_description = string_prompt("Docs Site Description".to_string(), None)?;
-        if site_description.is_empty() {
-            bail!("A site description is required for docs");
-        }
-
         let site_url = string_prompt("Docs Site Url".to_string(), None)?;
-        if site_url.is_empty() {
-            bail!("A site url is required for docs");
-        }
-
         let locale = string_prompt("Docs Locale".to_string(), Some("en".to_string()))?;
-
         let repo_name = string_prompt("Docs Repo Name".to_string(), None)?;
-        if repo_name.is_empty() {
-            bail!("A repo name is required for docs");
-        }
-
         let repo_url = string_prompt("Docs Repo Url".to_string(), None)?;
-        if repo_url.is_empty() {
-            bail!("A repo url is required for docs");
-        }
 
         Some(DocsInfo {
             site_name,
