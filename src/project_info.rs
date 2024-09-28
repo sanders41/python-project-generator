@@ -208,6 +208,23 @@ fn boolean_prompt(
     }
 }
 
+fn default_or_prompt_bool(
+    prompt_text: String,
+    selected_default: Option<bool>,
+    default: bool,
+    use_defaults: bool,
+) -> Result<bool> {
+    if use_defaults {
+        if let Some(d) = selected_default {
+            return Ok(d);
+        }
+    }
+
+    let result = boolean_prompt(prompt_text, selected_default, default)?;
+
+    Ok(result)
+}
+
 fn string_prompt(prompt_text: String, default: Option<String>) -> Result<String> {
     let prompt = Prompt {
         prompt_text,
@@ -216,6 +233,22 @@ fn string_prompt(prompt_text: String, default: Option<String>) -> Result<String>
     let value = prompt.show_prompt()?;
 
     Ok(value)
+}
+
+fn default_or_prompt_string(
+    prompt_text: String,
+    default: Option<String>,
+    use_defaults: bool,
+) -> Result<String> {
+    if use_defaults {
+        if let Some(d) = default {
+            return Ok(d);
+        }
+    }
+
+    let result = string_prompt(prompt_text, default)?;
+
+    Ok(result)
 }
 
 fn dependabot_day_prompt(default: Option<Day>) -> Result<Option<Day>> {
@@ -380,65 +413,52 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     let config = Config::load_config();
     let project_name = string_prompt("Project Name".to_string(), None)?;
     let project_slug_default = project_name.replace(' ', "-").to_lowercase();
-    let project_slug = if use_defaults {
-        project_slug_default
-    } else {
-        string_prompt("Project Slug".to_string(), Some(project_slug_default))?
-    };
+    let project_slug = default_or_prompt_string(
+        "Project Slug".to_string(),
+        Some(project_slug_default),
+        use_defaults,
+    )?;
 
     if Path::new(&project_slug).exists() {
         bail!(format!("The {project_slug} directory already exists"));
     }
 
     let source_dir_default = project_name.replace([' ', '-'], "_").to_lowercase();
-    let source_dir = if use_defaults {
-        source_dir_default
-    } else {
-        string_prompt("Source Directory".to_string(), Some(source_dir_default))?
-    };
+    let source_dir = default_or_prompt_string(
+        "Source Directory".to_string(),
+        Some(source_dir_default),
+        use_defaults,
+    )?;
     let project_description = string_prompt("Project Description".to_string(), None)?;
-
-    let creator = if use_defaults && config.creator.is_some() {
-        config.creator.unwrap()
-    } else {
-        string_prompt("Creator".to_string(), config.creator)?
-    };
-
-    let creator_email = if use_defaults && config.creator_email.is_some() {
-        config.creator_email.unwrap()
-    } else {
-        string_prompt("Creator Email".to_string(), config.creator_email)?
-    };
-
+    let creator = default_or_prompt_string("Creator".to_string(), config.creator, use_defaults)?;
+    let creator_email = default_or_prompt_string(
+        "Creator Email".to_string(),
+        config.creator_email,
+        use_defaults,
+    )?;
     let license = if use_defaults {
-        if let Some(l) = config.license {
-            l
-        } else {
-            LicenseType::Mit
-        }
+        config.license.unwrap_or(LicenseType::Mit)
     } else {
         license_prompt(config.license)?
     };
-
-    let mut copyright_year: Option<String> = None;
-    if let LicenseType::Mit = license {
+    let copyright_year = if let LicenseType::Mit = license {
         if let Ok(now) = OffsetDateTime::now_local() {
             if use_defaults {
-                copyright_year = Some(now.year().to_string());
+                Some(now.year().to_string())
             } else {
                 let result = copyright_year_prompt(&license, Some(now.year().to_string()))?;
-                copyright_year = Some(result);
+                Some(result)
             }
+        } else {
+            None
         }
-    }
-
-    let default_version = "0.1.0".to_string();
-    let version = if use_defaults {
-        default_version
     } else {
-        string_prompt("Version".to_string(), Some(default_version))?
+        None
     };
 
+    let default_version = "0.1.0".to_string();
+    let version =
+        default_or_prompt_string("Version".to_string(), Some(default_version), use_defaults)?;
     let python_version_default = match config.python_version {
         Some(python) => python,
         None => "3.12".to_string(),
@@ -495,36 +515,25 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     };
 
     let project_manager = if use_defaults {
-        if let Some(manager) = config.project_manager {
-            manager
-        } else {
-            ProjectManager::Poetry
-        }
+        config.project_manager.unwrap_or(ProjectManager::Poetry)
     } else {
         let default = config.project_manager.unwrap_or(ProjectManager::Poetry);
         project_manager_prompt(Some(default))?
     };
 
-    let is_application = if use_defaults {
-        config.is_application.unwrap_or(true)
-    } else {
-        boolean_prompt(
-            "Application or Library\n  1 - Application\n  2 - Library\n  Choose from [1, 2]"
-                .to_string(),
-            config.is_application,
-            true,
-        )?
-    };
-
-    let is_async_project = if use_defaults {
-        config.is_async_project.unwrap_or(false)
-    } else {
-        boolean_prompt(
-            "Async Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
-            config.is_async_project,
-            false,
-        )?
-    };
+    let is_application = default_or_prompt_bool(
+        "Application or Library\n  1 - Application\n  2 - Library\n  Choose from [1, 2]"
+            .to_string(),
+        config.is_application,
+        true,
+        use_defaults,
+    )?;
+    let is_async_project = default_or_prompt_bool(
+        "Async Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+        config.is_async_project,
+        false,
+        use_defaults,
+    )?;
 
     let max_line_length = if use_defaults {
         config.max_line_length.unwrap_or(100)
@@ -544,11 +553,11 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
 
     let dependabot_schedule = if use_dependabot {
         if use_defaults {
-            if let Some(schedule) = config.dependabot_schedule {
-                Some(schedule)
-            } else {
-                Some(DependabotSchedule::Daily)
-            }
+            Some(
+                config
+                    .dependabot_schedule
+                    .unwrap_or(DependabotSchedule::Daily),
+            )
         } else {
             dependabot_schedule_prompt(Some(DependabotSchedule::Daily))?
         }
@@ -556,65 +565,37 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         None
     };
 
-    let dependabot_day = if use_dependabot {
-        if use_defaults {
-            if use_defaults {
-                if let Some(default) = config.dependabot_day {
-                    Some(default)
-                } else {
-                    Some(Day::Monday)
-                }
-            } else {
-                None
-            }
-        } else if let Some(DependabotSchedule::Weekly) = &dependabot_schedule {
-            dependabot_day_prompt(Some(Day::Monday))?
-        } else {
-            None
-        }
+    let dependabot_day = if use_dependabot && use_defaults {
+        Some(config.dependabot_day.unwrap_or(Day::Monday))
+    } else if let Some(DependabotSchedule::Weekly) = &dependabot_schedule {
+        dependabot_day_prompt(Some(Day::Monday))?
     } else {
         None
     };
-
-    let use_continuous_deployment = if use_defaults {
-        config.use_continuous_deployment.unwrap_or(true)
-    } else {
-        boolean_prompt(
-            "Use Continuous Deployment\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
-            config.use_continuous_deployment,
-            true,
-        )?
-    };
-
-    let use_release_drafter = if use_defaults {
-        config.use_release_drafter.unwrap_or(true)
-    } else {
-        boolean_prompt(
-            "Use Release Drafter\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
-            config.use_release_drafter,
-            true,
-        )?
-    };
-
-    let use_multi_os_ci = if use_defaults {
-        config.use_multi_os_ci.unwrap_or(true)
-    } else {
-        boolean_prompt(
-            "Use Multi OS CI\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
-            config.use_multi_os_ci,
-            true,
-        )?
-    };
-
-    let include_docs = if use_defaults {
-        config.include_docs.unwrap_or(false)
-    } else {
-        boolean_prompt(
-            "Include Docs\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
-            config.include_docs,
-            false,
-        )?
-    };
+    let use_continuous_deployment = default_or_prompt_bool(
+        "Use Continuous Deployment\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+        config.use_continuous_deployment,
+        true,
+        use_defaults,
+    )?;
+    let use_release_drafter = default_or_prompt_bool(
+        "Use Release Drafter\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+        config.use_release_drafter,
+        true,
+        use_defaults,
+    )?;
+    let use_multi_os_ci = default_or_prompt_bool(
+        "Use Multi OS CI\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+        config.use_multi_os_ci,
+        true,
+        use_defaults,
+    )?;
+    let include_docs = default_or_prompt_bool(
+        "Include Docs\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+        config.include_docs,
+        false,
+        use_defaults,
+    )?;
 
     let docs_info = if include_docs {
         let site_name = string_prompt("Docs Site Name".to_string(), None)?;
