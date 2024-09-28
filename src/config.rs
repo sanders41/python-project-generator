@@ -35,18 +35,18 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn load_config() -> Result<Self> {
+    pub fn load_config() -> Self {
         if let Some(config_file) = config_file_path() {
             if config_file.exists() {
                 if let Ok(config_str) = read_to_string(config_file) {
                     if let Ok(config) = serde_json::from_str::<Self>(&config_str) {
-                        return Ok(config);
+                        return config;
                     }
                 }
             }
         };
 
-        Ok(Self::default())
+        Self::default()
     }
 
     pub fn reset() -> Result<()> {
@@ -82,89 +82,65 @@ impl Config {
     }
 
     pub fn save_creator(value: String) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.creator = Some(value);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.creator = Some(value);
+        config.save()?;
 
         Ok(())
     }
 
     pub fn save_creator_email(value: String) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.creator_email = Some(value);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.creator_email = Some(value);
+        config.save()?;
 
         Ok(())
     }
 
     pub fn save_license(value: LicenseType) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.license = Some(value);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.license = Some(value);
+        config.save()?;
 
         Ok(())
     }
 
     pub fn save_python_version(value: String) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.python_version = Some(value);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.python_version = Some(value);
+        config.save()?;
 
         Ok(())
     }
 
     pub fn save_min_python_version(value: String) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.min_python_version = Some(value);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.min_python_version = Some(value);
+        config.save()?;
 
         Ok(())
     }
 
     pub fn save_project_manager(value: ProjectManager) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.project_manager = Some(value);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.project_manager = Some(value);
+        config.save()?;
 
         Ok(())
     }
 
     pub fn save_is_async_project(value: bool) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.is_async_project = Some(value);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.is_async_project = Some(value);
+        config.save()?;
 
         Ok(())
     }
 
     pub fn save_is_application(value: bool) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.is_application = Some(value);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.is_application = Some(value);
+        config.save()?;
 
         Ok(())
     }
@@ -182,117 +158,87 @@ impl Config {
             }
         }
 
-        if let Ok(mut config) = Config::load_config() {
-            config.github_actions_python_test_versions = Some(versions);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.github_actions_python_test_versions = Some(versions);
+        config.save()?;
 
         Ok(())
     }
 
     pub fn save_max_line_length(value: u8) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.max_line_length = Some(value);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.max_line_length = Some(value);
+        config.save()?;
 
         Ok(())
     }
 
     pub fn save_use_dependabot(value: bool) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.use_dependabot = Some(value);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.use_dependabot = Some(value);
+        config.save()?;
 
         Ok(())
     }
 
     pub fn save_dependabot_schedule(value: DependabotSchedule) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.dependabot_schedule = Some(value);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.dependabot_schedule = Some(value);
+        config.save()?;
 
         Ok(())
     }
 
     pub fn save_dependabot_day(value: Day) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.dependabot_day = Some(value);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.dependabot_day = Some(value);
+        config.save()?;
 
         Ok(())
     }
 
     pub fn save_use_continuous_deployment(value: bool) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.use_continuous_deployment = Some(value);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.use_continuous_deployment = Some(value);
+        config.save()?;
 
         Ok(())
     }
 
     pub fn save_use_release_drafter(value: bool) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.use_release_drafter = Some(value);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.use_release_drafter = Some(value);
+        config.save()?;
 
         Ok(())
     }
 
     pub fn save_use_multi_os_ci(value: bool) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.use_multi_os_ci = Some(value);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.use_multi_os_ci = Some(value);
+        config.save()?;
 
         Ok(())
     }
 
     pub fn save_include_docs(value: bool) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.include_docs = Some(value);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.include_docs = Some(value);
+        config.save()?;
 
         Ok(())
     }
 
     pub fn save_download_latest_packages(value: bool) -> Result<()> {
-        if let Ok(mut config) = Config::load_config() {
-            config.download_latest_packages = Some(value);
-            config.save()?;
-        } else {
-            raise_error()?;
-        }
+        let mut config = Config::load_config();
+        config.download_latest_packages = Some(value);
+        config.save()?;
 
         Ok(())
     }
 
     pub fn show() {
-        let config = Config::load_config().unwrap_or_default();
+        let config = Config::load_config();
         print_config_value("Creator", &config.creator);
         print_config_value("Creator Email", &config.creator_email);
         print_config_value("License", &config.license);
@@ -353,10 +299,6 @@ fn config_file_path() -> Option<PathBuf> {
     };
 
     None
-}
-
-fn raise_error() -> Result<()> {
-    bail!("Error saving config")
 }
 
 fn print_config_value<T: Display>(label: &str, value: &Option<T>) {
