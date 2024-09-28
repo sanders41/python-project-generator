@@ -1,25 +1,36 @@
-all:
-  just --justfile {{justfile()}} fmt
-  just --justfile {{justfile()}} check
-  just --justfile {{justfile()}} clippy
-  just --justfile {{justfile()}} test
+@_default:
+  just --list
 
-lint:
+@all:
+  echo fmt
   just --justfile {{justfile()}} fmt
+  echo check
   just --justfile {{justfile()}} check
+  echo clippy
+  just --justfile {{justfile()}} clippy
+  echo test
+  just --justfile {{justfile()}} test-review
+
+
+@lint:
+  echo fmt
+  just --justfile {{justfile()}} fmt
+  echo check
+  just --justfile {{justfile()}} check
+  echo clippy
   just --justfile {{justfile()}} clippy
 
-clippy:
+@clippy:
   cargo clippy --all-targets
 
-check:
+@check:
   cargo check --all-targets
 
-fmt:
+@fmt:
   cargo fmt --all
 
-test:
+@test:
   cargo insta test
 
-test-review:
+@test-review:
   cargo insta test --review
