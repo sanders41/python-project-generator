@@ -129,6 +129,9 @@ target/
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# pixi environments
+.pixi
+
 # IPython
 profile_default/
 ipython_config.py
