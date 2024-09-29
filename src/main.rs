@@ -98,50 +98,50 @@ fn main() {
         }
         Command::Config(config) => match config.param {
             Param::Creator { value } => {
-                if let Err(e) = Config::save_creator(value) {
+                if let Err(e) = Config::default().save_creator(value) {
                     print_error(e);
                     exit(1);
                 }
             }
             Param::CreatorEmail { value } => {
-                if let Err(e) = Config::save_creator_email(value) {
+                if let Err(e) = Config::default().save_creator_email(value) {
                     print_error(e);
                     exit(1);
                 }
             }
             Param::License { value } => {
-                if let Err(e) = Config::save_license(value) {
+                if let Err(e) = Config::default().save_license(value) {
                     print_error(e);
                     exit(1);
                 }
             }
             Param::PythonVersion { value } => {
-                if let Err(e) = Config::save_python_version(value) {
+                if let Err(e) = Config::default().save_python_version(value) {
                     print_error(e);
                     exit(1);
                 }
             }
             Param::MinPythonVersion { value } => {
-                if let Err(e) = Config::save_min_python_version(value) {
+                if let Err(e) = Config::default().save_min_python_version(value) {
                     print_error(e);
                     exit(1);
                 }
             }
             Param::ProjectManager { value } => {
-                if let Err(e) = Config::save_project_manager(value) {
+                if let Err(e) = Config::default().save_project_manager(value) {
                     print_error(e);
                     exit(1);
                 }
             }
             Param::ApplicationOrLibrary { value } => match value {
                 ApplicationOrLib::Application => {
-                    if let Err(e) = Config::save_is_application(true) {
+                    if let Err(e) = Config::default().save_is_application(true) {
                         print_error(e);
                         exit(1);
                     }
                 }
                 ApplicationOrLib::Lib => {
-                    if let Err(e) = Config::save_is_application(false) {
+                    if let Err(e) = Config::default().save_is_application(false) {
                         print_error(e);
                         exit(1);
                     }
@@ -149,65 +149,65 @@ fn main() {
             },
             Param::IsAsyncProject { value } => match value {
                 BooleanChoice::True => {
-                    if let Err(e) = Config::save_is_async_project(true) {
+                    if let Err(e) = Config::default().save_is_async_project(true) {
                         print_error(e);
                         exit(1);
                     }
                 }
                 BooleanChoice::False => {
-                    if let Err(e) = Config::save_is_async_project(false) {
+                    if let Err(e) = Config::default().save_is_async_project(false) {
                         print_error(e);
                         exit(1);
                     }
                 }
             },
             Param::GithubActionPythonTestVersions { value } => {
-                if let Err(e) = Config::save_github_actions_python_test_versions(value) {
+                if let Err(e) = Config::default().save_github_actions_python_test_versions(value) {
                     print_error(e);
                     exit(1);
                 }
             }
             Param::MaxLineLength { value } => {
-                if let Err(e) = Config::save_max_line_length(value) {
+                if let Err(e) = Config::default().save_max_line_length(value) {
                     print_error(e);
                     exit(1);
                 }
             }
             Param::UseDependabot { value } => match value {
                 BooleanChoice::True => {
-                    if let Err(e) = Config::save_use_dependabot(true) {
+                    if let Err(e) = Config::default().save_use_dependabot(true) {
                         print_error(e);
                         exit(1);
                     }
                 }
                 BooleanChoice::False => {
-                    if let Err(e) = Config::save_use_dependabot(false) {
+                    if let Err(e) = Config::default().save_use_dependabot(false) {
                         print_error(e);
                         exit(1);
                     }
                 }
             },
             Param::DependabotSchedule { value } => {
-                if let Err(e) = Config::save_dependabot_schedule(value) {
+                if let Err(e) = Config::default().save_dependabot_schedule(value) {
                     print_error(e);
                     exit(1);
                 }
             }
             Param::DependabotDay { value } => {
-                if let Err(e) = Config::save_dependabot_day(value) {
+                if let Err(e) = Config::default().save_dependabot_day(value) {
                     print_error(e);
                     exit(1);
                 }
             }
             Param::UseContinuousDeployment { value } => match value {
                 BooleanChoice::True => {
-                    if let Err(e) = Config::save_use_continuous_deployment(true) {
+                    if let Err(e) = Config::default().save_use_continuous_deployment(true) {
                         print_error(e);
                         exit(1);
                     }
                 }
                 BooleanChoice::False => {
-                    if let Err(e) = Config::save_use_continuous_deployment(false) {
+                    if let Err(e) = Config::default().save_use_continuous_deployment(false) {
                         print_error(e);
                         exit(1);
                     }
@@ -215,13 +215,13 @@ fn main() {
             },
             Param::UseReleaseDrafter { value } => match value {
                 BooleanChoice::True => {
-                    if let Err(e) = Config::save_use_release_drafter(true) {
+                    if let Err(e) = Config::default().save_use_release_drafter(true) {
                         print_error(e);
                         exit(1);
                     }
                 }
                 BooleanChoice::False => {
-                    if let Err(e) = Config::save_use_release_drafter(false) {
+                    if let Err(e) = Config::default().save_use_release_drafter(false) {
                         print_error(e);
                         exit(1);
                     }
@@ -229,13 +229,13 @@ fn main() {
             },
             Param::UseMultiOsCi { value } => match value {
                 BooleanChoice::True => {
-                    if let Err(e) = Config::save_use_multi_os_ci(true) {
+                    if let Err(e) = Config::default().save_use_multi_os_ci(true) {
                         print_error(e);
                         exit(1);
                     }
                 }
                 BooleanChoice::False => {
-                    if let Err(e) = Config::save_use_multi_os_ci(false) {
+                    if let Err(e) = Config::default().save_use_multi_os_ci(false) {
                         print_error(e);
                         exit(1);
                     }
@@ -243,13 +243,13 @@ fn main() {
             },
             Param::IncludeDocs { value } => match value {
                 BooleanChoice::True => {
-                    if let Err(e) = Config::save_include_docs(true) {
+                    if let Err(e) = Config::default().save_include_docs(true) {
                         print_error(e);
                         exit(1);
                     }
                 }
                 BooleanChoice::False => {
-                    if let Err(e) = Config::save_include_docs(false) {
+                    if let Err(e) = Config::default().save_include_docs(false) {
                         print_error(e);
                         exit(1);
                     }
@@ -257,13 +257,13 @@ fn main() {
             },
             Param::DownloadLatestPackages { value } => match value {
                 BooleanChoice::True => {
-                    if let Err(e) = Config::save_download_latest_packages(true) {
+                    if let Err(e) = Config::default().save_download_latest_packages(true) {
                         print_error(e);
                         exit(1);
                     }
                 }
                 BooleanChoice::False => {
-                    if let Err(e) = Config::save_download_latest_packages(false) {
+                    if let Err(e) = Config::default().save_download_latest_packages(false) {
                         print_error(e);
                         exit(1);
                     }
@@ -276,7 +276,7 @@ fn main() {
                     exit(1);
                 }
             }
-            Param::Show => Config::show(),
+            Param::Show => Config::default().show(),
         },
     }
 }

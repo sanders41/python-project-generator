@@ -11,7 +11,7 @@ use time::OffsetDateTime;
 
 use crate::config::Config;
 
-#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum)]
+#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
 pub enum DependabotSchedule {
     Daily,
     Weekly,
@@ -28,7 +28,7 @@ impl fmt::Display for DependabotSchedule {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum)]
+#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
 pub enum Day {
     Monday,
     Tuesday,
@@ -53,7 +53,7 @@ impl fmt::Display for Day {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum)]
+#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
 pub enum LicenseType {
     Mit,
     Apache2,
@@ -70,7 +70,7 @@ impl fmt::Display for LicenseType {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum)]
+#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
 pub enum ProjectManager {
     Maturin,
     Poetry,
@@ -410,7 +410,7 @@ fn copyright_year_prompt(license: &LicenseType, default: Option<String>) -> Resu
 }
 
 pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
-    let config = Config::load_config();
+    let config = Config::default().load_config();
     let project_name = string_prompt("Project Name".to_string(), None)?;
     let project_slug_default = project_name.replace(' ', "-").to_lowercase();
     let project_slug = default_or_prompt_string(
