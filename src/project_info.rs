@@ -215,11 +215,7 @@ fn default_or_prompt_bool(
     use_defaults: bool,
 ) -> Result<bool> {
     if use_defaults {
-        if let Some(d) = selected_default {
-            return Ok(d);
-        } else {
-            return Ok(default);
-        }
+        return Ok(selected_default.unwrap_or(default));
     }
 
     let result = boolean_prompt(prompt_text, selected_default, default)?;
