@@ -217,6 +217,8 @@ fn default_or_prompt_bool(
     if use_defaults {
         if let Some(d) = selected_default {
             return Ok(d);
+        } else {
+            return Ok(default);
         }
     }
 
