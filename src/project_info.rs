@@ -346,7 +346,7 @@ fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectMana
         Ok(ProjectManager::Uv)
     } else if input == "2" || input.is_empty() {
         Ok(ProjectManager::Poetry)
-    } else if input == "2" {
+    } else if input == "3" {
         Ok(ProjectManager::Maturin)
     } else if input == "4" {
         Ok(ProjectManager::Setuptools)
