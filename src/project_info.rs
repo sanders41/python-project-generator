@@ -11,8 +11,9 @@ use time::OffsetDateTime;
 
 use crate::config::Config;
 
-#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
 pub enum DependabotSchedule {
+    #[default]
     Daily,
     Weekly,
     Monthly,
@@ -28,8 +29,9 @@ impl fmt::Display for DependabotSchedule {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
 pub enum Day {
+    #[default]
     Monday,
     Tuesday,
     Wednesday,
@@ -53,8 +55,9 @@ impl fmt::Display for Day {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
 pub enum LicenseType {
+    #[default]
     Mit,
     Apache2,
     NoLicense,
@@ -436,7 +439,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         use_defaults,
     )?;
     let license = if use_defaults {
-        config.license.unwrap_or(LicenseType::Mit)
+        config.license.unwrap_or_default()
     } else {
         license_prompt(config.license)?
     };
@@ -552,22 +555,18 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
 
     let dependabot_schedule = if use_dependabot {
         if use_defaults {
-            Some(
-                config
-                    .dependabot_schedule
-                    .unwrap_or(DependabotSchedule::Daily),
-            )
+            Some(config.dependabot_schedule.unwrap_or_default())
         } else {
-            dependabot_schedule_prompt(Some(DependabotSchedule::Daily))?
+            dependabot_schedule_prompt(Some(DependabotSchedule::default()))?
         }
     } else {
         None
     };
 
     let dependabot_day = if use_dependabot && use_defaults {
-        Some(config.dependabot_day.unwrap_or(Day::Monday))
+        Some(config.dependabot_day.unwrap_or_default())
     } else if let Some(DependabotSchedule::Weekly) = &dependabot_schedule {
-        dependabot_day_prompt(Some(Day::Monday))?
+        dependabot_day_prompt(Some(Day::default()))?
     } else {
         None
     };
