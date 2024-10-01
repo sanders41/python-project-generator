@@ -70,11 +70,12 @@ impl fmt::Display for LicenseType {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
 pub enum ProjectManager {
     Maturin,
     Poetry,
     Setuptools,
+    #[default]
     Uv,
     Pixi,
 }
@@ -324,16 +325,16 @@ fn dependabot_schedule_prompt(
 fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectManager> {
     let default_str = match default {
         Some(d) => match d {
-            ProjectManager::Maturin => "2".to_string(),
-            ProjectManager::Poetry => "1".to_string(),
-            ProjectManager::Setuptools => "3".to_string(),
-            ProjectManager::Uv => "4".to_string(),
+            ProjectManager::Uv => "1".to_string(),
+            ProjectManager::Poetry => "2".to_string(),
+            ProjectManager::Maturin => "3".to_string(),
+            ProjectManager::Setuptools => "4".to_string(),
             ProjectManager::Pixi => "5".to_string(),
         },
         None => "poetry".to_string(),
     };
     let prompt_text =
-        "Project Manager\n  1 - Poetry\n  2 - Maturin\n  3 - setuptools\n  4 - uv\n  5 - Pixi\n  Choose from[1, 2, 3, 4, 5]"
+        "Project Manager\n  1 - uv\n  2 - Poetry\n  3 - Maturin\n  4 - setuptools\n  5 - Pixi\n  Choose from[1, 2, 3, 4, 5]"
             .to_string();
     let prompt = Prompt {
         prompt_text,
@@ -341,14 +342,14 @@ fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectMana
     };
     let input = prompt.show_prompt()?;
 
-    if input == "1" || input.is_empty() {
-        Ok(ProjectManager::Poetry)
-    } else if input == "2" {
-        Ok(ProjectManager::Maturin)
-    } else if input == "3" {
-        Ok(ProjectManager::Setuptools)
-    } else if input == "4" {
+    if input == "1" {
         Ok(ProjectManager::Uv)
+    } else if input == "2" || input.is_empty() {
+        Ok(ProjectManager::Poetry)
+    } else if input == "3" {
+        Ok(ProjectManager::Maturin)
+    } else if input == "4" {
+        Ok(ProjectManager::Setuptools)
     } else if input == "5" {
         Ok(ProjectManager::Pixi)
     } else {
@@ -513,9 +514,9 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     };
 
     let project_manager = if use_defaults {
-        config.project_manager.unwrap_or(ProjectManager::Poetry)
+        config.project_manager.unwrap_or_default()
     } else {
-        let default = config.project_manager.unwrap_or(ProjectManager::Poetry);
+        let default = config.project_manager.unwrap_or_default();
         project_manager_prompt(Some(default))?
     };
 
