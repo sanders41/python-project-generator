@@ -118,6 +118,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: uv run pre-commit install
       - name: Test with pytest
+        if: ${{ matrix.project_type  }} == "application"
         working-directory: ${{ env.WORKING_DIR }}
         run: uv run pytest
   poetry-linting:
@@ -338,6 +339,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: pre-commit install
       - name: Test with pytest
+        if: ${{ matrix.project_type  }} == "application"
         working-directory: ${{ env.WORKING_DIR }}
         run: pytest
   pixi-linting:
@@ -400,7 +402,7 @@ jobs:
         run: pixi add python=="${{ env.MIN_PYTHON_VERSION }}.*"
       - name: Pre-commit install
         working-directory: ${{ env.WORKING_DIR }}
-        run: pre-commit install
+        run: pixi run -e dev pre-commit install
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
-        run: pytest
+        run: pixi run -e dev pytest
