@@ -119,7 +119,7 @@ jobs:
         run: uv run pre-commit install
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
-        if: ${{ matrix.project_type  }} == "application"
+        if: matrix.project_type == "application"
         run: uv run pytest
   poetry-linting:
     strategy:
@@ -340,7 +340,7 @@ jobs:
         run: pre-commit install
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
-        if: ${{ matrix.project_type  }} == "application"
+        if: matrix.project_type == "application"
         run: pytest
   pixi-linting:
     strategy:
