@@ -313,7 +313,8 @@ jobs:
       fail-fast: false
       matrix:
         project_type: ["application", "lib"]
-    runs-on: ubuntu-latest
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust
@@ -379,7 +380,8 @@ jobs:
       fail-fast: false
       matrix:
         project_type: ["application", "lib"]
-    runs-on: ubuntu-latest
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust
