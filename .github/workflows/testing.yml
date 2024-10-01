@@ -1,4 +1,4 @@
-name: Testing(ProjectManager::Uv)o
+name: Testing
 
 on:
   push:
@@ -118,8 +118,8 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: uv run pre-commit install
       - name: Test with pytest
-        if: ${{ matrix.project_type  }} == "application"
         working-directory: ${{ env.WORKING_DIR }}
+        if: ${{ matrix.project_type  }} == "application"
         run: uv run pytest
   poetry-linting:
     strategy:
@@ -339,8 +339,8 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: pre-commit install
       - name: Test with pytest
-        if: ${{ matrix.project_type  }} == "application"
         working-directory: ${{ env.WORKING_DIR }}
+        if: ${{ matrix.project_type  }} == "application"
         run: pytest
   pixi-linting:
     strategy:
