@@ -136,156 +136,218 @@ impl Config {
     }
 
     pub fn save_creator(&self, value: String) -> Result<()> {
-        let mut config = self.load_config();
-        config.creator = Some(value);
-        config.save()?;
+        self.handle_save_config(|config| &mut config.creator, Some(value))?;
+        Ok(())
+    }
 
+    pub fn reset_creator(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.creator, None)?;
         Ok(())
     }
 
     pub fn save_creator_email(&self, value: String) -> Result<()> {
-        let mut config = self.load_config();
-        config.creator_email = Some(value);
-        config.save()?;
+        self.handle_save_config(|config| &mut config.creator_email, Some(value))?;
+        Ok(())
+    }
 
+    pub fn reset_creator_email(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.creator_email, None)?;
         Ok(())
     }
 
     pub fn save_license(&self, value: LicenseType) -> Result<()> {
-        let mut config = self.load_config();
-        config.license = Some(value);
-        config.save()?;
+        self.handle_save_config(|config| &mut config.license, Some(value))?;
+        Ok(())
+    }
 
+    pub fn reset_license(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.license, None)?;
         Ok(())
     }
 
     pub fn save_python_version(&self, value: String) -> Result<()> {
-        let mut config = self.load_config();
-        config.python_version = Some(value);
-        config.save()?;
+        self.handle_save_config(|config| &mut config.python_version, Some(value))?;
+        Ok(())
+    }
 
+    pub fn reset_python_version(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.python_version, None)?;
         Ok(())
     }
 
     pub fn save_min_python_version(&self, value: String) -> Result<()> {
-        let mut config = self.load_config();
-        config.min_python_version = Some(value);
-        config.save()?;
+        self.handle_save_config(|config| &mut config.min_python_version, Some(value))?;
+        Ok(())
+    }
 
+    pub fn reset_min_python_version(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.min_python_version, None)?;
         Ok(())
     }
 
     pub fn save_project_manager(&self, value: ProjectManager) -> Result<()> {
-        let mut config = self.load_config();
-        config.project_manager = Some(value);
-        config.save()?;
+        self.handle_save_config(|config| &mut config.project_manager, Some(value))?;
+        Ok(())
+    }
 
+    pub fn reset_project_manager(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.project_manager, None)?;
         Ok(())
     }
 
     pub fn save_is_async_project(&self, value: bool) -> Result<()> {
-        let mut config = self.load_config();
-        config.is_async_project = Some(value);
-        config.save()?;
+        self.handle_save_config(|config| &mut config.is_async_project, Some(value))?;
+        Ok(())
+    }
 
+    pub fn reset_is_async_project(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.is_async_project, None)?;
         Ok(())
     }
 
     pub fn save_is_application(&self, value: bool) -> Result<()> {
-        let mut config = self.load_config();
-        config.is_application = Some(value);
-        config.save()?;
+        self.handle_save_config(|config| &mut config.is_application, Some(value))?;
+        Ok(())
+    }
 
+    pub fn reset_is_application(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.is_application, None)?;
         Ok(())
     }
 
     pub fn save_github_actions_python_test_versions(&self, value: String) -> Result<()> {
-        let versions = value
-            .replace(' ', "")
-            .split(',')
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>();
+        self.handle_save_github_actions_python_test_versions(Some(value))?;
+        Ok(())
+    }
 
-        for version in &versions {
-            if !is_valid_python_version(&version.replace('"', "")) {
-                bail!(format!("{} is not a valid Python Version", version));
+    pub fn reset_github_actions_python_test_versions(&self) -> Result<()> {
+        self.handle_save_github_actions_python_test_versions(None)?;
+        Ok(())
+    }
+
+    fn handle_save_github_actions_python_test_versions(&self, value: Option<String>) -> Result<()> {
+        let mut config = self.load_config();
+
+        if let Some(v) = value {
+            let versions = v
+                .replace(' ', "")
+                .split(',')
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>();
+
+            for version in &versions {
+                if !is_valid_python_version(&version.replace('"', "")) {
+                    bail!(format!("{} is not a valid Python Version", version));
+                }
             }
+
+            config.github_actions_python_test_versions = Some(versions);
+        } else {
+            config.github_actions_python_test_versions = None;
         }
 
-        let mut config = self.load_config();
-        config.github_actions_python_test_versions = Some(versions);
         config.save()?;
 
         Ok(())
     }
 
     pub fn save_max_line_length(&self, value: u8) -> Result<()> {
-        let mut config = self.load_config();
-        config.max_line_length = Some(value);
-        config.save()?;
+        self.handle_save_config(|config| &mut config.max_line_length, Some(value))?;
+        Ok(())
+    }
 
+    pub fn reset_max_line_length(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.max_line_length, None)?;
         Ok(())
     }
 
     pub fn save_use_dependabot(&self, value: bool) -> Result<()> {
-        let mut config = self.load_config();
-        config.use_dependabot = Some(value);
-        config.save()?;
+        self.handle_save_config(|config| &mut config.use_dependabot, Some(value))?;
+        Ok(())
+    }
 
+    pub fn reset_use_dependabot(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.use_dependabot, None)?;
         Ok(())
     }
 
     pub fn save_dependabot_schedule(&self, value: DependabotSchedule) -> Result<()> {
-        let mut config = self.load_config();
-        config.dependabot_schedule = Some(value);
-        config.save()?;
+        self.handle_save_config(|config| &mut config.dependabot_schedule, Some(value))?;
+        Ok(())
+    }
 
+    pub fn reset_dependabot_schedule(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.dependabot_schedule, None)?;
         Ok(())
     }
 
     pub fn save_dependabot_day(&self, value: Day) -> Result<()> {
-        let mut config = self.load_config();
-        config.dependabot_day = Some(value);
-        config.save()?;
+        self.handle_save_config(|config| &mut config.dependabot_day, Some(value))?;
+        Ok(())
+    }
 
+    pub fn reset_dependabot_day(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.dependabot_day, None)?;
         Ok(())
     }
 
     pub fn save_use_continuous_deployment(&self, value: bool) -> Result<()> {
-        let mut config = self.load_config();
-        config.use_continuous_deployment = Some(value);
-        config.save()?;
+        self.handle_save_config(|config| &mut config.use_continuous_deployment, Some(value))?;
+        Ok(())
+    }
 
+    pub fn reset_use_continuous_deployment(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.use_continuous_deployment, None)?;
         Ok(())
     }
 
     pub fn save_use_release_drafter(&self, value: bool) -> Result<()> {
-        let mut config = self.load_config();
-        config.use_release_drafter = Some(value);
-        config.save()?;
+        self.handle_save_config(|config| &mut config.use_release_drafter, Some(value))?;
+        Ok(())
+    }
 
+    pub fn reset_use_release_drafter(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.use_release_drafter, None)?;
         Ok(())
     }
 
     pub fn save_use_multi_os_ci(&self, value: bool) -> Result<()> {
-        let mut config = self.load_config();
-        config.use_multi_os_ci = Some(value);
-        config.save()?;
+        self.handle_save_config(|config| &mut config.use_multi_os_ci, Some(value))?;
+        Ok(())
+    }
 
+    pub fn reset_use_multi_os_ci(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.use_multi_os_ci, None)?;
         Ok(())
     }
 
     pub fn save_include_docs(&self, value: bool) -> Result<()> {
-        let mut config = self.load_config();
-        config.include_docs = Some(value);
-        config.save()?;
+        self.handle_save_config(|config| &mut config.include_docs, Some(value))?;
+        Ok(())
+    }
 
+    pub fn reset_include_docs(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.include_docs, None)?;
         Ok(())
     }
 
     pub fn save_download_latest_packages(&self, value: bool) -> Result<()> {
+        self.handle_save_config(|config| &mut config.download_latest_packages, Some(value))?;
+        Ok(())
+    }
+
+    pub fn reset_download_latest_packages(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.download_latest_packages, None)?;
+        Ok(())
+    }
+
+    fn handle_save_config<F, T>(&self, func: F, value: Option<T>) -> Result<()>
+    where
+        F: FnOnce(&mut Self) -> &mut Option<T>,
+    {
         let mut config = self.load_config();
-        config.download_latest_packages = Some(value);
+        let field = func(&mut config);
+        *field = value;
         config.save()?;
 
         Ok(())
@@ -436,6 +498,16 @@ mod tests {
     }
 
     #[test]
+    fn test_reset_creator() {
+        let config = mock_config();
+        config.save_creator("Some Person".to_string()).unwrap();
+        config.reset_creator().unwrap();
+        let result = config.load_config();
+
+        assert!(result.creator.is_none());
+    }
+
+    #[test]
     fn test_save_creator_email() {
         let config = mock_config();
         let expected = "someone@email.com".to_string();
@@ -443,6 +515,18 @@ mod tests {
         let result = config.load_config();
 
         assert_eq!(result.creator_email, Some(expected));
+    }
+
+    #[test]
+    fn test_reset_creator_email() {
+        let config = mock_config();
+        config
+            .save_creator_email("someone@email.com".to_string())
+            .unwrap();
+        config.reset_creator_email().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.creator_email, None);
     }
 
     #[test]
@@ -456,6 +540,16 @@ mod tests {
     }
 
     #[test]
+    fn test_reset_license() {
+        let config = mock_config();
+        config.save_license(LicenseType::Apache2).unwrap();
+        config.reset_license().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.license, None);
+    }
+
+    #[test]
     fn test_save_python_version() {
         let config = mock_config();
         let expected = "3.12".to_string();
@@ -463,6 +557,16 @@ mod tests {
         let result = config.load_config();
 
         assert_eq!(result.python_version, Some(expected));
+    }
+
+    #[test]
+    fn test_reset_python_version() {
+        let config = mock_config();
+        config.save_python_version("3.12".to_string()).unwrap();
+        config.reset_python_version().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.python_version, None);
     }
 
     #[test]
@@ -476,7 +580,17 @@ mod tests {
     }
 
     #[test]
-    fn test_project_manager() {
+    fn test_reset_min_python_version() {
+        let config = mock_config();
+        config.save_min_python_version("3.12".to_string()).unwrap();
+        config.reset_min_python_version().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.min_python_version, None);
+    }
+
+    #[test]
+    fn test_save_project_manager() {
         let config = mock_config();
         let expected = ProjectManager::Maturin;
         config.save_project_manager(expected.clone()).unwrap();
@@ -486,7 +600,19 @@ mod tests {
     }
 
     #[test]
-    fn test_is_async_project() {
+    fn test_reset_project_manager() {
+        let config = mock_config();
+        config
+            .save_project_manager(ProjectManager::Maturin)
+            .unwrap();
+        config.reset_project_manager().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.project_manager, None);
+    }
+
+    #[test]
+    fn test_save_is_async_project() {
         let config = mock_config();
         let expected = true;
         config.save_is_async_project(expected).unwrap();
@@ -496,7 +622,17 @@ mod tests {
     }
 
     #[test]
-    fn test_is_application() {
+    fn test_reset_is_async_project() {
+        let config = mock_config();
+        config.save_is_async_project(true).unwrap();
+        config.reset_is_async_project().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.is_async_project, None);
+    }
+
+    #[test]
+    fn test_save_is_application() {
         let config = mock_config();
         let expected = false;
         config.save_is_application(expected).unwrap();
@@ -506,7 +642,17 @@ mod tests {
     }
 
     #[test]
-    fn test_github_actions_pythong_test_versions() {
+    fn test_reset_is_application() {
+        let config = mock_config();
+        config.save_is_application(false).unwrap();
+        config.reset_is_application().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.is_application, None);
+    }
+
+    #[test]
+    fn test_save_github_actions_pythong_test_versions() {
         let config = mock_config();
         let expected = vec!["3.11".to_string(), "3.12".to_string()];
         config
@@ -518,7 +664,19 @@ mod tests {
     }
 
     #[test]
-    fn test_max_line_length() {
+    fn test_reset_github_actions_pythong_test_versions() {
+        let config = mock_config();
+        config
+            .save_github_actions_python_test_versions("3.11, 3.12".to_string())
+            .unwrap();
+        config.reset_github_actions_python_test_versions().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.github_actions_python_test_versions, None);
+    }
+
+    #[test]
+    fn test_save_max_line_length() {
         let config = mock_config();
         let expected = 42;
         config.save_max_line_length(expected).unwrap();
@@ -528,7 +686,17 @@ mod tests {
     }
 
     #[test]
-    fn test_use_dependabot() {
+    fn test_reset_max_line_length() {
+        let config = mock_config();
+        config.save_max_line_length(42).unwrap();
+        config.reset_max_line_length().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.max_line_length, None);
+    }
+
+    #[test]
+    fn test_save_use_dependabot() {
         let config = mock_config();
         let expected = false;
         config.save_use_dependabot(expected).unwrap();
@@ -538,7 +706,17 @@ mod tests {
     }
 
     #[test]
-    fn test_dependabot_schedule() {
+    fn test_reset_use_dependabot() {
+        let config = mock_config();
+        config.save_use_dependabot(false).unwrap();
+        config.reset_use_dependabot().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.use_dependabot, None);
+    }
+
+    #[test]
+    fn test_save_dependabot_schedule() {
         let config = mock_config();
         let expected = DependabotSchedule::Weekly;
         config.save_dependabot_schedule(expected.clone()).unwrap();
@@ -548,7 +726,19 @@ mod tests {
     }
 
     #[test]
-    fn test_dependabot_day() {
+    fn test_reset_dependabot_schedule() {
+        let config = mock_config();
+        config
+            .save_dependabot_schedule(DependabotSchedule::Weekly)
+            .unwrap();
+        config.reset_dependabot_schedule().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.dependabot_schedule, None);
+    }
+
+    #[test]
+    fn test_save_dependabot_day() {
         let config = mock_config();
         let expected = Day::Monday;
         config.save_dependabot_day(expected.clone()).unwrap();
@@ -558,7 +748,17 @@ mod tests {
     }
 
     #[test]
-    fn test_use_continuous_deployment() {
+    fn test_reset_dependabot_day() {
+        let config = mock_config();
+        config.save_dependabot_day(Day::Tuesday).unwrap();
+        config.reset_dependabot_day().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.dependabot_day, None);
+    }
+
+    #[test]
+    fn test_save_use_continuous_deployment() {
         let config = mock_config();
         let expected = false;
         config.save_use_continuous_deployment(expected).unwrap();
@@ -568,7 +768,17 @@ mod tests {
     }
 
     #[test]
-    fn test_use_release_drafter() {
+    fn test_reset_use_continuous_deployment() {
+        let config = mock_config();
+        config.save_use_continuous_deployment(false).unwrap();
+        config.reset_use_continuous_deployment().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.use_continuous_deployment, None);
+    }
+
+    #[test]
+    fn test_save_use_release_drafter() {
         let config = mock_config();
         let expected = false;
         config.save_use_release_drafter(expected).unwrap();
@@ -578,7 +788,17 @@ mod tests {
     }
 
     #[test]
-    fn test_use_multi_os_ci() {
+    fn test_reset_use_release_drafter() {
+        let config = mock_config();
+        config.save_use_release_drafter(false).unwrap();
+        config.reset_use_release_drafter().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.use_release_drafter, None);
+    }
+
+    #[test]
+    fn test_save_use_multi_os_ci() {
         let config = mock_config();
         let expected = false;
         config.save_use_multi_os_ci(expected).unwrap();
@@ -588,7 +808,17 @@ mod tests {
     }
 
     #[test]
-    fn test_include_docs() {
+    fn test_reset_use_multi_os_ci() {
+        let config = mock_config();
+        config.save_use_multi_os_ci(false).unwrap();
+        config.reset_use_multi_os_ci().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.use_multi_os_ci, None);
+    }
+
+    #[test]
+    fn test_save_include_docs() {
         let config = mock_config();
         let expected = true;
         config.save_include_docs(expected).unwrap();
@@ -598,12 +828,32 @@ mod tests {
     }
 
     #[test]
-    fn test_download_latest_packages() {
+    fn test_reset_include_docs() {
+        let config = mock_config();
+        config.save_include_docs(true).unwrap();
+        config.reset_include_docs().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.include_docs, None);
+    }
+
+    #[test]
+    fn test_save_download_latest_packages() {
         let config = mock_config();
         let expected = false;
         config.save_download_latest_packages(expected).unwrap();
         let result = config.load_config();
 
         assert_eq!(result.download_latest_packages, Some(expected));
+    }
+
+    #[test]
+    fn test_reset_download_latest_packages() {
+        let config = mock_config();
+        config.save_download_latest_packages(false).unwrap();
+        config.reset_download_latest_packages().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.download_latest_packages, None);
     }
 }

@@ -103,8 +103,20 @@ fn main() {
                     exit(1);
                 }
             }
+            Param::ResetCreator {} => {
+                if let Err(e) = Config::default().reset_creator() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::CreatorEmail { value } => {
                 if let Err(e) = Config::default().save_creator_email(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+            Param::ResetCreatorEmail {} => {
+                if let Err(e) = Config::default().reset_creator_email() {
                     print_error(e);
                     exit(1);
                 }
@@ -115,8 +127,20 @@ fn main() {
                     exit(1);
                 }
             }
+            Param::ResetLicense {} => {
+                if let Err(e) = Config::default().reset_license() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::PythonVersion { value } => {
                 if let Err(e) = Config::default().save_python_version(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+            Param::ResetPythonVersion {} => {
+                if let Err(e) = Config::default().reset_python_version() {
                     print_error(e);
                     exit(1);
                 }
@@ -127,8 +151,20 @@ fn main() {
                     exit(1);
                 }
             }
+            Param::ResetMinPythonVersion {} => {
+                if let Err(e) = Config::default().reset_min_python_version() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::ProjectManager { value } => {
                 if let Err(e) = Config::default().save_project_manager(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+            Param::ResetProjectManager {} => {
+                if let Err(e) = Config::default().reset_project_manager() {
                     print_error(e);
                     exit(1);
                 }
@@ -147,6 +183,12 @@ fn main() {
                     }
                 }
             },
+            Param::ResetApplicationOrLibrary {} => {
+                if let Err(e) = Config::default().reset_is_application() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::IsAsyncProject { value } => match value {
                 BooleanChoice::True => {
                     if let Err(e) = Config::default().save_is_async_project(true) {
@@ -161,14 +203,32 @@ fn main() {
                     }
                 }
             },
+            Param::ResetIsAsyncProject {} => {
+                if let Err(e) = Config::default().reset_is_async_project() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::GithubActionPythonTestVersions { value } => {
                 if let Err(e) = Config::default().save_github_actions_python_test_versions(value) {
                     print_error(e);
                     exit(1);
                 }
             }
+            Param::ResetGithubActionPythonTestVersions {} => {
+                if let Err(e) = Config::default().reset_github_actions_python_test_versions() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::MaxLineLength { value } => {
                 if let Err(e) = Config::default().save_max_line_length(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+            Param::ResetMaxLineLength {} => {
+                if let Err(e) = Config::default().reset_max_line_length() {
                     print_error(e);
                     exit(1);
                 }
@@ -187,14 +247,32 @@ fn main() {
                     }
                 }
             },
+            Param::ResetUseDependabot {} => {
+                if let Err(e) = Config::default().reset_use_dependabot() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::DependabotSchedule { value } => {
                 if let Err(e) = Config::default().save_dependabot_schedule(value) {
                     print_error(e);
                     exit(1);
                 }
             }
+            Param::ResetDependabotSchedule {} => {
+                if let Err(e) = Config::default().reset_dependabot_schedule() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::DependabotDay { value } => {
                 if let Err(e) = Config::default().save_dependabot_day(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+            Param::ResetDependabotDay {} => {
+                if let Err(e) = Config::default().reset_dependabot_day() {
                     print_error(e);
                     exit(1);
                 }
@@ -213,6 +291,12 @@ fn main() {
                     }
                 }
             },
+            Param::ResetUseContinuousDeployment {} => {
+                if let Err(e) = Config::default().reset_use_continuous_deployment() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::UseReleaseDrafter { value } => match value {
                 BooleanChoice::True => {
                     if let Err(e) = Config::default().save_use_release_drafter(true) {
@@ -227,6 +311,12 @@ fn main() {
                     }
                 }
             },
+            Param::ResetUseReleaseDrafter {} => {
+                if let Err(e) = Config::default().reset_use_release_drafter() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::UseMultiOsCi { value } => match value {
                 BooleanChoice::True => {
                     if let Err(e) = Config::default().save_use_multi_os_ci(true) {
@@ -241,6 +331,12 @@ fn main() {
                     }
                 }
             },
+            Param::ResetUseMultiOsCi {} => {
+                if let Err(e) = Config::default().reset_use_multi_os_ci() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::IncludeDocs { value } => match value {
                 BooleanChoice::True => {
                     if let Err(e) = Config::default().save_include_docs(true) {
@@ -255,6 +351,12 @@ fn main() {
                     }
                 }
             },
+            Param::ResetIncludeDocs {} => {
+                if let Err(e) = Config::default().reset_include_docs() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::DownloadLatestPackages { value } => match value {
                 BooleanChoice::True => {
                     if let Err(e) = Config::default().save_download_latest_packages(true) {
@@ -269,6 +371,12 @@ fn main() {
                     }
                 }
             },
+            Param::ResetDownloadLatestPackages {} => {
+                if let Err(e) = Config::default().reset_download_latest_packages() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::Reset => {
                 if Config::reset().is_err() {
                     let message = "Error resetting config.";
