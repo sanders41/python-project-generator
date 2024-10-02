@@ -2,6 +2,7 @@ use std::{
     fmt::Display,
     fs::{create_dir_all, read_to_string, File},
     path::PathBuf,
+    rc::Rc,
 };
 
 use anyhow::{bail, Result};
@@ -34,9 +35,9 @@ pub struct Config {
     pub download_latest_packages: Option<bool>,
 
     #[serde(skip)]
-    config_dir: Option<PathBuf>,
+    config_dir: Rc<Option<PathBuf>>,
     #[serde(skip)]
-    config_file_path: Option<PathBuf>,
+    config_file_path: Rc<Option<PathBuf>>,
 }
 
 impl Default for Config {
@@ -68,7 +69,7 @@ impl Default for Config {
 
 impl Config {
     pub fn load_config(&self) -> Self {
-        if let Some(config_file) = &self.config_file_path {
+        if let Some(config_file) = &*self.config_file_path {
             if config_file.exists() {
                 if let Ok(config_str) = read_to_string(config_file) {
                     if let Ok(config) = serde_json::from_str::<Self>(&config_str) {
@@ -111,13 +112,13 @@ impl Config {
     }
 
     pub fn save(&self) -> Result<()> {
-        match &self.config_dir {
+        match &*self.config_dir {
             Some(c) => {
                 if !c.exists() {
                     create_dir_all(c)?;
                 }
 
-                match &self.config_file_path {
+                match &*self.config_file_path {
                     Some(c) => {
                         let config_file = File::create(c)?;
                         serde_json::to_writer_pretty(config_file, self)?;
@@ -397,24 +398,25 @@ impl Config {
     }
 }
 
-fn config_dir() -> Option<PathBuf> {
+fn config_dir() -> Rc<Option<PathBuf>> {
     let config_dir: Option<PathBuf> = dirs::config_dir();
 
     if let Some(mut c) = config_dir {
         c.push("python-project-generator");
-        return Some(c);
+        return Rc::new(Some(c));
     }
 
-    None
+    Rc::new(None)
 }
 
-fn config_file_path() -> Option<PathBuf> {
-    if let Some(mut c) = config_dir() {
+fn config_file_path() -> Rc<Option<PathBuf>> {
+    if let Some(c) = &config_dir().as_ref() {
+        let mut c = c.clone();
         c.push("config.json");
-        return Some(c);
+        return Rc::new(Some(c));
     };
 
-    None
+    Rc::new(None)
 }
 
 fn print_config_value<T: Display>(label: &str, value: &Option<T>) {
@@ -439,8 +441,8 @@ mod tests {
         let config_file_path = base;
 
         let config = Config {
-            config_dir: Some(config_dir),
-            config_file_path: Some(config_file_path),
+            config_dir: Some(config_dir).into(),
+            config_file_path: Some(config_file_path).into(),
             ..Default::default()
         };
 
@@ -452,8 +454,8 @@ mod tests {
     #[test]
     fn test_config_dir() {
         let config_dir = config_dir();
-        assert_ne!(config_dir, None);
-        let config = config_dir.unwrap();
+        assert_ne!(config_dir, Rc::new(None));
+        let config = config_dir.as_ref().as_ref().unwrap();
 
         let last = config.file_name();
         assert_ne!(last, None);
@@ -463,8 +465,8 @@ mod tests {
     #[test]
     fn test_config_file_path() {
         let config_file_path = config_file_path();
-        assert_ne!(config_file_path, None);
-        let mut config = config_file_path.unwrap();
+        assert_ne!(config_file_path, Rc::new(None));
+        let mut config = config_file_path.as_ref().as_ref().unwrap().clone();
 
         let last = config.file_name();
         assert_ne!(last, None);
