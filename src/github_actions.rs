@@ -1040,7 +1040,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-macos-${{ matrix.target }}
+          name: wheels-macos-${{{{ matrix.target }}}}
           path: dist
   sdist:
     runs-on: ubuntu-latest
@@ -1066,7 +1066,7 @@ jobs:
       - name: Publish to PyPI
         uses: PyO3/maturin-action@v1
         env:
-          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          MATURIN_PYPI_TOKEN: ${{{{ secrets.PYPI_API_TOKEN }}}}
         with:
           command: upload
           args: --non-interactive --skip-existing wheels-*/*
