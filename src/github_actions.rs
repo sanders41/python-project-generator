@@ -301,7 +301,7 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache dependencies
-      uses: Swatinem/rust-cache@v2.7
+      uses: Swatinem/rust-cache@v2
     - name: Run cargo clippy
       run: cargo clippy --all-targets -- --deny warnings
   fmt:
@@ -313,7 +313,7 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache dependencies
-      uses: Swatinem/rust-cache@v2.7
+      uses: Swatinem/rust-cache@v2
     - name: Run cargo fmt
       run: cargo fmt --all -- --check
   python-linting:
@@ -558,7 +558,7 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache dependencies
-      uses: Swatinem/rust-cache@v2.7
+      uses: Swatinem/rust-cache@v2
     - name: Run cargo clippy
       run: cargo clippy --all-targets -- --deny warnings
   fmt:
@@ -570,7 +570,7 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Cache dependencies
-      uses: Swatinem/rust-cache@v2.7
+      uses: Swatinem/rust-cache@v2
     - name: Run cargo fmt
       run: cargo fmt --all -- --check
   python-linting:
