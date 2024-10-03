@@ -171,11 +171,11 @@ jobs:
     - name: Restore uv cache
       uses: actions/cache@v4
       with:
-        path: ${{ env.UV_CACHE_DIR }}
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        path: ${{{{ env.UV_CACHE_DIR }}}}
+        key: uv-${{{{ runner.os }}}}-${{{{ hashFiles('uv.lock') }}}}
         restore-keys: |
-          uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-          uv-${{ runner.os }}
+          uv-${{{{ runner.os }}}}-${{{{ hashFiles('uv.lock') }}}}
+          uv-${{{{ runner.os }}}}
     - name: Install Dependencies
       run: uv sync --frozen
     - name: Ruff format check
@@ -203,11 +203,11 @@ jobs:
     - name: Restore uv cache
       uses: actions/cache@v4
       with:
-        path: ${{ env.UV_CACHE_DIR }}
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        path: ${{{{ env.UV_CACHE_DIR }}}}
+        key: uv-${{{{ runner.os }}}}-${{{{ hashFiles('uv.lock') }}}}
         restore-keys: |
-          uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-          uv-${{ runner.os }}
+          uv-${{{{ runner.os }}}}-${{{{ hashFiles('uv.lock') }}}}
+          uv-${{{{ runner.os }}}}
     - name: Install Dependencies
       run: uv sync --frozen
     - name: Test with pytest
@@ -652,11 +652,11 @@ jobs:
     - name: Restore uv cache
       uses: actions/cache@v4
       with:
-        path: ${{ env.UV_CACHE_DIR }}
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        path: ${{{{ env.UV_CACHE_DIR }}}}
+        key: uv-${{{{ runner.os }}}}-${{{{ hashFiles('uv.lock') }}}}
         restore-keys: |
-          uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-          uv-${{ runner.os }}
+          uv-${{{{ runner.os }}}}-${{{{ hashFiles('uv.lock') }}}}
+          uv-${{{{ runner.os }}}}
     - name: Install Dependencies
       run: uv sync --frozen
     - name: Ruff format check
@@ -676,13 +676,8 @@ jobs:
     runs-on: ${{{{ matrix.os }}}}
     steps:
     - uses: actions/checkout@v4
-    - name: Set up uv ubuntu/mac
-        if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest' }}
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
-    - name: Set up uv windows
-      if: ${{ matrix.os == 'windows-latest' }}
-      run: irm https://astral.sh/uv/install.ps1 | iex
-      shell: powershell
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
     - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v5
       with:
@@ -690,11 +685,11 @@ jobs:
     - name: Restore uv cache
       uses: actions/cache@v4
       with:
-        path: ${{ env.UV_CACHE_DIR }}
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        path: ${{{{ env.UV_CACHE_DIR }}}}
+        key: uv-${{{{ runner.os }}}}-${{{{ hashFiles('uv.lock') }}}}
         restore-keys: |
-          uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-          uv-${{ runner.os }}
+          uv-${{{{ runner.os }}}}-${{{{ hashFiles('uv.lock') }}}}
+          uv-${{{{ runner.os }}}}
     - name: Install Dependencies
       run: uv sync --frozen
     - name: Test with pytest
@@ -1140,13 +1135,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: "{python_version}"
     - name: Install Dependencies
-        run: uv sync --frozen
+      run: uv sync --frozen
     - name: Build and publish package
       env:
         TWINE_USERNAME: __token__
