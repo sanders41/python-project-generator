@@ -1238,6 +1238,48 @@ mod tests {
     }
 
     #[test]
+    fn test_save_poetry_pyproject_toml_application_with_python_extras() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.is_application = true;
+        project_info.extra_python_packages = Some(vec![
+            "fastapi@0.115.0".to_string(),
+            "camel-converter@4.0.0".to_string(),
+        ]);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_poetry_pyproject_toml_lib_with_python_extras() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.is_application = false;
+        project_info.extra_python_packages = Some(vec![
+            "fastapi@0.115.0".to_string(),
+            "camel-converter@4.0.0".to_string(),
+        ]);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
     fn test_save_poetry_pyproject_toml_file_apache_application() {
         let mut project_info = project_info_dummy();
         project_info.license = LicenseType::Apache2;
@@ -1310,6 +1352,48 @@ mod tests {
     }
 
     #[test]
+    fn test_save_pyproject_toml_file_pyo3_application_with_python_extras() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.is_application = true;
+        project_info.extra_python_packages = Some(vec![
+            "fastapi@0.115.0".to_string(),
+            "camel-converter@4.0.0".to_string(),
+        ]);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pyproject_toml_file_pyo3_lib_with_python_extras() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.is_application = false;
+        project_info.extra_python_packages = Some(vec![
+            "fastapi@0.115.0".to_string(),
+            "camel-converter@4.0.0".to_string(),
+        ]);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
     fn test_save_pyproject_toml_file_apache_pyo3() {
         let mut project_info = project_info_dummy();
         project_info.license = LicenseType::Apache2;
@@ -1351,6 +1435,48 @@ mod tests {
         project_info.license = LicenseType::Mit;
         project_info.project_manager = ProjectManager::Setuptools;
         project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pyproject_toml_file_setuptools_application_with_python_extras() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Setuptools;
+        project_info.is_application = true;
+        project_info.extra_python_packages = Some(vec![
+            "fastapi@0.115.0".to_string(),
+            "camel-converter@4.0.0".to_string(),
+        ]);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pyproject_toml_file_setuptools_lib_with_python_extras() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Setuptools;
+        project_info.is_application = false;
+        project_info.extra_python_packages = Some(vec![
+            "fastapi@0.115.0".to_string(),
+            "camel-converter@4.0.0".to_string(),
+        ]);
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("pyproject.toml");
@@ -1436,6 +1562,48 @@ mod tests {
     }
 
     #[test]
+    fn test_save_pyproject_toml_file_uv_application_with_python_extras() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        project_info.is_application = true;
+        project_info.extra_python_packages = Some(vec![
+            "fastapi@0.115.0".to_string(),
+            "camel-converter@4.0.0".to_string(),
+        ]);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pyproject_toml_file_uv_lib_with_python_extras() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        project_info.is_application = false;
+        project_info.extra_python_packages = Some(vec![
+            "fastapi@0.115.0".to_string(),
+            "camel-converter@4.0.0".to_string(),
+        ]);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
     fn test_save_uv_pyproject_toml_file_apache_application() {
         let mut project_info = project_info_dummy();
         project_info.license = LicenseType::Apache2;
@@ -1495,6 +1663,48 @@ mod tests {
         project_info.license = LicenseType::Mit;
         project_info.project_manager = ProjectManager::Pixi;
         project_info.is_application = true;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pyproject_toml_file_pixi_application_with_python_extras() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Pixi;
+        project_info.is_application = true;
+        project_info.extra_python_packages = Some(vec![
+            "fastapi@0.115.0".to_string(),
+            "camel-converter@4.0.0".to_string(),
+        ]);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pyproject_toml_file_pixi_lib_with_python_extras() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Pixi;
+        project_info.is_application = false;
+        project_info.extra_python_packages = Some(vec![
+            "fastapi@0.115.0".to_string(),
+            "camel-converter@4.0.0".to_string(),
+        ]);
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("pyproject.toml");
