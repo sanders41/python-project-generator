@@ -145,9 +145,16 @@ pub struct ExtraPythonPackageVersion {
 
 impl ExtraPythonPackageVersion {
     pub fn new(package: String) -> Result<Self> {
-        let version = get_latest_python_version(&package)?;
+        if let Some(p) = package.split_once("@") {
+            Ok(ExtraPythonPackageVersion {
+                package: p.0.to_string(),
+                version: p.1.to_string(),
+            })
+        } else {
+            let version = get_latest_python_version(&package)?;
 
-        Ok(ExtraPythonPackageVersion { package, version })
+            Ok(ExtraPythonPackageVersion { package, version })
+        }
     }
 }
 
