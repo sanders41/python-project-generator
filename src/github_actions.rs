@@ -1258,20 +1258,20 @@ exclude-labels:
   - 'dependencies'
   - 'skip-changelog'
 version-resolver:
-  minor:
+  major:
     labels:
       - 'breaking-change'
+  minor:
+    labels:
       - 'enhancement'
   default: patch
 categories:
-  - title: 'Features'
-    labels:
-      - 'enhancement'
-  - title: 'Bug Fixes'
-    labels:
-      - 'bug'
   - title: '⚠ Breaking changes'
     label: 'breaking-change'
+  - title: 'Features'
+    labels: 'enhancement'
+  - title: 'Bug Fixes'
+    labels: 'bug'
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 template: |
   ## Changes
