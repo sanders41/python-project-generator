@@ -389,7 +389,7 @@ jobs:
         run: pixi run -e dev ruff check .
       - name: ruff format
         working-directory: ${{ env.WORKING_DIR }}
-        run: python -m ruff format --check .
+        run: pixi run -e dev ruff format --check .
   pixi-test:
     strategy:
       fail-fast: false
