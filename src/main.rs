@@ -389,6 +389,18 @@ fn main() {
                     exit(1);
                 }
             }
+            Param::ExtraPythonDevPackages { value } => {
+                if let Err(e) = Config::default().save_extra_python_dev_packages(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+            Param::ResetExtraPythonDevPackages {} => {
+                if let Err(e) = Config::default().reset_extra_python_dev_packages() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::Reset => {
                 if Config::reset().is_err() {
                     let message = "Error resetting config.";
@@ -444,6 +456,7 @@ mod tests {
             include_docs: false,
             docs_info: None,
             extra_python_packages: None,
+            extra_python_dev_packages: None,
             download_latest_packages: false,
             project_root_dir: Some(base),
         };
