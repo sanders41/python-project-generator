@@ -125,6 +125,31 @@ impl Prompt {
 
         Ok(input.trim().to_string())
     }
+
+    fn show_optional_prompt(&self) -> Result<Option<String>> {
+        let mut input = String::new();
+
+        if let Some(d) = &self.default {
+            print!("{} ({d}): ", self.prompt_text);
+        } else {
+            print!("{}: ", self.prompt_text);
+        }
+
+        std::io::stdout().flush().unwrap();
+        std::io::stdin()
+            .read_line(&mut input)
+            .expect("Error: Could not read a line");
+
+        if input.trim() == "" {
+            if let Some(d) = &self.default {
+                return Ok(Some(d.to_string()));
+            } else {
+                return Ok(None);
+            }
+        }
+
+        Ok(Some(input.trim().to_string()))
+    }
 }
 
 #[derive(Debug)]
@@ -164,6 +189,7 @@ pub struct ProjectInfo {
     pub include_docs: bool,
     pub docs_info: Option<DocsInfo>,
     pub download_latest_packages: bool,
+    pub extra_python_packages: Option<Vec<String>>,
     pub project_root_dir: Option<PathBuf>,
 }
 
@@ -249,6 +275,37 @@ fn default_or_prompt_string(
     }
 
     let result = string_prompt(prompt_text, default)?;
+
+    Ok(result)
+}
+
+fn option_vec_string_prompt(
+    prompt_text: String,
+    default: Option<Vec<String>>,
+) -> Result<Option<Vec<String>>> {
+    let default = default.map(|d| d.join(", "));
+    let prompt = Prompt {
+        prompt_text,
+        default,
+    };
+    if let Some(value) = prompt.show_optional_prompt()? {
+        let values = value.split(",").map(|v| v.trim().to_string()).collect();
+        Ok(Some(values))
+    } else {
+        Ok(None)
+    }
+}
+
+fn default_or_prompt_option_vec_string(
+    prompt_text: String,
+    default: Option<Vec<String>>,
+    use_defaults: bool,
+) -> Result<Option<Vec<String>>> {
+    if use_defaults {
+        return Ok(default);
+    }
+
+    let result = option_vec_string_prompt(prompt_text, default)?;
 
     Ok(result)
 }
@@ -615,6 +672,12 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         None
     };
 
+    let extra_python_packages = default_or_prompt_option_vec_string(
+        "Extra Python Dependencies".to_string(),
+        config.extra_python_packages,
+        use_defaults,
+    )?;
+
     Ok(ProjectInfo {
         project_name,
         project_slug,
@@ -640,6 +703,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         use_multi_os_ci,
         include_docs,
         docs_info,
+        extra_python_packages,
         download_latest_packages: false,
         project_root_dir: None,
     })
