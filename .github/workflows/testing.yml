@@ -81,9 +81,12 @@ jobs:
       - name: MyPy
         working-directory: ${{ env.WORKING_DIR }}
         run: uv run mypy .
-      - name: ruff
+      - name: ruff check
         working-directory: ${{ env.WORKING_DIR }}
         run: uv run ruff check .
+      - name: ruff format
+        working-directory: ${{ env.WORKING_DIR }}
+        run: uv run ruff format --check .
   uv-test:
     strategy:
       fail-fast: false
@@ -155,9 +158,12 @@ jobs:
       - name: MyPy
         working-directory: ${{ env.WORKING_DIR }}
         run: poetry run mypy .
-      - name: ruff
+      - name: ruff check
         working-directory: ${{ env.WORKING_DIR }}
         run: poetry run ruff check .
+      - name: ruff format
+        working-directory: ${{ env.WORKING_DIR }}
+        run: poetry run ruff format --check .
   poetry-test:
     strategy:
       fail-fast: false
@@ -230,9 +236,12 @@ jobs:
       - name: MyPy
         working-directory: ${{ env.WORKING_DIR }}
         run: just mypy
-      - name: Ruff
+      - name: ruff check
         working-directory: ${{ env.WORKING_DIR }}
         run: just ruff
+      - name: ruff format
+        working-directory: ${{ env.WORKING_DIR }}
+        run: python -m ruff format --check .
       - name: Generated Project Clippy
         working-directory: ${{ env.WORKING_DIR }}
         run: just clippy
@@ -305,9 +314,12 @@ jobs:
       - name: MyPy
         working-directory: ${{ env.WORKING_DIR }}
         run: mypy .
-      - name: ruff
+      - name: ruff check
         working-directory: ${{ env.WORKING_DIR }}
         run: ruff check .
+      - name: ruff format
+        working-directory: ${{ env.WORKING_DIR }}
+        run: ruff format --check .
   setuptools-test:
     strategy:
       fail-fast: false
@@ -372,9 +384,12 @@ jobs:
       - name: MyPy
         working-directory: ${{ env.WORKING_DIR }}
         run: pixi run -e dev mypy .
-      - name: ruff
+      - name: ruff check
         working-directory: ${{ env.WORKING_DIR }}
         run: pixi run -e dev ruff check .
+      - name: ruff format
+        working-directory: ${{ env.WORKING_DIR }}
+        run: python -m ruff format --check .
   pixi-test:
     strategy:
       fail-fast: false
