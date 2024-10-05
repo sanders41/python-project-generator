@@ -647,7 +647,10 @@ select = [
   "UP",  # pyupgrade
   "I001",  # unsorted-imports
   "T201",  # print found
-  "T203"  # pprint found
+  "T203",  # pprint found
+  {%- if is_async_project %}
+  "ASYNC",  # flake8-async
+  {% endif %}
 ]
 ignore=[
   # Recommended ignores by ruff when using formatter
