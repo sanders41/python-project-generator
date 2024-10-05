@@ -123,32 +123,9 @@ pub struct PythonPackageVersion {
 
 impl LatestVersion for PythonPackageVersion {
     fn get_latest_version(&mut self) -> Result<()> {
-        let name = self.package.to_string();
-        let url = format!("https://pypi.org/pypi/{}/json", name);
-        let client = reqwest::blocking::Client::new();
-        let attempts = 3;
-        let min = Duration::from_millis(100); // 10ms
-        let max = Duration::from_secs(1);
-        let backoff = Backoff::new(attempts, min, max);
+        self.version = get_latest_python_version(&self.package.to_string())?;
 
-        for duration in backoff {
-            let response = client.get(&url).timeout(Duration::new(5, 0)).send();
-
-            match response {
-                Ok(r) => {
-                    let result = r.text()?;
-                    let info: serde_json::Value = serde_json::from_str(&result)?;
-                    self.version = info["info"]["version"].to_string().replace('"', "");
-
-                    return Ok(());
-                }
-                Err(e) => match duration {
-                    Some(duration) => thread::sleep(duration),
-                    None => bail!("{e}"),
-                },
-            }
-        }
-        bail!("Error retrieving latest version");
+        Ok(())
     }
 }
 
@@ -157,6 +134,20 @@ impl PythonPackageVersion {
         let version = default_version(&package);
 
         PythonPackageVersion { package, version }
+    }
+}
+
+#[derive(Debug)]
+pub struct ExtraPythonPackageVersion {
+    pub package: String,
+    pub version: String,
+}
+
+impl ExtraPythonPackageVersion {
+    pub fn new(package: String) -> Result<Self> {
+        let version = get_latest_python_version(&package)?;
+
+        Ok(ExtraPythonPackageVersion { package, version })
     }
 }
 
@@ -217,4 +208,30 @@ pub fn pre_commit_repo(hook: &PreCommitHook) -> String {
         PreCommitHook::PreCommit => "https://github.com/pre-commit/pre-commit-hooks".to_string(),
         PreCommitHook::Ruff => "https://github.com/astral-sh/ruff-pre-commit".to_string(),
     }
+}
+
+fn get_latest_python_version(name: &str) -> Result<String> {
+    let url = format!("https://pypi.org/pypi/{}/json", name);
+    let client = reqwest::blocking::Client::new();
+    let attempts = 3;
+    let min = Duration::from_millis(100); // 10ms
+    let max = Duration::from_secs(1);
+    let backoff = Backoff::new(attempts, min, max);
+
+    for duration in backoff {
+        let response = client.get(&url).timeout(Duration::new(5, 0)).send();
+
+        match response {
+            Ok(r) => {
+                let result = r.text()?;
+                let info: serde_json::Value = serde_json::from_str(&result)?;
+                return Ok(info["info"]["version"].to_string().replace('"', ""));
+            }
+            Err(e) => match duration {
+                Some(duration) => thread::sleep(duration),
+                None => bail!("{e}"),
+            },
+        }
+    }
+    bail!("Error retrieving latest version");
 }

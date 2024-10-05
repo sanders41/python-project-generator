@@ -400,6 +400,7 @@ mod tests {
             use_multi_os_ci: true,
             include_docs: false,
             docs_info: None,
+            extra_python_packages: None,
             download_latest_packages: false,
             project_root_dir: Some(tempdir().unwrap().path().to_path_buf()),
         }

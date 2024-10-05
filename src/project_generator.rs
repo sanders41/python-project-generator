@@ -12,7 +12,8 @@ use crate::github_actions::{
 };
 use crate::licenses::{generate_license, license_str};
 use crate::package_version::{
-    LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackage, PythonPackageVersion,
+    ExtraPythonPackageVersion, LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackage,
+    PythonPackageVersion,
 };
 use crate::project_info::{ProjectInfo, ProjectManager};
 use crate::python_files::generate_python_files;
@@ -382,10 +383,56 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
     }
 }
 
+fn build_extra_python_dependencies(project_info: &ProjectInfo) -> Result<String> {
+    if let Some(extra_python_packages) = &project_info.extra_python_packages {
+        let mut version_string = if let ProjectManager::Poetry = project_info.project_manager {
+            String::new()
+        } else {
+            "[\n".to_string()
+        };
+        for package in extra_python_packages {
+            if let Ok(p) = ExtraPythonPackageVersion::new(package.to_lowercase().clone()) {
+                if let ProjectManager::Poetry = project_info.project_manager {
+                    if project_info.is_application {
+                        version_string.push_str(&format!("{} = \"{}\"\n", p.package, p.version));
+                    } else {
+                        version_string.push_str(&format!("{} = \">={}\"\n", p.package, p.version));
+                    }
+                } else if project_info.is_application {
+                    version_string.push_str(&format!("  \"{}=={}\",\n", p.package, p.version));
+                } else {
+                    version_string.push_str(&format!("  \"{}>={}\",\n", p.package, p.version));
+                }
+            } else {
+                let error_message = format!(
+                    "Error retrieving latest python package version for {}, skipping.",
+                    package
+                );
+                println!("\n{}", error_message.yellow());
+            }
+        }
+
+        if let ProjectManager::Poetry = project_info.project_manager {
+            Ok(version_string.trim().to_string())
+        } else {
+            version_string.push(']');
+            Ok(version_string)
+        }
+    } else {
+        bail!("No extra python packages provided");
+    }
+}
+
 fn create_pyproject_toml(project_info: &ProjectInfo) -> Result<String> {
     let module = project_info.source_dir.replace([' ', '-'], "_");
     let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
     let license_text = license_str(&project_info.license);
+    let dependencies = if project_info.extra_python_packages.is_some() {
+        let d = build_extra_python_dependencies(project_info)?;
+        Some(d)
+    } else {
+        None
+    };
     let mut pyproject = match &project_info.project_manager {
         ProjectManager::Maturin => r#"[build-system]
 requires = ["maturin>=1.5,<2.0"]
@@ -399,6 +446,11 @@ authors = [{name = "{{ creator }}", email =  "{{ creator_email }}"}]
 license = "{{ license }}"
 {% endif -%}
 readme = "README.md"
+{%- if dependencies %}
+dependencies = {{ dependencies }}
+{%- else %}
+dependencies = []
+{%- endif %}
 
 [tool.maturin]
 module-name = "{{ module }}._{{ module }}"
@@ -419,6 +471,9 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^{{ min_python_version }}"
+{%- if dependencies %}
+{{ dependencies }}
+{%- endif %}
 
 [tool.poetry.group.dev.dependencies]
 {{ dev_dependencies }}
@@ -444,6 +499,11 @@ license = { text = "{{ license }}" }
 {% endif -%}
 requires-python = ">={{ min_python_version }}"
 dynamic = ["version", "readme"]
+{%- if dependencies %}
+dependencies = {{ dependencies }}
+{%- else %}
+dependencies = []
+{%- endif %}
 
 [tool.setuptools.dynamic]
 version = {attr = "{{ module }}.__version__"}
@@ -473,7 +533,11 @@ license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">={{ min_python_version }}"
 dynamic = ["version"]
+{%- if dependencies %}
+dependencies = {{ dependencies }}
+{%- else %}
 dependencies = []
+{%- endif %}
 
 [tool.uv]
 dev-dependencies = {{ dev_dependencies }}
@@ -499,7 +563,11 @@ license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">={{ min_python_version }}"
 dynamic = ["version"]
+{%- if dependencies %}
+dependencies = {{ dependencies }}
+{%- else %}
 dependencies = []
+{%- endif %}
 
 [tool.pixi.project]
 channels = ["conda-forge", "bioconda"]
@@ -594,6 +662,7 @@ ignore=[
         creator_email => project_info.creator_email,
         license => license_text,
         min_python_version => project_info.min_python_version,
+        dependencies => dependencies,
         dev_dependencies => build_latest_dev_dependencies(project_info)?,
         max_line_length => project_info.max_line_length,
         module => module,
@@ -1086,6 +1155,7 @@ mod tests {
             use_multi_os_ci: true,
             include_docs: false,
             docs_info: None,
+            extra_python_packages: None,
             download_latest_packages: false,
             project_root_dir: Some(tempdir().unwrap().path().to_path_buf()),
         }
