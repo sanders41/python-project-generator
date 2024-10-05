@@ -117,9 +117,12 @@ jobs:
         run: |
           uv lock
           uv sync --frozen
-      - name: Pre-commit install
+      - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
-        run: uv run pre-commit install
+        run: |
+          uv run pre-commit install
+          git add .
+          uv run pre-commit run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         if: matrix.project_type == 'application'
@@ -196,9 +199,12 @@ jobs:
       - name: Install Dependencies
         working-directory: ${{ env.WORKING_DIR }}
         run: poetry install
-      - name: Pre-commit install
+      - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
-        run: poetry run pre-commit install
+        run: |
+          poetry run pre-commit install
+          git add .
+          poetry run pre-commit run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         run: poetry run pytest
@@ -278,9 +284,12 @@ jobs:
           python -m pip install -e .
           maturin build --out dist
           python -m pip install --no-index --find-links=dist/ my-project
-      - name: Pre-commit install
+      - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
-        run: pre-commit install
+        run: |
+          pre-commit install
+          git add .
+          pre-commit run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         run: pytest
@@ -348,9 +357,12 @@ jobs:
         run: |
           python -m pip install -U pip
           python -m pip install -r requirements-dev.txt
-      - name: Pre-commit install
+      - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
-        run: pre-commit install
+        run: |
+          pre-commit install
+          git add .
+          pre-commit run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         if: matrix.project_type == 'application'
@@ -417,9 +429,12 @@ jobs:
       - name: Set up Python
         working-directory: ${{ env.WORKING_DIR }}
         run: pixi add python=="${{ env.MIN_PYTHON_VERSION }}.*"
-      - name: Pre-commit install
+      - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
-        run: pixi run -e dev pre-commit install
+        run: |
+          pixi run -e dev pre-commit install
+          git add .
+          pixi run -e dev pre-commit run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         if: matrix.project_type == 'application'
