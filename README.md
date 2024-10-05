@@ -198,6 +198,13 @@ python-project create -s
   docs are referencing. For example in this repository the repo url would be
   `https://github.com/sanders41/python-project-generator`
 
+- Extra Python Dependencies
+
+  These are extra packages you want to include in the project that are not provided by default.
+  For example specifying `fastapi, meilisearch-python-sdk` here will these two packages in the
+  dependencies. If the project is an application the version will be pinned to the latest release
+  of the packages, and if it is a library the latest release will be used for the minimum version.
+
 After running the generator a new directory will be created with the name you used for the
 `Project Slug`. Change to this directory then install the python packages and pre-commit hooks.
 
