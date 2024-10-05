@@ -165,6 +165,12 @@ pub enum Param {
     /// Remove the saved extra Python dependencies
     ResetExtraPythonPackages,
 
+    /// Extra Python dev dependencies to include in the project
+    ExtraPythonDevPackages { value: Vec<String> },
+
+    /// Remove the saved extra Python dev dependencies
+    ResetExtraPythonDevPackages,
+
     /// Rerset the config to the default values
     Reset,
 

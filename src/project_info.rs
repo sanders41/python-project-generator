@@ -190,6 +190,7 @@ pub struct ProjectInfo {
     pub docs_info: Option<DocsInfo>,
     pub download_latest_packages: bool,
     pub extra_python_packages: Option<Vec<String>>,
+    pub extra_python_dev_packages: Option<Vec<String>>,
     pub project_root_dir: Option<PathBuf>,
 }
 
@@ -678,6 +679,12 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         use_defaults,
     )?;
 
+    let extra_python_dev_packages = default_or_prompt_option_vec_string(
+        "Extra Python Dev Dependencies".to_string(),
+        config.extra_python_dev_packages,
+        use_defaults,
+    )?;
+
     Ok(ProjectInfo {
         project_name,
         project_slug,
@@ -704,6 +711,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         include_docs,
         docs_info,
         extra_python_packages,
+        extra_python_dev_packages,
         download_latest_packages: false,
         project_root_dir: None,
     })

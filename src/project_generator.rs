@@ -366,6 +366,24 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
         }
     }
 
+    if let Some(extras) = &project_info.extra_python_dev_packages {
+        for extra in extras {
+            if let Ok(p) = ExtraPythonPackageVersion::new(extra.to_lowercase().clone()) {
+                if let ProjectManager::Poetry = project_info.project_manager {
+                    version_string.push_str(&format!("{} = \"{}\"\n", p.package, p.version));
+                } else {
+                    version_string.push_str(&format!("{}=={}\n", p.package, p.version));
+                }
+            } else {
+                let error_message = format!(
+                    "Error retrieving latest python package version for {}, skipping.",
+                    extra
+                );
+                println!("\n{}", error_message.yellow());
+            }
+        }
+    }
+
     match project_info.project_manager {
         ProjectManager::Poetry => Ok(version_string.trim().to_string()),
         ProjectManager::Uv => {
@@ -1156,6 +1174,7 @@ mod tests {
             include_docs: false,
             docs_info: None,
             extra_python_packages: None,
+            extra_python_dev_packages: None,
             download_latest_packages: false,
             project_root_dir: Some(tempdir().unwrap().path().to_path_buf()),
         }
@@ -1266,6 +1285,26 @@ mod tests {
         project_info.extra_python_packages = Some(vec![
             "fastapi@0.115.0".to_string(),
             "camel-converter@4.0.0".to_string(),
+        ]);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_poetry_pyproject_toml_with_python_dev_extras() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.extra_python_dev_packages = Some(vec![
+            "pytest-xdist@3.6.1".to_string(),
+            "types-ujson@5.10.0.20240515".to_string(),
         ]);
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
@@ -1394,6 +1433,26 @@ mod tests {
     }
 
     #[test]
+    fn test_save_pyo3_pyproject_toml_with_python_dev_extras() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.extra_python_dev_packages = Some(vec![
+            "pytest-xdist@3.6.1".to_string(),
+            "types-ujson@5.10.0.20240515".to_string(),
+        ]);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
     fn test_save_pyproject_toml_file_apache_pyo3() {
         let mut project_info = project_info_dummy();
         project_info.license = LicenseType::Apache2;
@@ -1476,6 +1535,26 @@ mod tests {
         project_info.extra_python_packages = Some(vec![
             "fastapi@0.115.0".to_string(),
             "camel-converter@4.0.0".to_string(),
+        ]);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_setuptools_pyproject_toml_with_python_dev_extras() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Setuptools;
+        project_info.extra_python_dev_packages = Some(vec![
+            "pytest-xdist@3.6.1".to_string(),
+            "types-ujson@5.10.0.20240515".to_string(),
         ]);
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
@@ -1604,6 +1683,26 @@ mod tests {
     }
 
     #[test]
+    fn test_save_uv_pyproject_toml_with_python_dev_extras() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        project_info.extra_python_dev_packages = Some(vec![
+            "pytest-xdist@3.6.1".to_string(),
+            "types-ujson@5.10.0.20240515".to_string(),
+        ]);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
     fn test_save_uv_pyproject_toml_file_apache_application() {
         let mut project_info = project_info_dummy();
         project_info.license = LicenseType::Apache2;
@@ -1704,6 +1803,26 @@ mod tests {
         project_info.extra_python_packages = Some(vec![
             "fastapi@0.115.0".to_string(),
             "camel-converter@4.0.0".to_string(),
+        ]);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_pixi_pyproject_toml_with_python_dev_extras() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Pixi;
+        project_info.extra_python_dev_packages = Some(vec![
+            "pytest-xdist@3.6.1".to_string(),
+            "types-ujson@5.10.0.20240515".to_string(),
         ]);
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
@@ -1822,6 +1941,26 @@ mod tests {
     }
 
     #[test]
+    fn test_save_pyo3_dev_requirements_extras_file() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.extra_python_dev_packages = Some(vec![
+            "pytest-xdist@3.6.1".to_string(),
+            "types-ujson@5.10.0.20240515".to_string(),
+        ]);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("requirements-dev.txt");
+        save_dev_requirements(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
     fn test_save_setuptools_dev_requirements_application_file() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
@@ -1843,6 +1982,26 @@ mod tests {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
         project_info.is_application = false;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("requirements-dev.txt");
+        save_dev_requirements(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_setuptools_dev_requirements_extras_file() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Setuptools;
+        project_info.extra_python_dev_packages = Some(vec![
+            "pytest-xdist@3.6.1".to_string(),
+            "types-ujson@5.10.0.20240515".to_string(),
+        ]);
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("requirements-dev.txt");
