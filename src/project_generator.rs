@@ -369,10 +369,17 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
     if let Some(extras) = &project_info.extra_python_dev_packages {
         for extra in extras {
             if let Ok(p) = ExtraPythonPackageVersion::new(extra.to_lowercase().clone()) {
-                if let ProjectManager::Poetry = project_info.project_manager {
-                    version_string.push_str(&format!("{} = \"{}\"\n", p.package, p.version));
-                } else {
-                    version_string.push_str(&format!("{}=={}\n", p.package, p.version));
+                match project_info.project_manager {
+                    ProjectManager::Poetry => {
+                        version_string.push_str(&format!("{} = \"{}\"\n", p.package, p.version))
+                    }
+                    ProjectManager::Uv => {
+                        version_string.push_str(&format!("  \"{}=={}\",\n", p.package, p.version))
+                    }
+                    ProjectManager::Pixi => {
+                        version_string.push_str(&format!("  \"{}=={}\",\n", p.package, p.version))
+                    }
+                    _ => version_string.push_str(&format!("{}=={}\n", p.package, p.version)),
                 }
             } else {
                 let error_message = format!(
