@@ -521,7 +521,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         default_or_prompt_string("Version".to_string(), Some(default_version), use_defaults)?;
     let python_version_default = match config.python_version {
         Some(python) => python,
-        None => "3.12".to_string(),
+        None => "3.13".to_string(),
     };
     let python_version = if use_defaults {
         python_version_default
@@ -551,8 +551,8 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
                     } else {
                         let mut versions: Vec<String> = Vec::new();
 
-                        // Up to 3.12
-                        for i in min..13 {
+                        // Up to 3.13
+                        for i in min..14 {
                             versions.push(format!("3.{i}"));
                         }
 
@@ -564,6 +564,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
                         "3.10".to_string(),
                         "3.11".to_string(),
                         "3.12".to_string(),
+                        "3.13".to_string(),
                     ]
                 }
             }
