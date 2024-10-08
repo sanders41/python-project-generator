@@ -840,15 +840,15 @@ fn create_poetry_justfile(module: &str) -> String {
 @lint:
   echo mypy
   just --justfile {{{{justfile()}}}} mypy
-  echo ruff
-  just --justfile {{{{justfile()}}}} ruff
+  echo ruff-check
+  just --justfile {{{{justfile()}}}} ruff-check
   echo ruff-format
   just --justfile {{{{justfile()}}}} ruff-format
 
 @mypy:
   poetry run mypy {module} tests
 
-@ruff:
+@ruff-check:
   poetry run ruff check {module} tests
 
 @ruff-format:
@@ -889,8 +889,8 @@ fn create_pyo3_justfile(module: &str) -> String {
   just --justfile {{{{justfile()}}}} fmt
   echo mypy
   just --justfile {{{{justfile()}}}} mypy
-  echo ruff linting
-  just --justfile {{{{justfile()}}}} ruff
+  echo ruff check
+  just --justfile {{{{justfile()}}}} ruff-check
   echo ruff formatting
   just --justfile {{{{justfile()}}}} ruff-format
 
@@ -906,8 +906,8 @@ fn create_pyo3_justfile(module: &str) -> String {
 @mypy:
   mypy .
 
-@ruff:
-  ruff check . --fix
+@ruff-check:
+  ruff check {module} tests --fix
 
 @ruff-format:
   ruff format {module} tests
@@ -926,15 +926,15 @@ fn create_setuptools_justfile(module: &str) -> String {
 @lint:
   echo mypy
   just --justfile {{{{justfile()}}}} mypy
-  echo ruff
-  just --justfile {{{{justfile()}}}} ruff
+  echo ruff-check
+  just --justfile {{{{justfile()}}}} ruff-check
   echo ruff-format
   just --justfile {{{{justfile()}}}} ruff-format
 
 @mypy:
   python -m mypy {module} tests
 
-@ruff:
+@ruff-check:
   python -m ruff check {module} tests
 
 @ruff-format:
@@ -957,15 +957,15 @@ fn create_uv_justfile(module: &str) -> String {
 @lint:
   echo mypy
   just --justfile {{{{justfile()}}}} mypy
-  echo ruff
-  just --justfile {{{{justfile()}}}} ruff
+  echo ruff-check
+  just --justfile {{{{justfile()}}}} ruff-check
   echo ruff-format
   just --justfile {{{{justfile()}}}} ruff-format
 
 @mypy:
   uv run mypy {module} tests
 
-@ruff:
+@ruff-check:
   uv run ruff check {module} tests
 
 @ruff-format:
@@ -990,15 +990,15 @@ fn create_pixi_justfile() -> String {
 @lint:
   echo mypy
   just --justfile {{{{justfile()}}}} mypy
-  echo ruff
-  just --justfile {{{{justfile()}}}} ruff
+  echo ruff-check
+  just --justfile {{{{justfile()}}}} ruff-check
   echo ruff-format
   just --justfile {{{{justfile()}}}} ruff-format
 
 @mypy:
   pixi run run-mypy
 
-@ruff:
+@ruff-check:
   pixi run run-ruff-check
 
 @ruff-format:

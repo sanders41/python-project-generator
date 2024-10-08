@@ -244,7 +244,7 @@ jobs:
         run: just mypy
       - name: ruff check
         working-directory: ${{ env.WORKING_DIR }}
-        run: just ruff
+        run: just ruff-check
       - name: ruff format
         working-directory: ${{ env.WORKING_DIR }}
         run: python -m ruff format --check .
