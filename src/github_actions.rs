@@ -1041,6 +1041,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "{python_version}"
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
@@ -1058,6 +1061,9 @@ jobs:
     needs: [linux, windows, macos, sdist]
     steps:
       - uses: actions/download-artifact@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "{python_version}"
       - name: Publish to PyPI
         uses: PyO3/maturin-action@v1
         env:
