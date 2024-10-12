@@ -2,4 +2,4 @@
 source: src/rust_files.rs
 expression: content
 ---
-"[package]\nname = \"my-project\"\nversion = \"0.1.0\"\ndescription = \"This is a test\"\nedition = \"2021\"\nlicense = \"MIT\"\nreadme = \"README.md\"\n\n[lib]\nname = \"_my_project\"\ncrate-type = [\"cdylib\"]\n\n[dependencies]\npyo3 = { version = \"0.22.3\", features = [\"extension-module\"] }\n"
+"[package]\nname = \"my-project\"\nversion = \"0.1.0\"\ndescription = \"This is a test\"\nedition = \"2021\"\nlicense = \"MIT\"\nreadme = \"README.md\"\n\n[lib]\nname = \"_my_project\"\ncrate-type = [\"cdylib\"]\n\n[dependencies]\npyo3 = { version = \"0.22.4\", features = [\"extension-module\"] }\n"
