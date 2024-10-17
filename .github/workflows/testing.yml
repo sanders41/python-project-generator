@@ -238,7 +238,7 @@ jobs:
         run: |
           uv lock
           uv sync --frozen
-          uv run maturin build --out dist
+          uv run maturin build
       - name: MyPy
         working-directory: ${{ env.WORKING_DIR }}
         run: just mypy
@@ -283,7 +283,7 @@ jobs:
         run: |
           uv lock
           uv sync --frozen
-          uv run maturin build --out dist
+          uv run maturin build
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
