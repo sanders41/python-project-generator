@@ -128,7 +128,7 @@ pub fn save_lib_file(project_info: &ProjectInfo) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project_info::{LicenseType, ProjectInfo, ProjectManager};
+    use crate::project_info::{LicenseType, ProjectInfo, ProjectManager, Pyo3PythonManager};
     use insta::assert_yaml_snapshot;
     use std::fs::create_dir_all;
     use tempfile::tempdir;
@@ -147,6 +147,7 @@ mod tests {
             python_version: "3.12".to_string(),
             min_python_version: "3.9".to_string(),
             project_manager: ProjectManager::Maturin,
+            pyo3_python_manager: Some(Pyo3PythonManager::Uv),
             is_application: true,
             is_async_project: false,
             github_actions_python_test_versions: vec![

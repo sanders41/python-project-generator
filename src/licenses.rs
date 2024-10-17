@@ -272,6 +272,7 @@ mod tests {
             python_version: "3.11".to_string(),
             min_python_version: "3.9".to_string(),
             project_manager: ProjectManager::Poetry,
+            pyo3_python_manager: None,
             is_application: true,
             is_async_project: false,
             github_actions_python_test_versions: vec![

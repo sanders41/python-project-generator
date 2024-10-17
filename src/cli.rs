@@ -1,6 +1,8 @@
 use clap::{Parser, Subcommand, ValueEnum};
 
-use crate::project_info::{Day, DependabotSchedule, LicenseType, ProjectManager};
+use crate::project_info::{
+    Day, DependabotSchedule, LicenseType, ProjectManager, Pyo3PythonManager,
+};
 
 #[derive(Clone, Debug, ValueEnum)]
 pub enum ApplicationOrLib {
@@ -86,6 +88,12 @@ pub enum Param {
 
     /// Remove the saved project manager
     ResetProjectManager,
+
+    /// Save a default PyO3 python manager
+    Pyo3PythonManager { value: Pyo3PythonManager },
+
+    /// Remove the saved PyO3 Python manager
+    ResetPyo3PythonManager,
 
     /// Save a default value for is async project
     IsAsyncProject { value: BooleanChoice },

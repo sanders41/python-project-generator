@@ -223,6 +223,8 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.7.5
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -234,11 +236,9 @@ jobs:
       - name: Install Dependencies
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          python -m pip install -U pip
-          python -m pip install -r requirements-dev.txt
-          python -m pip install -e .
-          maturin build --out dist
-          python -m pip install --no-index --find-links=dist/ my-project
+          uv lock
+          uv sync --frozen
+          uv run maturin build
       - name: MyPy
         working-directory: ${{ env.WORKING_DIR }}
         run: just mypy
@@ -247,7 +247,7 @@ jobs:
         run: just ruff-check
       - name: ruff format
         working-directory: ${{ env.WORKING_DIR }}
-        run: python -m ruff format --check .
+        run: uv run ruff format --check .
       - name: Generated Project Clippy
         working-directory: ${{ env.WORKING_DIR }}
         run: just clippy
@@ -268,6 +268,8 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.7.5
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -279,20 +281,18 @@ jobs:
       - name: Install Dependencies
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          python -m pip install -U pip
-          python -m pip install -r requirements-dev.txt
-          python -m pip install -e .
-          maturin build --out dist
-          python -m pip install --no-index --find-links=dist/ my-project
+          uv lock
+          uv sync --frozen
+          uv run maturin build
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          pre-commit install
+          uv run pre-commit install
           git add .
-          pre-commit run --all-files
+          uv run pre-commit run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
-        run: pytest
+        run: uv run pytest
   setuptools-linting:
     strategy:
       fail-fast: false
