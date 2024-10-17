@@ -42,8 +42,33 @@ use_dependabot=""
 use_continuous_deployment=""
 use_release_drafter=""
 use_multi_os_ci=""
+pyo3_python_manager=""
 
-./target/release/python-project create -s << EOF
+if [[ project_manager -eq 3 ]]; then
+  ./target/release/python-project create -s << EOF
+$project_name
+$project_slug
+$source_dir
+$project_description
+$creator
+$creator_email
+$license
+$copyright_year
+$version
+$python_version
+$min_python_version
+$gha_versions
+$project_manager
+$pyo3_python_manager
+$application
+$max_line_length
+$use_dependabot
+$use_continuous_deployment
+$use_release_drafter
+$use_multi_os_ci
+EOF
+else
+  ./target/release/python-project create -s << EOF
 $project_name
 $project_slug
 $source_dir
@@ -64,6 +89,7 @@ $use_continuous_deployment
 $use_release_drafter
 $use_multi_os_ci
 EOF
+fi
 
 if [ ! -d $project_slug ]; then
   echo "Directory not created"
