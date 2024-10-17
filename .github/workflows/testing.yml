@@ -247,7 +247,7 @@ jobs:
         run: just ruff-check
       - name: ruff format
         working-directory: ${{ env.WORKING_DIR }}
-        run: python -m ruff format --check .
+        run: uv run ruff format --check .
       - name: Generated Project Clippy
         working-directory: ${{ env.WORKING_DIR }}
         run: just clippy
@@ -287,12 +287,12 @@ jobs:
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          pre-commit install
+          uv run pre-commit install
           git add .
-          pre-commit run --all-files
+          uv run pre-commit run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
-        run: pytest
+        run: uv run pytest
   setuptools-linting:
     strategy:
       fail-fast: false
