@@ -15,7 +15,7 @@ use crate::package_version::{
     ExtraPythonPackageVersion, LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackage,
     PythonPackageVersion,
 };
-use crate::project_info::{ProjectInfo, ProjectManager};
+use crate::project_info::{ProjectInfo, ProjectManager, Pyo3PythonManager};
 use crate::python_files::generate_python_files;
 use crate::rust_files::{save_cargo_toml_file, save_lib_file};
 use crate::utils::is_python_312_or_greater;
@@ -322,6 +322,14 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
         version_string.push_str("[\n");
     }
 
+    if let ProjectManager::Maturin = project_info.project_manager {
+        if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
+            if pyo3_python_manager == &Pyo3PythonManager::Uv {
+                version_string.push_str("[\n");
+            }
+        }
+    }
+
     for package in packages {
         match project_info.project_manager {
             ProjectManager::Poetry => {
@@ -353,7 +361,41 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
                     ));
                 }
             }
-            _ => {
+            ProjectManager::Maturin => {
+                if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
+                    match pyo3_python_manager {
+                        Pyo3PythonManager::Uv => {
+                            if package.package == PythonPackage::Mkdocstrings {
+                                version_string.push_str(&format!(
+                                    "  \"{}[python]=={}\",\n",
+                                    package.package, package.version
+                                ));
+                            } else {
+                                version_string.push_str(&format!(
+                                    "  \"{}=={}\",\n",
+                                    package.package, package.version
+                                ));
+                            }
+                        }
+                        Pyo3PythonManager::Setuptools => {
+                            if package.package == PythonPackage::Mkdocstrings {
+                                version_string.push_str(&format!(
+                                    "{}[python]=={}\n",
+                                    package.package, package.version
+                                ));
+                            } else {
+                                version_string.push_str(&format!(
+                                    "{}=={}\n",
+                                    package.package, package.version
+                                ));
+                            }
+                        }
+                    }
+                } else {
+                    bail!("A PyO3 Python manager is required with maturin");
+                }
+            }
+            ProjectManager::Setuptools => {
                 if package.package == PythonPackage::Mkdocstrings {
                     version_string.push_str(&format!(
                         "{}[python]=={}\n",
@@ -401,7 +443,23 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
             version_string.push(']');
             Ok(version_string)
         }
-        _ => {
+        ProjectManager::Maturin => {
+            if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
+                match pyo3_python_manager {
+                    Pyo3PythonManager::Uv => {
+                        version_string.push(']');
+                        Ok(version_string)
+                    }
+                    Pyo3PythonManager::Setuptools => {
+                        version_string.push_str("-e .\n");
+                        Ok(version_string)
+                    }
+                }
+            } else {
+                bail!("A PyO3 Python manager is required for maturin");
+            }
+        }
+        ProjectManager::Setuptools => {
             version_string.push_str("-e .\n");
             Ok(version_string)
         }
@@ -459,7 +517,41 @@ fn create_pyproject_toml(project_info: &ProjectInfo) -> Result<String> {
         None
     };
     let mut pyproject = match &project_info.project_manager {
-        ProjectManager::Maturin => r#"[build-system]
+        ProjectManager::Maturin => {
+            if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
+                match pyo3_python_manager {
+                    Pyo3PythonManager::Uv => r#"[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "{{ project_name }}"
+description = "{{ project_description }}"
+authors = [
+  { name = "{{ creator }}", email = "{{ creator_email }}" },
+]
+{% if license != "NoLicense" -%}
+license = { file = "LICENSE" }
+{% endif -%}
+readme = "README.md"
+requires-python = ">={{ min_python_version }}"
+{%- if dependencies %}
+dependencies = {{ dependencies }}
+{%- else %}
+dependencies = []
+{%- endif %}
+
+[tool.uv]
+dev-dependencies = {{ dev_dependencies }}
+
+[tool.maturin]
+module-name = "{{ module }}._{{ module }}"
+binding = "pyo3"
+features = ["pyo3/extension-module"]
+
+"#
+                    .to_string(),
+                    Pyo3PythonManager::Setuptools => r#"[build-system]
 requires = ["maturin>=1.5,<2.0"]
 build-backend = "maturin"
 
@@ -483,7 +575,12 @@ binding = "pyo3"
 features = ["pyo3/extension-module"]
 
 "#
-        .to_string(),
+                    .to_string(),
+                }
+            } else {
+                bail!("A PyO3 Python manager is required for maturin projects");
+            }
+        }
         ProjectManager::Poetry => r#"[tool.poetry]
 name = "{{ project_name }}"
 version = "{{ version }}"
@@ -863,9 +960,68 @@ fn create_poetry_justfile(module: &str) -> String {
     )
 }
 
-fn create_pyo3_justfile(module: &str) -> String {
-    format!(
-        r#"@_default:
+fn create_pyo3_justfile(module: &str, pyo3_python_manager: &Pyo3PythonManager) -> String {
+    match pyo3_python_manager {
+        Pyo3PythonManager::Uv => {
+            format!(
+                r#"@_default:
+  just --list
+
+@lock:
+  uv lock
+
+@develop:
+  uv run maturin develop
+
+@develop-release:
+  uv run maturin develop -r
+
+@install: && develop
+  uv sync --frozen --all-extras
+
+@install-release: && develop-release
+  uv sync --frozen --all-extras
+
+@lint:
+  echo cargo check
+  just --justfile {{{{justfile()}}}} check
+  echo cargo clippy
+  just --justfile {{{{justfile()}}}} clippy
+  echo cargo fmt
+  just --justfile {{{{justfile()}}}} fmt
+  echo mypy
+  just --justfile {{{{justfile()}}}} mypy
+  echo ruff check
+  just --justfile {{{{justfile()}}}} ruff-check
+  echo ruff formatting
+  just --justfile {{{{justfile()}}}} ruff-format
+
+@check:
+  cargo check
+
+@clippy:
+  cargo clippy --all-targets
+
+@fmt:
+  cargo fmt --all -- --check
+
+@mypy:
+  uv run mypy {module} tests
+
+@ruff-check:
+  uv run ruff check {module} tests --fix
+
+@ruff-format:
+  ub run ruff format {module} tests
+
+@test:
+  uv run pytest
+"#
+            )
+        }
+        Pyo3PythonManager::Setuptools => {
+            format!(
+                r#"@_default:
   just --list
 
 @develop:
@@ -904,7 +1060,7 @@ fn create_pyo3_justfile(module: &str) -> String {
   cargo fmt --all -- --check
 
 @mypy:
-  mypy .
+  mypy {module} tests
 
 @ruff-check:
   ruff check {module} tests --fix
@@ -915,7 +1071,9 @@ fn create_pyo3_justfile(module: &str) -> String {
 @test:
   pytest
 "#
-    )
+            )
+        }
+    }
 }
 
 fn create_setuptools_justfile(module: &str) -> String {
@@ -1018,7 +1176,13 @@ fn save_justfile(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info.base_dir().join("justfile");
     let content = match &project_info.project_manager {
         ProjectManager::Poetry => create_poetry_justfile(&module),
-        ProjectManager::Maturin => create_pyo3_justfile(&module),
+        ProjectManager::Maturin => {
+            if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
+                create_pyo3_justfile(&module, pyo3_python_manager)
+            } else {
+                bail!("A PyO3 Python manager is required for maturin");
+            }
+        }
         ProjectManager::Setuptools => create_setuptools_justfile(&module),
         ProjectManager::Uv => create_uv_justfile(&module),
         ProjectManager::Pixi => create_pixi_justfile(),
@@ -1084,16 +1248,22 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
 
     match &project_info.project_manager {
         ProjectManager::Maturin => {
-            if save_dev_requirements(project_info).is_err() {
-                bail!("Error creating requirements-dev.txt file");
-            }
+            if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
+                if pyo3_python_manager == &Pyo3PythonManager::Setuptools
+                    && save_dev_requirements(project_info).is_err()
+                {
+                    bail!("Error creating requirements-dev.txt file");
+                }
 
-            if save_lib_file(project_info).is_err() {
-                bail!("Error creating Rust lib.rs file");
-            }
+                if save_lib_file(project_info).is_err() {
+                    bail!("Error creating Rust lib.rs file");
+                }
 
-            if save_cargo_toml_file(project_info).is_err() {
-                bail!("Error creating Rust lib.rs file");
+                if save_cargo_toml_file(project_info).is_err() {
+                    bail!("Error creating Rust lib.rs file");
+                }
+            } else {
+                bail!("A PyO3 Python Manager is required with Maturin");
             }
         }
         ProjectManager::Setuptools => {
@@ -1148,7 +1318,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project_info::{DocsInfo, LicenseType, ProjectInfo};
+    use crate::project_info::{DocsInfo, LicenseType, ProjectInfo, Pyo3PythonManager};
     use insta::assert_yaml_snapshot;
     use tempfile::tempdir;
 
@@ -1166,6 +1336,7 @@ mod tests {
             python_version: "3.11".to_string(),
             min_python_version: "3.9".to_string(),
             project_manager: ProjectManager::Poetry,
+            pyo3_python_manager: Some(Pyo3PythonManager::Uv),
             is_application: true,
             is_async_project: false,
             github_actions_python_test_versions: vec![
@@ -1974,6 +2145,7 @@ mod tests {
     fn test_save_setuptools_dev_requirements_application_file() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
+        project_info.pyo3_python_manager = Some(Pyo3PythonManager::Setuptools);
         project_info.is_application = true;
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
@@ -1991,6 +2163,7 @@ mod tests {
     fn test_save_setuptools_dev_requirements_lib_file() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
+        project_info.pyo3_python_manager = Some(Pyo3PythonManager::Setuptools);
         project_info.is_application = false;
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();

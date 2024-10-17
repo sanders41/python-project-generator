@@ -169,6 +169,18 @@ fn main() {
                     exit(1);
                 }
             }
+            Param::Pyo3PythonManager { value } => {
+                if let Err(e) = Config::default().save_pyo3_python_manager(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+            Param::ResetPyo3PythonManager {} => {
+                if let Err(e) = Config::default().reset_pyo3_python_manager() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::ApplicationOrLibrary { value } => match value {
                 ApplicationOrLib::Application => {
                     if let Err(e) = Config::default().save_is_application(true) {
@@ -438,6 +450,7 @@ mod tests {
             python_version: "3.12".to_string(),
             min_python_version: "3.9".to_string(),
             project_manager: ProjectManager::Poetry,
+            pyo3_python_manager: None,
             is_application: true,
             is_async_project: false,
             github_actions_python_test_versions: vec![

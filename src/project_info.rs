@@ -22,9 +22,9 @@ pub enum DependabotSchedule {
 impl fmt::Display for DependabotSchedule {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            DependabotSchedule::Daily => write!(f, "Daily"),
-            DependabotSchedule::Weekly => write!(f, "Weekly"),
-            DependabotSchedule::Monthly => write!(f, "Montly"),
+            Self::Daily => write!(f, "Daily"),
+            Self::Weekly => write!(f, "Weekly"),
+            Self::Monthly => write!(f, "Montly"),
         }
     }
 }
@@ -44,13 +44,13 @@ pub enum Day {
 impl fmt::Display for Day {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Day::Monday => write!(f, "Monday"),
-            Day::Tuesday => write!(f, "Tuesday"),
-            Day::Wednesday => write!(f, "Wednesday"),
-            Day::Thursday => write!(f, "Thursday"),
-            Day::Friday => write!(f, "Friday"),
-            Day::Saturday => write!(f, "Saturday"),
-            Day::Sunday => write!(f, "Sunday"),
+            Self::Monday => write!(f, "Monday"),
+            Self::Tuesday => write!(f, "Tuesday"),
+            Self::Wednesday => write!(f, "Wednesday"),
+            Self::Thursday => write!(f, "Thursday"),
+            Self::Friday => write!(f, "Friday"),
+            Self::Saturday => write!(f, "Saturday"),
+            Self::Sunday => write!(f, "Sunday"),
         }
     }
 }
@@ -66,9 +66,25 @@ pub enum LicenseType {
 impl fmt::Display for LicenseType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            LicenseType::Mit => write!(f, "MIT"),
-            LicenseType::Apache2 => write!(f, "Apache 2.0"),
-            LicenseType::NoLicense => write!(f, "No License"),
+            Self::Mit => write!(f, "MIT"),
+            Self::Apache2 => write!(f, "Apache 2.0"),
+            Self::NoLicense => write!(f, "No License"),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
+pub enum Pyo3PythonManager {
+    #[default]
+    Uv,
+    Setuptools,
+}
+
+impl fmt::Display for Pyo3PythonManager {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Uv => write!(f, "uv"),
+            Self::Setuptools => write!(f, "Setuptools"),
         }
     }
 }
@@ -86,11 +102,11 @@ pub enum ProjectManager {
 impl fmt::Display for ProjectManager {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ProjectManager::Maturin => write!(f, "Maturin"),
-            ProjectManager::Poetry => write!(f, "Poetry"),
-            ProjectManager::Setuptools => write!(f, "Setuptools"),
-            ProjectManager::Uv => write!(f, "uv"),
-            ProjectManager::Pixi => write!(f, "Pixi"),
+            Self::Maturin => write!(f, "Maturin"),
+            Self::Poetry => write!(f, "Poetry"),
+            Self::Setuptools => write!(f, "Setuptools"),
+            Self::Uv => write!(f, "uv"),
+            Self::Pixi => write!(f, "Pixi"),
         }
     }
 }
@@ -176,6 +192,7 @@ pub struct ProjectInfo {
     pub python_version: String,
     pub min_python_version: String,
     pub project_manager: ProjectManager,
+    pub pyo3_python_manager: Option<Pyo3PythonManager>,
     pub is_async_project: bool,
     pub is_application: bool,
     pub github_actions_python_test_versions: Vec<String>,
@@ -418,6 +435,31 @@ fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectMana
     }
 }
 
+fn pyo3_python_manager_prompt(default: Option<Pyo3PythonManager>) -> Result<Pyo3PythonManager> {
+    let default_str = match default {
+        Some(d) => match d {
+            Pyo3PythonManager::Uv => "1".to_string(),
+            Pyo3PythonManager::Setuptools => "2".to_string(),
+        },
+        None => "Uv".to_string(),
+    };
+    let prompt_text =
+        "PyO3 Python Manager\n  1 - uv\n  2 - setuptools\n  Choose from[1, 2]".to_string();
+    let prompt = Prompt {
+        prompt_text,
+        default: Some(default_str),
+    };
+    let input = prompt.show_prompt()?;
+
+    if input == "1" {
+        Ok(Pyo3PythonManager::Uv)
+    } else if input == "4" {
+        Ok(Pyo3PythonManager::Setuptools)
+    } else {
+        bail!("Invalid selection");
+    }
+}
+
 pub fn is_valid_python_version(version: &str) -> bool {
     let split_version: Vec<&str> = version.split('.').collect();
     let split_length = split_version.len();
@@ -582,6 +624,22 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         project_manager_prompt(Some(default))?
     };
 
+    let pyo3_python_manager = if project_manager == ProjectManager::Maturin {
+        if use_defaults {
+            if let Some(default) = config.pyo3_python_manager {
+                Some(default)
+            } else {
+                let default = config.pyo3_python_manager.unwrap_or_default();
+                Some(pyo3_python_manager_prompt(Some(default))?)
+            }
+        } else {
+            let default = config.pyo3_python_manager.unwrap_or_default();
+            Some(pyo3_python_manager_prompt(Some(default))?)
+        }
+    } else {
+        None
+    };
+
     let is_application = default_or_prompt_bool(
         "Application or Library\n  1 - Application\n  2 - Library\n  Choose from [1, 2]"
             .to_string(),
@@ -699,6 +757,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         python_version,
         min_python_version,
         project_manager,
+        pyo3_python_manager,
         is_application,
         is_async_project,
         github_actions_python_test_versions,

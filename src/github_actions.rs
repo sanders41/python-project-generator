@@ -1,7 +1,9 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 
 use crate::file_manager::save_file_with_content;
-use crate::project_info::{Day, DependabotSchedule, ProjectInfo, ProjectManager};
+use crate::project_info::{
+    Day, DependabotSchedule, ProjectInfo, ProjectManager, Pyo3PythonManager,
+};
 
 fn build_actions_python_test_versions(github_action_python_test_versions: &[String]) -> String {
     github_action_python_test_versions
@@ -275,11 +277,112 @@ fn create_ci_testing_linux_only_file_pyo3(
     source_dir: &str,
     min_python_version: &str,
     github_action_python_test_versions: &[String],
+    pyo3_python_manager: &Pyo3PythonManager,
 ) -> String {
     let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+    match pyo3_python_manager {
+        Pyo3PythonManager::Uv => format!(
+            r#"name: Testing
 
-    format!(
-        r#"name: Testing
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: "-D warnings"
+  PYTHON_VERSION: "{min_python_version}"
+jobs:
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Run cargo clippy
+      run: cargo clippy --all-targets -- --deny warnings
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Run cargo fmt
+      run: cargo fmt --all -- --check
+  python-linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
+    - name: Restore uv cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.UV_CACHE_DIR }}
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          uv-${{ runner.os }}
+    - name: Install Dependencies
+      run: |
+        run: uv sync --frozen
+        maturin build --out dist
+    - name: Ruff format check
+      run: uv run ruff format {source_dir} tests --check
+    - name: Lint with ruff
+      run: uv run ruff check .
+    - name: mypy check
+      run: uv run mypy {source_dir} tests
+    - name: Minimize uv cache
+      run: uv cache prune --ci
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+    - name: Restore uv cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.UV_CACHE_DIR }}
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          uv-${{ runner.os }}
+    - name: Install Dependencies
+      run: |
+        uv sync --frozen
+        uv run maturin build
+    - name: Test with pytest
+      run: uv run pytest
+    - name: Minimize uv cache
+      run: uv cache prune --ci
+"#
+        ),
+        Pyo3PythonManager::Setuptools => format!(
+            r#"name: Testing
 
 on:
   push:
@@ -359,7 +462,8 @@ jobs:
     - name: Test with pytest
       run: pytest
 "#
-    )
+        ),
+    }
 }
 
 pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()> {
@@ -367,11 +471,18 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
         .base_dir()
         .join(".github/workflows/testing.yml");
     let content = match &project_info.project_manager {
-        ProjectManager::Maturin => create_ci_testing_linux_only_file_pyo3(
-            &project_info.source_dir,
-            &project_info.min_python_version,
-            &project_info.github_actions_python_test_versions,
-        ),
+        ProjectManager::Maturin => {
+            if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
+                create_ci_testing_linux_only_file_pyo3(
+                    &project_info.source_dir,
+                    &project_info.min_python_version,
+                    &project_info.github_actions_python_test_versions,
+                    pyo3_python_manager,
+                )
+            } else {
+                bail!("A PyO3 Python manager is required for maturin");
+            }
+        }
         ProjectManager::Poetry => create_poetry_ci_testing_linux_only_file(
             &project_info.source_dir,
             &project_info.min_python_version,
@@ -532,11 +643,113 @@ fn create_ci_testing_multi_os_file_pyo3(
     source_dir: &str,
     min_python_version: &str,
     github_action_python_test_versions: &[String],
+    pyo3_python_manager: &Pyo3PythonManager,
 ) -> String {
     let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+    match pyo3_python_manager {
+        Pyo3PythonManager::Uv => format!(
+            r#"name: Testing
 
-    format!(
-        r#"name: Testing
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: "-D warnings"
+  PYTHON_VERSION: "{min_python_version}"
+jobs:
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Run cargo clippy
+      run: cargo clippy --all-targets -- --deny warnings
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Run cargo fmt
+      run: cargo fmt --all -- --check
+  python-linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
+    - name: Restore uv cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.UV_CACHE_DIR }}
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          uv-${{ runner.os }}
+    - name: Install Dependencies
+      run: |
+        run: uv sync --frozen
+        maturin build --out dist
+    - name: Ruff format check
+      run: uv run ruff format {source_dir} tests --check
+    - name: Lint with ruff
+      run: uv run ruff check .
+    - name: mypy check
+      run: uv run mypy {source_dir} tests
+    - name: Minimize uv cache
+      run: uv cache prune --ci
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{{{ matrix.os }}}}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+    - name: Restore uv cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.UV_CACHE_DIR }}
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          uv-${{ runner.os }}
+    - name: Install Dependencies
+      run: |
+        uv sync --frozen
+        uv run maturin build
+    - name: Test with pytest
+      run: uv run pytest
+    - name: Minimize uv cache
+      run: uv cache prune --ci
+"#
+        ),
+        Pyo3PythonManager::Setuptools => format!(
+            r#"name: Testing
 
 on:
   push:
@@ -617,7 +830,8 @@ jobs:
     - name: Test with pytest
       run: pytest
 "#
-    )
+        ),
+    }
 }
 
 fn create_uv_ci_testing_multi_os_file(
@@ -759,11 +973,18 @@ pub fn save_ci_testing_multi_os_file(project_info: &ProjectInfo) -> Result<()> {
         .base_dir()
         .join(".github/workflows/testing.yml");
     let content = match &project_info.project_manager {
-        ProjectManager::Maturin => create_ci_testing_multi_os_file_pyo3(
-            &project_info.source_dir,
-            &project_info.min_python_version,
-            &project_info.github_actions_python_test_versions,
-        ),
+        ProjectManager::Maturin => {
+            if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
+                create_ci_testing_multi_os_file_pyo3(
+                    &project_info.source_dir,
+                    &project_info.min_python_version,
+                    &project_info.github_actions_python_test_versions,
+                    pyo3_python_manager,
+                )
+            } else {
+                bail!("A PyO3 Python Manager is required for maturin");
+            }
+        }
         ProjectManager::Poetry => create_poetry_ci_testing_multi_os_file(
             &project_info.source_dir,
             &project_info.min_python_version,
@@ -1305,7 +1526,9 @@ pub fn save_release_drafter_file(project_info: &ProjectInfo) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project_info::{DocsInfo, LicenseType, ProjectInfo, ProjectManager};
+    use crate::project_info::{
+        DocsInfo, LicenseType, ProjectInfo, ProjectManager, Pyo3PythonManager,
+    };
     use insta::assert_yaml_snapshot;
     use std::fs::create_dir_all;
     use tempfile::tempdir;
@@ -1324,6 +1547,7 @@ mod tests {
             python_version: "3.12".to_string(),
             min_python_version: "3.9".to_string(),
             project_manager: ProjectManager::Maturin,
+            pyo3_python_manager: Some(Pyo3PythonManager::Uv),
             is_application: true,
             is_async_project: false,
             github_actions_python_test_versions: vec![

@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::project_info::{
     is_valid_python_version, Day, DependabotSchedule, LicenseType, ProjectManager,
+    Pyo3PythonManager,
 };
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -21,6 +22,7 @@ pub struct Config {
     pub python_version: Option<String>,
     pub min_python_version: Option<String>,
     pub project_manager: Option<ProjectManager>,
+    pub pyo3_python_manager: Option<Pyo3PythonManager>,
     pub is_async_project: Option<bool>,
     pub is_application: Option<bool>,
     pub github_actions_python_test_versions: Option<Vec<String>>,
@@ -51,6 +53,7 @@ impl Default for Config {
             python_version: None,
             min_python_version: None,
             project_manager: None,
+            pyo3_python_manager: None,
             is_async_project: None,
             is_application: None,
             github_actions_python_test_versions: None,
@@ -84,6 +87,7 @@ impl Config {
                             python_version: config.python_version,
                             min_python_version: config.min_python_version,
                             project_manager: config.project_manager,
+                            pyo3_python_manager: config.pyo3_python_manager,
                             is_async_project: config.is_async_project,
                             is_application: config.is_application,
                             github_actions_python_test_versions: config
@@ -199,6 +203,16 @@ impl Config {
 
     pub fn reset_project_manager(&self) -> Result<()> {
         self.handle_save_config(|config| &mut config.project_manager, None)?;
+        Ok(())
+    }
+
+    pub fn save_pyo3_python_manager(&self, value: Pyo3PythonManager) -> Result<()> {
+        self.handle_save_config(|config| &mut config.pyo3_python_manager, Some(value))?;
+        Ok(())
+    }
+
+    pub fn reset_pyo3_python_manager(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.pyo3_python_manager, None)?;
         Ok(())
     }
 
@@ -408,6 +422,7 @@ impl Config {
         }
 
         print_config_value("Project Manager", &config.project_manager);
+        print_config_value("PyO3 Python Manager", &config.pyo3_python_manager);
         print_config_value("Async Project", &config.is_async_project);
         print_config_value("Max Line Length", &config.max_line_length);
         print_config_value("Use Dependabot", &config.use_dependabot);
@@ -657,6 +672,28 @@ mod tests {
         let result = config.load_config();
 
         assert_eq!(result.project_manager, None);
+    }
+
+    #[test]
+    fn test_save_pyo3_python_manger() {
+        let config = mock_config();
+        let expected = Pyo3PythonManager::Uv;
+        config.save_pyo3_python_manager(expected.clone()).unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.pyo3_python_manager, Some(expected));
+    }
+
+    #[test]
+    fn test_reset_pyo3_project_manager() {
+        let config = mock_config();
+        config
+            .save_pyo3_python_manager(Pyo3PythonManager::Uv)
+            .unwrap();
+        config.reset_pyo3_python_manager().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.pyo3_python_manager, None);
     }
 
     #[test]
