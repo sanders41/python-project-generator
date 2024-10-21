@@ -191,7 +191,7 @@ pub fn default_version(package: &PythonPackage) -> String {
         PythonPackage::Mkdocs => "1.6.1".to_string(),
         PythonPackage::MkdocsMaterial => "9.5.41".to_string(),
         PythonPackage::Mkdocstrings => "0.26.2".to_string(),
-        PythonPackage::MyPy => "1.12.0".to_string(),
+        PythonPackage::MyPy => "1.12.1".to_string(),
         PythonPackage::PreCommit => "4.0.0".to_string(),
         PythonPackage::Pytest => "8.3.3".to_string(),
         PythonPackage::PytestAsyncio => "0.24.0".to_string(),
@@ -203,7 +203,7 @@ pub fn default_version(package: &PythonPackage) -> String {
 
 pub fn default_pre_commit_rev(hook: &PreCommitHook) -> String {
     match hook {
-        PreCommitHook::MyPy => "v1.12.0".to_string(),
+        PreCommitHook::MyPy => "v1.12.1".to_string(),
         PreCommitHook::PreCommit => "v5.0.0".to_string(),
         PreCommitHook::Ruff => "v0.7.0".to_string(),
     }
