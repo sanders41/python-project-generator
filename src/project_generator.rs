@@ -333,7 +333,12 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
     for package in packages {
         match project_info.project_manager {
             ProjectManager::Poetry => {
-                if package.package == PythonPackage::Tomli {
+                if package.package == PythonPackage::MyPy {
+                    version_string.push_str(&format!(
+                        "{} = {{version = \"{}\", extras = [\"faster-cache\"]}}\n",
+                        package.package, package.version
+                    ));
+                } else if package.package == PythonPackage::Tomli {
                     version_string.push_str(&format!(
                         "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
                         package.package, package.version
@@ -349,7 +354,12 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
                 }
             }
             ProjectManager::Uv | ProjectManager::Pixi => {
-                if package.package == PythonPackage::Mkdocstrings {
+                if package.package == PythonPackage::MyPy {
+                    version_string.push_str(&format!(
+                        "  \"{}[faster-cache]=={}\",\n",
+                        package.package, package.version
+                    ));
+                } else if package.package == PythonPackage::Mkdocstrings {
                     version_string.push_str(&format!(
                         "  \"{}[python]=={}\",\n",
                         package.package, package.version
@@ -365,7 +375,12 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
                 if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
                     match pyo3_python_manager {
                         Pyo3PythonManager::Uv => {
-                            if package.package == PythonPackage::Mkdocstrings {
+                            if package.package == PythonPackage::MyPy {
+                                version_string.push_str(&format!(
+                                    "  \"{}[faster-cache]=={}\",\n",
+                                    package.package, package.version
+                                ));
+                            } else if package.package == PythonPackage::Mkdocstrings {
                                 version_string.push_str(&format!(
                                     "  \"{}[python]=={}\",\n",
                                     package.package, package.version
@@ -378,7 +393,12 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
                             }
                         }
                         Pyo3PythonManager::Setuptools => {
-                            if package.package == PythonPackage::Mkdocstrings {
+                            if package.package == PythonPackage::MyPy {
+                                version_string.push_str(&format!(
+                                    "{}[faster-cachw]=={}\n",
+                                    package.package, package.version
+                                ));
+                            } else if package.package == PythonPackage::Mkdocstrings {
                                 version_string.push_str(&format!(
                                     "{}[python]=={}\n",
                                     package.package, package.version
@@ -396,7 +416,12 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
                 }
             }
             ProjectManager::Setuptools => {
-                if package.package == PythonPackage::Mkdocstrings {
+                if package.package == PythonPackage::MyPy {
+                    version_string.push_str(&format!(
+                        "{}[faster-cache]=={}\n",
+                        package.package, package.version
+                    ));
+                } else if package.package == PythonPackage::Mkdocstrings {
                     version_string.push_str(&format!(
                         "{}[python]=={}\n",
                         package.package, package.version
