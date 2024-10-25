@@ -2,4 +2,4 @@
 source: src/project_generator.rs
 expression: content
 ---
-"@_default:\n  just --list\n\n@lint:\n  echo mypy\n  just --justfile {{justfile()}} mypy\n  echo ruff-check\n  just --justfile {{justfile()}} ruff-check\n  echo ruff-format\n  just --justfile {{justfile()}} ruff-format\n\n@mypy:\n  poetry run mypy my_project tests\n\n@ruff-check:\n  poetry run ruff check my_project tests\n\n@ruff-format:\n  poetry run ruff format my_project tests\n\n@test:\n  -poetry run pytest -x\n\n@install:\n  poetry install\n"
+"@_default:\n  just --list\n\n@lint:\n  echo mypy\n  just --justfile {{justfile()}} mypy\n  echo ruff-check\n  just --justfile {{justfile()}} ruff-check\n  echo ruff-format\n  just --justfile {{justfile()}} ruff-format\n\n@mypy:\n  poetry run mypy my_project tests\n\n@ruff-check:\n  poetry run ruff check my_project tests\n\n@ruff-format:\n  poetry run ruff format my_project tests\n\n@test *args=\"\":\n  -poetry run pytest {{args}}\n\n@install:\n  poetry install\n"

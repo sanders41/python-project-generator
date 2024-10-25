@@ -976,8 +976,8 @@ fn create_poetry_justfile(module: &str) -> String {
 @ruff-format:
   poetry run ruff format {module} tests
 
-@test:
-  -poetry run pytest -x
+@test *args="":
+  -poetry run pytest {{{{args}}}}
 
 @install:
   poetry install
@@ -1039,8 +1039,8 @@ fn create_pyo3_justfile(module: &str, pyo3_python_manager: &Pyo3PythonManager) -
 @ruff-format:
   ub run ruff format {module} tests
 
-@test:
-  uv run pytest
+@test *args="":
+  uv run pytest {{{{args}}}}
 "#
             )
         }
@@ -1093,8 +1093,8 @@ fn create_pyo3_justfile(module: &str, pyo3_python_manager: &Pyo3PythonManager) -
 @ruff-format:
   ruff format {module} tests
 
-@test:
-  pytest
+@test *arg="":
+  pytest {{{{args}}}}
 "#
             )
         }
@@ -1123,8 +1123,8 @@ fn create_setuptools_justfile(module: &str) -> String {
 @ruff-format:
   python -m ruff format {module} tests
 
-@test:
-  -python -m pytest -x
+@test *args="":
+  -python -m pytest {{{{args}}}}
 
 @install:
   python -m pip install -r requirements-dev.txt
@@ -1154,8 +1154,8 @@ fn create_uv_justfile(module: &str) -> String {
 @ruff-format:
   uv run ruff format {module} tests
 
-@test:
-  -uv run pytest -x
+@test *args="":
+  -uv run pytest {{{{args}}}}
 
 @lock:
   uv lock
