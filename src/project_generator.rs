@@ -1037,7 +1037,7 @@ fn create_pyo3_justfile(module: &str, pyo3_python_manager: &Pyo3PythonManager) -
   uv run ruff check {module} tests --fix
 
 @ruff-format:
-  ub run ruff format {module} tests
+  uv run ruff format {module} tests
 
 @test *args="":
   uv run pytest {{{{args}}}}
