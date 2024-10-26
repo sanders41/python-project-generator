@@ -23,6 +23,7 @@ colored = "2.0.4"
 dirs = "5.0.1"
 exponential-backoff = "2.0.0"
 indicatif = "0.17.8"
+insta = { version = "1.40.0", features = ["filters"] }
 minijinja = "2.4.0"
 rayon = "1.10.0"
 reqwest = { version = "0.12.8", features = ["json", "blocking"] }

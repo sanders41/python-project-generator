@@ -2,4 +2,4 @@
 source: src/project_generator.rs
 expression: content
 ---
-"mypy[faster-cache]==1.13.0\npre-commit==4.0.0\npytest==8.3.3\npytest-cov==5.0.0\nruff==0.7.1\npytest-xdist==3.6.1\ntypes-ujson==5.10.0.20240515\n-e .\n"
+"mypy[faster-cache]==1.0.0\npre-commit==1.0.0\npytest==1.0.0\npytest-cov==1.0.0\nruff==1.0.0\npytest-xdist==1.0.0\ntypes-ujson==1.0.0.20240515\n-e .\n"

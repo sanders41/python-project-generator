@@ -1357,7 +1357,7 @@ mod tests {
             creator_email: "authur@heartofgold.com".to_string(),
             license: LicenseType::Mit,
             copyright_year: Some("2023".to_string()),
-            version: "0.1.7".to_string(),
+            version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.9".to_string(),
             project_manager: ProjectManager::Poetry,
@@ -1441,7 +1441,9 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r": v\d+\.\d+\.\d+", ": v1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1459,7 +1461,9 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r#""\d+\.\d+\.\d+"#, "\"1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1480,7 +1484,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r#""\d+\.\d+\.\d+"#, "\"1.0.0"),
+            (r#"">=\d+\.\d+\.\d+"#, "\">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1501,7 +1508,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r#""\d+\.\d+\.\d+"#, "\"1.0.0"),
+            (r#"">=\d+\.\d+\.\d+"#, "\">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1521,7 +1531,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r#""\d+\.\d+\.\d+"#, "\"1.0.0"),
+            (r#"">=\d+\.\d+\.\d+"#, "\">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1539,7 +1552,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r#""\d+\.\d+\.\d+"#, "\"1.0.0"),
+            (r#"">=\d+\.\d+\.\d+"#, "\">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1557,7 +1573,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r#""\d+\.\d+\.\d+"#, "\"1.0.0"),
+            (r#"">=\d+\.\d+\.\d+"#, "\">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1575,7 +1594,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r#""\d+\.\d+\.\d+"#, "\"1.0.0"),
+            (r#"">=\d+\.\d+\.\d+"#, "\">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1593,7 +1615,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1614,7 +1639,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1635,7 +1663,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1655,7 +1686,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1673,7 +1707,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1691,7 +1728,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1709,7 +1749,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1730,7 +1773,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1751,7 +1797,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1789,7 +1838,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1807,7 +1859,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1825,7 +1880,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1843,7 +1901,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1864,7 +1925,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1885,7 +1949,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1905,7 +1972,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1923,7 +1993,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1941,7 +2014,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1959,7 +2035,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1977,7 +2056,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -1998,7 +2080,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -2019,7 +2104,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -2039,7 +2127,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -2057,7 +2148,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -2075,7 +2169,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -2093,7 +2190,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -2109,7 +2209,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -2126,7 +2229,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -2143,7 +2249,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -2163,7 +2272,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -2181,7 +2293,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -2199,7 +2314,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
@@ -2219,7 +2337,10 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
