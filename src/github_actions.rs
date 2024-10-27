@@ -1099,9 +1099,6 @@ jobs:
     - name: Install Dependencies
       run: |
         poetry install
-    - name: Add pypi token to Poetry
-      run: |
-        poetry config pypi-token.pypi ${{{{ secrets.PYPI_API_KEY }}}}
     - name: Publish package
       run: poetry publish --build
 "#
@@ -1222,8 +1219,6 @@ jobs:
           python-version: "{python_version}"
       - name: Publish to PyPI
         uses: PyO3/maturin-action@v1
-        env:
-          MATURIN_PYPI_TOKEN: ${{{{ secrets.PYPI_API_TOKEN }}}}
         with:
           command: upload
           args: --non-interactive --skip-existing wheels-*/*
@@ -1264,9 +1259,6 @@ jobs:
         python -m pip -r requirements-dev.txt
         python -m pip install build setuptools wheel twine
     - name: Build and publish package
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{{{ secrets.PYPI_API_KEY }}}}
       run: |
         python -m build
         twine upload dist/*
@@ -1341,9 +1333,6 @@ jobs:
     - name: Set up Python
       run: pixi add python=="{python_version}.*"
     - name: Build and publish package
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{{{ secrets.PYPI_API_KEY }}}}
       run: |
         pixi exec --spec python=="{python_version}.*" --spec python-build pyproject-build
         pixi exec --spec python=="{python_version}.*" --spec twine twine upload dist/*
