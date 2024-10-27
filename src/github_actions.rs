@@ -1307,12 +1307,7 @@ jobs:
     - name: Install Dependencies
       run: uv sync --frozen
     - name: Build and publish package
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{{{ secrets.PYPI_API_KEY }}}}
-      run: |
-        uvx --from build pyproject-build --installer uv
-        uvx twine upload dist/*
+      run: uv publish
 "#
     );
 
