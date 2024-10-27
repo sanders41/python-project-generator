@@ -566,8 +566,8 @@ dependencies = {{ dependencies }}
 dependencies = []
 {%- endif %}
 
-[tool.uv]
-dev-dependencies = {{ dev_dependencies }}
+[dependency-groups]
+dev = {{ dev_dependencies }}
 
 [tool.maturin]
 module-name = "{{ module }}._{{ module }}"
@@ -686,8 +686,8 @@ dependencies = {{ dependencies }}
 dependencies = []
 {%- endif %}
 
-[tool.uv]
-dev-dependencies = {{ dev_dependencies }}
+[dependency-groups]
+dev = {{ dev_dependencies }}
 
 [tool.hatch.version]
 path = "{{ module }}/_version.py"
