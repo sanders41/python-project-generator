@@ -165,6 +165,8 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install uv
       uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -187,6 +189,8 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install uv
       uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
     - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v5
       with:
@@ -304,6 +308,8 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install uv
       uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -328,6 +334,8 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install uv
       uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
     - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v5
       with:
@@ -650,6 +658,8 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install uv
       uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -675,6 +685,8 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install uv
       uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
     - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v5
       with:
@@ -798,6 +810,8 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install uv
       uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -821,6 +835,8 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install uv
       uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
     - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v5
       with:
@@ -1282,6 +1298,8 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install uv
       uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
