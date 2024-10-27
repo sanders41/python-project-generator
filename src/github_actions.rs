@@ -157,7 +157,6 @@ on:
     - main
   pull_request:
 env:
-  UV_CACHE_DIR: /tmp/.uv-cache
   PYTHON_VERSION: "{min_python_version}"
 jobs:
   linting:
@@ -165,19 +164,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      uses: astral-sh/setup-uv@v3
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{{{ env.PYTHON_VERSION }}}}
-    - name: Restore uv cache
-      uses: actions/cache@v4
-      with:
-        path: ${{{{ env.UV_CACHE_DIR }}}}
-        key: uv-${{{{ runner.os }}}}-${{{{ hashFiles('uv.lock') }}}}
-        restore-keys: |
-          uv-${{{{ runner.os }}}}-${{{{ hashFiles('uv.lock') }}}}
-          uv-${{{{ runner.os }}}}
     - name: Install Dependencies
       run: uv sync --frozen
     - name: Ruff format check
@@ -186,8 +177,6 @@ jobs:
       run: uv run ruff check .
     - name: mypy check
       run: uv run mypy .
-    - name: Minimize uv cache
-      run: uv cache prune --ci
   testing:
     strategy:
       fail-fast: false
@@ -197,25 +186,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      uses: astral-sh/setup-uv@v3
     - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v5
       with:
         python-version: ${{{{ matrix.python-version }}}}
-    - name: Restore uv cache
-      uses: actions/cache@v4
-      with:
-        path: ${{{{ env.UV_CACHE_DIR }}}}
-        key: uv-${{{{ runner.os }}}}-${{{{ hashFiles('uv.lock') }}}}
-        restore-keys: |
-          uv-${{{{ runner.os }}}}-${{{{ hashFiles('uv.lock') }}}}
-          uv-${{{{ runner.os }}}}
     - name: Install Dependencies
       run: uv sync --frozen
     - name: Test with pytest
       run: uv run pytest
-    - name: Minimize uv cache
-      run: uv cache prune --ci
 "#
     )
 }
@@ -324,19 +303,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      uses: astral-sh/setup-uv@v3
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{{{ env.PYTHON_VERSION }}}}
-    - name: Restore uv cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.UV_CACHE_DIR }}
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-          uv-${{ runner.os }}
     - name: Install Dependencies
       run: |
         run: uv sync --frozen
@@ -347,8 +318,6 @@ jobs:
       run: uv run ruff check .
     - name: mypy check
       run: uv run mypy {source_dir} tests
-    - name: Minimize uv cache
-      run: uv cache prune --ci
   testing:
     strategy:
       fail-fast: false
@@ -358,27 +327,17 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      uses: astral-sh/setup-uv@v3
     - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v5
       with:
         python-version: ${{{{ matrix.python-version }}}}
-    - name: Restore uv cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.UV_CACHE_DIR }}
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-          uv-${{ runner.os }}
     - name: Install Dependencies
       run: |
         uv sync --frozen
         uv run maturin build
     - name: Test with pytest
       run: uv run pytest
-    - name: Minimize uv cache
-      run: uv cache prune --ci
 "#
         ),
         Pyo3PythonManager::Setuptools => format!(
@@ -690,19 +649,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      uses: astral-sh/setup-uv@v3
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{{{ env.PYTHON_VERSION }}}}
-    - name: Restore uv cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.UV_CACHE_DIR }}
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-          uv-${{ runner.os }}
     - name: Install Dependencies
       run: |
         run: uv sync --frozen
@@ -713,8 +664,6 @@ jobs:
       run: uv run ruff check .
     - name: mypy check
       run: uv run mypy {source_dir} tests
-    - name: Minimize uv cache
-      run: uv cache prune --ci
   testing:
     strategy:
       fail-fast: false
@@ -725,27 +674,17 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      uses: astral-sh/setup-uv@v3
     - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v5
       with:
         python-version: ${{{{ matrix.python-version }}}}
-    - name: Restore uv cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.UV_CACHE_DIR }}
-        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-        restore-keys: |
-          uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-          uv-${{ runner.os }}
     - name: Install Dependencies
       run: |
         uv sync --frozen
         uv run maturin build
     - name: Test with pytest
       run: uv run pytest
-    - name: Minimize uv cache
-      run: uv cache prune --ci
 "#
         ),
         Pyo3PythonManager::Setuptools => format!(
@@ -858,19 +797,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      uses: astral-sh/setup-uv@v3
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{{{ env.PYTHON_VERSION }}}}
-    - name: Restore uv cache
-      uses: actions/cache@v4
-      with:
-        path: ${{{{ env.UV_CACHE_DIR }}}}
-        key: uv-${{{{ runner.os }}}}-${{{{ hashFiles('uv.lock') }}}}
-        restore-keys: |
-          uv-${{{{ runner.os }}}}-${{{{ hashFiles('uv.lock') }}}}
-          uv-${{{{ runner.os }}}}
     - name: Install Dependencies
       run: uv sync --frozen
     - name: Ruff format check
@@ -879,8 +810,6 @@ jobs:
       run: uv run ruff check .
     - name: mypy check
       run: uv run mypy .
-    - name: Minimize uv cache
-      run: uv cache prune --ci
   testing:
     strategy:
       fail-fast: false
@@ -891,25 +820,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      uses: astral-sh/setup-uv@v3
     - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v5
       with:
         python-version: ${{{{ matrix.python-version }}}}
-    - name: Restore uv cache
-      uses: actions/cache@v4
-      with:
-        path: ${{{{ env.UV_CACHE_DIR }}}}
-        key: uv-${{{{ runner.os }}}}-${{{{ hashFiles('uv.lock') }}}}
-        restore-keys: |
-          uv-${{{{ runner.os }}}}-${{{{ hashFiles('uv.lock') }}}}
-          uv-${{{{ runner.os }}}}
     - name: Install Dependencies
       run: uv sync --frozen
     - name: Test with pytest
       run: uv run pytest
-    - name: Minimize uv cache
-      run: uv cache prune --ci
 "#
     )
 }
@@ -1362,7 +1281,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      uses: astral-sh/setup-uv@v3
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
