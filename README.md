@@ -142,9 +142,10 @@ python-project create -s
 
 - Use Continuous Deployment
 
-  This will create a GitHub Action to deploy the project to pypi when a new release is created.
-  Note that for this to work you will need to get an API token for the project from pypi and add it
-  to as a new repsitory secret called `PYPI_API_KEY` in the GitHub project.
+  This will create a GitHub Action to deploy the project to PyPI when a new release is created.
+  Note that for this to work you will need to setup a
+  [trusted publisher](https://docs.pypi.org/trusted-publishers/adding-a-publisher/) in PyPI with
+  a workflow name of pypi_publish.yml.
 
 - Release Drafter
 

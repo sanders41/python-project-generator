@@ -2,4 +2,4 @@
 source: src/github_actions.rs
 expression: content
 ---
-"name: PyPi Publish\non:\n  release:\n    types:\n    - published\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v4\n    - name: Install Poetry\n      run: pipx install poetry\n    - name: Set up Python\n      uses: actions/setup-python@v5\n      with:\n        python-version: \"3.12\"\n        cache: \"poetry\"\n    - name: Install Dependencies\n      run: |\n        poetry install\n    - name: Add pypi token to Poetry\n      run: |\n        poetry config pypi-token.pypi ${{ secrets.PYPI_API_KEY }}\n    - name: Publish package\n      run: poetry publish --build\n"
+"name: PyPi Publish\non:\n  release:\n    types:\n    - published\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v4\n    - name: Install Poetry\n      run: pipx install poetry\n    - name: Set up Python\n      uses: actions/setup-python@v5\n      with:\n        python-version: \"3.12\"\n        cache: \"poetry\"\n    - name: Install Dependencies\n      run: |\n        poetry install\n    - name: Publish package\n      run: poetry publish --build\n"
