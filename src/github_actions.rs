@@ -1286,6 +1286,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      # For PyPI's trusted publishing.
+      id-token: write
     steps:
     - uses: actions/checkout@v4
     - name: Install uv
