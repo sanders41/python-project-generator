@@ -1271,7 +1271,9 @@ jobs:
         python-version: "{python_version}"
     - name: Install Dependencies
       run: uv sync --frozen
-    - name: Build and publish package
+    - name: Build package
+      run: uv build
+    - name: Publish package
       run: uv publish
 "#
     )
