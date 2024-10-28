@@ -1077,8 +1077,8 @@ pub fn save_dependabot_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_poetry_pypi_publish_file(python_version: &str, include_docs: bool) -> String {
-    let mut yml = format!(
+fn create_poetry_pypi_publish_file(python_version: &str) -> String {
+    format!(
         r#"name: PyPi Publish
 on:
   release:
@@ -1102,21 +1102,11 @@ jobs:
     - name: Publish package
       run: poetry publish --build
 "#
-    );
-
-    if include_docs {
-        yml.push_str(
-            r#"    - name: Deploy Docs
-      run: poetry run mkdocs gh-deploy --force
-"#,
-        );
-    }
-
-    yml
+    )
 }
 
-fn create_pypi_publish_file_pyo3(python_version: &str, include_docs: bool) -> String {
-    let mut yml = format!(
+fn create_pyo3_pypi_publish_file(python_version: &str) -> String {
+    format!(
         r#"name: PyPi Publish
 on:
   release:
@@ -1223,21 +1213,11 @@ jobs:
           command: upload
           args: --non-interactive --skip-existing wheels-*/*
 "#
-    );
-
-    if include_docs {
-        yml.push_str(
-            r#"    - name: Deploy Docs
-      run: mkdocs gh-deploy --force
-"#,
-        );
-    }
-
-    yml
+    )
 }
 
-fn create_setuptools_pypi_publish_file(python_version: &str, include_docs: bool) -> String {
-    let mut yml = format!(
+fn create_setuptools_pypi_publish_file(python_version: &str) -> String {
+    format!(
         r#"name: PyPi Publish
 on:
   release:
@@ -1263,21 +1243,11 @@ jobs:
         python -m build
         twine upload dist/*
 "#
-    );
-
-    if include_docs {
-        yml.push_str(
-            r#"    - name: Deploy Docs
-      run: mkdocs gh-deploy --force
-"#,
-        );
-    }
-
-    yml
+    )
 }
 
-fn create_uv_pypi_publish_file(python_version: &str, include_docs: bool) -> String {
-    let mut yml = format!(
+fn create_uv_pypi_publish_file(python_version: &str) -> String {
+    format!(
         r#"name: PyPi Publish
 on:
   release:
@@ -1304,21 +1274,11 @@ jobs:
     - name: Build and publish package
       run: uv publish
 "#
-    );
-
-    if include_docs {
-        yml.push_str(
-            r#"    - name: Deploy Docs
-      run: mkdocs gh-deploy --force
-"#,
-        );
-    }
-
-    yml
+    )
 }
 
-fn create_pixi_pypi_publish_file(python_version: &str, include_docs: bool) -> String {
-    let mut yml = format!(
+fn create_pixi_pypi_publish_file(python_version: &str) -> String {
+    format!(
         r#"name: PyPi Publish
 on:
   release:
@@ -1340,17 +1300,7 @@ jobs:
         pixi exec --spec python=="{python_version}.*" --spec python-build pyproject-build
         pixi exec --spec python=="{python_version}.*" --spec twine twine upload dist/*
 "#
-    );
-
-    if include_docs {
-        yml.push_str(
-            r#"    - name: Deploy Docs
-      run: pixi run run-deploy-docs
-"#,
-        );
-    }
-
-    yml
+    )
 }
 
 pub fn save_pypi_publish_file(project_info: &ProjectInfo) -> Result<()> {
@@ -1358,22 +1308,152 @@ pub fn save_pypi_publish_file(project_info: &ProjectInfo) -> Result<()> {
         .base_dir()
         .join(".github/workflows/pypi_publish.yml");
     let content = match &project_info.project_manager {
+        ProjectManager::Maturin => create_pyo3_pypi_publish_file(&project_info.python_version),
+        ProjectManager::Poetry => create_poetry_pypi_publish_file(&project_info.python_version),
+        ProjectManager::Setuptools => {
+            create_setuptools_pypi_publish_file(&project_info.python_version)
+        }
+        ProjectManager::Uv => create_uv_pypi_publish_file(&project_info.python_version),
+        ProjectManager::Pixi => create_pixi_pypi_publish_file(&project_info.python_version),
+    };
+
+    save_file_with_content(&file_path, &content)?;
+
+    Ok(())
+}
+
+fn create_poetry_docs_publish_file(python_version: &str) -> String {
+    format!(
+        r#"name: Docs Publish
+on:
+  release:
+    types:
+    - published
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Poetry
+      run: pipx install poetry
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "{python_version}"
+        cache: "poetry"
+    - name: Install Dependencies
+      run: |
+        poetry install
+    - name: Publish package
+      run: poetry run mkdocs gh-deploy --force
+"#
+    )
+}
+
+fn create_setuptools_docs_publish_file(python_version: &str) -> String {
+    format!(
+        r#"name: Docs Publish
+on:
+  release:
+    types:
+    - published
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "{python_version}"
+        cache: "pip"
+    - name: Install Dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip -r requirements-dev.txt
+    - name: Publish docs
+      run: mkdocs gh-deploy --force
+"#
+    )
+}
+
+fn create_pixi_docs_publish_file(python_version: &str) -> String {
+    format!(
+        r#"name: Docs Publish
+on:
+  release:
+    types:
+    - published
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Pixi
+      uses: prefix-dev/setup-pixi@v0.8.1
+      with:
+        pixi-version: v0.30.0
+    - name: Set up Python
+      run: pixi add python=="{python_version}.*"
+    - name: Deploy Docs
+      run pixi run run-deploy-docs
+"#
+    )
+}
+
+fn create_uv_docs_publish_file(python_version: &str) -> String {
+    format!(
+        r#"name: Docs Publish
+on:
+  release:
+    types:
+    - published
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "{python_version}"
+    - name: Install Dependencies
+      run: uv sync --frozen
+    - name: Deploy Docs
+      run: uv run mkdocs gh-deploy --force
+"#
+    )
+}
+
+pub fn save_docs_publish_file(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info
+        .base_dir()
+        .join(".github/workflows/docs_publish.yml");
+    let content = match &project_info.project_manager {
         ProjectManager::Maturin => {
-            create_pypi_publish_file_pyo3(&project_info.python_version, project_info.include_docs)
+            if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
+                match pyo3_python_manager {
+                    Pyo3PythonManager::Setuptools => {
+                        create_setuptools_docs_publish_file(&project_info.python_version)
+                    }
+                    Pyo3PythonManager::Uv => {
+                        create_uv_docs_publish_file(&project_info.python_version)
+                    }
+                }
+            } else {
+                bail!("No PyO3 Python project manager specified");
+            }
         }
-        ProjectManager::Poetry => {
-            create_poetry_pypi_publish_file(&project_info.python_version, project_info.include_docs)
+        ProjectManager::Poetry => create_poetry_docs_publish_file(&project_info.python_version),
+        ProjectManager::Setuptools => {
+            create_setuptools_docs_publish_file(&project_info.python_version)
         }
-        ProjectManager::Setuptools => create_setuptools_pypi_publish_file(
-            &project_info.python_version,
-            project_info.include_docs,
-        ),
-        ProjectManager::Uv => {
-            create_uv_pypi_publish_file(&project_info.python_version, project_info.include_docs)
-        }
-        ProjectManager::Pixi => {
-            create_pixi_pypi_publish_file(&project_info.python_version, project_info.include_docs)
-        }
+        ProjectManager::Uv => create_uv_docs_publish_file(&project_info.python_version),
+        ProjectManager::Pixi => create_pixi_docs_publish_file(&project_info.python_version),
     };
 
     save_file_with_content(&file_path, &content)?;
@@ -1901,15 +1981,15 @@ mod tests {
     }
 
     #[test]
-    fn test_save_pypi_publish_file_poetry_docs() {
+    fn test_save_docs_publish_file_poetry() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
         project_info.include_docs = true;
         project_info.docs_info = Some(docs_info_dummy());
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
-        let expected_file = base.join(".github/workflows/pypi_publish.yml");
-        save_pypi_publish_file(&project_info).unwrap();
+        let expected_file = base.join(".github/workflows/docs_publish.yml");
+        save_docs_publish_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -1935,15 +2015,15 @@ mod tests {
     }
 
     #[test]
-    fn test_save_pypi_publish_file_pyo3_docs() {
+    fn test_save_docs_publish_file_pyo3() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
         project_info.include_docs = true;
         project_info.docs_info = Some(docs_info_dummy());
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
-        let expected_file = base.join(".github/workflows/pypi_publish.yml");
-        save_pypi_publish_file(&project_info).unwrap();
+        let expected_file = base.join(".github/workflows/docs_publish.yml");
+        save_docs_publish_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -1969,15 +2049,15 @@ mod tests {
     }
 
     #[test]
-    fn test_save_pypi_publish_file_setuptools_docs() {
+    fn test_save_docs_publish_file_setuptools() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Setuptools;
         project_info.include_docs = true;
         project_info.docs_info = Some(docs_info_dummy());
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
-        let expected_file = base.join(".github/workflows/pypi_publish.yml");
-        save_pypi_publish_file(&project_info).unwrap();
+        let expected_file = base.join(".github/workflows/docs_publish.yml");
+        save_docs_publish_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -2003,15 +2083,15 @@ mod tests {
     }
 
     #[test]
-    fn test_save_pypi_publish_file_uv_docs() {
+    fn test_save_docs_publish_file_uv() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Uv;
         project_info.include_docs = true;
         project_info.docs_info = Some(docs_info_dummy());
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
-        let expected_file = base.join(".github/workflows/pypi_publish.yml");
-        save_pypi_publish_file(&project_info).unwrap();
+        let expected_file = base.join(".github/workflows/docs_publish.yml");
+        save_docs_publish_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -2037,15 +2117,15 @@ mod tests {
     }
 
     #[test]
-    fn test_save_pypi_publish_file_pixi_docs() {
+    fn test_save_docs_publish_file_pixi() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Pixi;
         project_info.include_docs = true;
         project_info.docs_info = Some(docs_info_dummy());
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
-        let expected_file = base.join(".github/workflows/pypi_publish.yml");
-        save_pypi_publish_file(&project_info).unwrap();
+        let expected_file = base.join(".github/workflows/docs_publish.yml");
+        save_docs_publish_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 

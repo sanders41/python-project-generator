@@ -1,0 +1,6 @@
+---
+source: src/github_actions.rs
+expression: content
+snapshot_kind: text
+---
+"name: Docs Publish\non:\n  release:\n    types:\n    - published\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v4\n    - name: Install Pixi\n      uses: prefix-dev/setup-pixi@v0.8.1\n      with:\n        pixi-version: v0.30.0\n    - name: Set up Python\n      run: pixi add python==\"3.12.*\"\n    - name: Deploy Docs\n      run pixi run run-deploy-docs\n"

@@ -8,7 +8,7 @@ use rayon::prelude::*;
 use crate::file_manager::{save_empty_src_file, save_file_with_content};
 use crate::github_actions::{
     save_ci_testing_linux_only_file, save_ci_testing_multi_os_file, save_dependabot_file,
-    save_pypi_publish_file, save_release_drafter_file,
+    save_docs_publish_file, save_pypi_publish_file, save_release_drafter_file,
 };
 use crate::licenses::{generate_license, license_str};
 use crate::package_version::{
@@ -1300,7 +1300,11 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
     }
 
     if project_info.use_continuous_deployment && save_pypi_publish_file(project_info).is_err() {
-        bail!("Error creating PYPI publish file");
+        bail!("Error creating PyPI publish file");
+    }
+
+    if project_info.include_docs && save_docs_publish_file(project_info).is_err() {
+        bail!("Error creating docs publish file");
     }
 
     if project_info.use_multi_os_ci {
