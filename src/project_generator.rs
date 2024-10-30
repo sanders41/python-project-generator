@@ -2214,8 +2214,7 @@ mod tests {
         let content = std::fs::read_to_string(expected_file).unwrap();
 
         insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+            (r"\d+\.\d+\.\d+", "1.0.0"),
         ]}, { assert_yaml_snapshot!(content)});
     }
 
