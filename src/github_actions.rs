@@ -316,8 +316,8 @@ jobs:
         python-version: ${{{{ env.PYTHON_VERSION }}}}
     - name: Install Dependencies
       run: |
-        run: uv sync --frozen
-        maturin build --out dist
+        uv sync --frozen
+        uv run maturin build
     - name: Ruff format check
       run: uv run ruff format {source_dir} tests --check
     - name: Lint with ruff
@@ -666,8 +666,8 @@ jobs:
         python-version: ${{{{ env.PYTHON_VERSION }}}}
     - name: Install Dependencies
       run: |
-        run: uv sync --frozen
-        maturin build --out dist
+        uv sync --frozen
+        uv run maturin build
     - name: Ruff format check
       run: uv run ruff format {source_dir} tests --check
     - name: Lint with ruff
