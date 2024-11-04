@@ -1163,7 +1163,7 @@ fn create_uv_justfile(module: &str) -> String {
 @lock:
   uv lock
 
-@lock-upgrade
+@lock-upgrade:
   uv lock --upgrade
 
 @install:
