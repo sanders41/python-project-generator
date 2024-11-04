@@ -995,6 +995,9 @@ fn create_pyo3_justfile(module: &str, pyo3_python_manager: &Pyo3PythonManager) -
 @lock:
   uv lock
 
+@lock-upgrade:
+  uv lock --upgrade
+
 @develop:
   uv run maturin develop
 
@@ -1159,6 +1162,9 @@ fn create_uv_justfile(module: &str) -> String {
 
 @lock:
   uv lock
+
+@lock-upgrade
+  uv lock --upgrade
 
 @install:
   uv sync --frozen --all-extras
