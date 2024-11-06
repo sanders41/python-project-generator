@@ -11,7 +11,7 @@ fn build_latest_dependencies(download_latest_packages: bool) -> String {
     let mut version_string = String::new();
     let mut packages = vec![RustPackageVersion {
         name: "pyo3".to_string(),
-        version: "0.22.5".to_string(),
+        version: "0.22.6".to_string(),
         features: Some(vec!["extension-module".to_string()]),
     }];
 
@@ -184,7 +184,9 @@ mod tests {
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
-        assert_yaml_snapshot!(content);
+        insta::with_settings!({filters => vec![
+            (r"\d+\.\d+\.\d+", "1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[test]
