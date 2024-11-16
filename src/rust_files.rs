@@ -11,7 +11,7 @@ fn build_latest_dependencies(download_latest_packages: bool) -> String {
     let mut version_string = String::new();
     let mut packages = vec![RustPackageVersion {
         name: "pyo3".to_string(),
-        version: "0.22.6".to_string(),
+        version: "0.23.0".to_string(),
         features: Some(vec!["extension-module".to_string()]),
     }];
 
