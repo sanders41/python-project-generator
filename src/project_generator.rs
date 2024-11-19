@@ -999,10 +999,10 @@ fn create_pyo3_justfile(module: &str, pyo3_python_manager: &Pyo3PythonManager) -
   uv lock --upgrade
 
 @develop:
-  uv run maturin develop
+  uv run maturin develop --uv
 
 @develop-release:
-  uv run maturin develop -r
+  uv run maturin develop -r --uv
 
 @install: && develop
   uv sync --frozen --all-extras
