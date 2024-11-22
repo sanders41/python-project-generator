@@ -777,6 +777,8 @@ select = [
   "I001",  # unsorted-imports
   "T201",  # print found
   "T203",  # pprint found
+  "RUF022",  # Unsorted __all__
+  "RUF023",  # Unforted __slots__
   {%- if is_async_project %}
   "ASYNC",  # flake8-async
   {% endif %}
