@@ -6,7 +6,7 @@ exclude-labels:
 version-resolver:
   major:
     labels:
-      - "breaking_change"
+      - "breaking-change"
   minor:
     labels:
       - "enhancement"
