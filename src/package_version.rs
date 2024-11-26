@@ -138,27 +138,6 @@ impl PythonPackageVersion {
 }
 
 #[derive(Debug)]
-pub struct ExtraPythonPackageVersion {
-    pub package: String,
-    pub version: String,
-}
-
-impl ExtraPythonPackageVersion {
-    pub fn new(package: String) -> Result<Self> {
-        if let Some(p) = package.split_once("@") {
-            Ok(ExtraPythonPackageVersion {
-                package: p.0.to_string(),
-                version: p.1.to_string(),
-            })
-        } else {
-            let version = get_latest_python_version(&package)?;
-
-            Ok(ExtraPythonPackageVersion { package, version })
-        }
-    }
-}
-
-#[derive(Debug)]
 pub struct RustPackageVersion {
     pub name: String,
     pub version: String,
