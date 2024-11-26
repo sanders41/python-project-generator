@@ -167,18 +167,6 @@ pub enum Param {
     /// Remove the save download latest packages value
     ResetDownloadLatestPackages,
 
-    /// Extra Python dependencies to include in the project
-    ExtraPythonPackages { value: Vec<String> },
-
-    /// Remove the saved extra Python dependencies
-    ResetExtraPythonPackages,
-
-    /// Extra Python dev dependencies to include in the project
-    ExtraPythonDevPackages { value: Vec<String> },
-
-    /// Remove the saved extra Python dev dependencies
-    ResetExtraPythonDevPackages,
-
     /// Rerset the config to the default values
     Reset,
 

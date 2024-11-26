@@ -199,24 +199,6 @@ python-project create -s
   docs are referencing. For example in this repository the repo url would be
   `https://github.com/sanders41/python-project-generator`
 
-- Extra Python Dependencies
-
-  These are extra packages you want to include in the project that are not provided by default.
-  For example specifying `fastapi, camel-converter` here will inculde these two packages in the
-  dependencies. If the project is an application the version will be pinned to the latest release
-  of the packages, and if it is a library the latest release will be used for the minimum version.
-  If you would like to specify a specific version instead you can by specifying the version with an
-  `@`. For example `fastapi@0.115.0, camel-converter@4.0.0`. When creating an appliction FastAPI
-  will be pinned to `0.115.0` and Camel Converter will be pinned to `4.0.0`, or if creating a
-  library these versions will be used for the minimum version.
-
-- Extra Python Dev Dependencies
-
-  These are extra packages you want to include in the project's dev dependencies that are not
-  provided by default. For example specifying `pytest-xdist` here will include this package in the
-  dev dependencies. If you would like to specify a specific version instead of checking for the
-  latest you can by specifying the version with an `@`. For example `pytest-xdist@3.6.1`.
-
 After running the generator a new directory will be created with the name you used for the
 `Project Slug`. Change to this directory then install the python packages and pre-commit hooks.
 

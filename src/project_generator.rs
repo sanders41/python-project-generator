@@ -12,8 +12,7 @@ use crate::github_actions::{
 };
 use crate::licenses::{generate_license, license_str};
 use crate::package_version::{
-    ExtraPythonPackageVersion, LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackage,
-    PythonPackageVersion,
+    LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackage, PythonPackageVersion,
 };
 use crate::project_info::{ProjectInfo, ProjectManager, Pyo3PythonManager};
 use crate::python_files::generate_python_files;
@@ -433,31 +432,6 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
         }
     }
 
-    if let Some(extras) = &project_info.extra_python_dev_packages {
-        for extra in extras {
-            if let Ok(p) = ExtraPythonPackageVersion::new(extra.to_lowercase().clone()) {
-                match project_info.project_manager {
-                    ProjectManager::Poetry => {
-                        version_string.push_str(&format!("{} = \"{}\"\n", p.package, p.version))
-                    }
-                    ProjectManager::Uv => {
-                        version_string.push_str(&format!("  \"{}=={}\",\n", p.package, p.version))
-                    }
-                    ProjectManager::Pixi => {
-                        version_string.push_str(&format!("  \"{}=={}\",\n", p.package, p.version))
-                    }
-                    _ => version_string.push_str(&format!("{}=={}\n", p.package, p.version)),
-                }
-            } else {
-                let error_message = format!(
-                    "Error retrieving latest python package version for {}, skipping.",
-                    extra
-                );
-                println!("\n{}", error_message.yellow());
-            }
-        }
-    }
-
     match project_info.project_manager {
         ProjectManager::Poetry => Ok(version_string.trim().to_string()),
         ProjectManager::Uv => {
@@ -491,56 +465,10 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
     }
 }
 
-fn build_extra_python_dependencies(project_info: &ProjectInfo) -> Result<String> {
-    if let Some(extra_python_packages) = &project_info.extra_python_packages {
-        let mut version_string = if let ProjectManager::Poetry = project_info.project_manager {
-            String::new()
-        } else {
-            "[\n".to_string()
-        };
-        for package in extra_python_packages {
-            if let Ok(p) = ExtraPythonPackageVersion::new(package.to_lowercase().clone()) {
-                if let ProjectManager::Poetry = project_info.project_manager {
-                    if project_info.is_application {
-                        version_string.push_str(&format!("{} = \"{}\"\n", p.package, p.version));
-                    } else {
-                        version_string.push_str(&format!("{} = \">={}\"\n", p.package, p.version));
-                    }
-                } else if project_info.is_application {
-                    version_string.push_str(&format!("  \"{}=={}\",\n", p.package, p.version));
-                } else {
-                    version_string.push_str(&format!("  \"{}>={}\",\n", p.package, p.version));
-                }
-            } else {
-                let error_message = format!(
-                    "Error retrieving latest python package version for {}, skipping.",
-                    package
-                );
-                println!("\n{}", error_message.yellow());
-            }
-        }
-
-        if let ProjectManager::Poetry = project_info.project_manager {
-            Ok(version_string.trim().to_string())
-        } else {
-            version_string.push(']');
-            Ok(version_string)
-        }
-    } else {
-        bail!("No extra python packages provided");
-    }
-}
-
 fn create_pyproject_toml(project_info: &ProjectInfo) -> Result<String> {
     let module = project_info.source_dir.replace([' ', '-'], "_");
     let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
     let license_text = license_str(&project_info.license);
-    let dependencies = if project_info.extra_python_packages.is_some() {
-        let d = build_extra_python_dependencies(project_info)?;
-        Some(d)
-    } else {
-        None
-    };
     let mut pyproject = match &project_info.project_manager {
         ProjectManager::Maturin => {
             if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
@@ -560,11 +488,7 @@ license = { file = "LICENSE" }
 {% endif -%}
 readme = "README.md"
 requires-python = ">={{ min_python_version }}"
-{%- if dependencies %}
-dependencies = {{ dependencies }}
-{%- else %}
 dependencies = []
-{%- endif %}
 
 [dependency-groups]
 dev = {{ dev_dependencies }}
@@ -588,11 +512,7 @@ authors = [{name = "{{ creator }}", email =  "{{ creator_email }}"}]
 license = "{{ license }}"
 {% endif -%}
 readme = "README.md"
-{%- if dependencies %}
-dependencies = {{ dependencies }}
-{%- else %}
 dependencies = []
-{%- endif %}
 
 [tool.maturin]
 module-name = "{{ module }}._{{ module }}"
@@ -618,9 +538,6 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^{{ min_python_version }}"
-{%- if dependencies %}
-{{ dependencies }}
-{%- endif %}
 
 [tool.poetry.group.dev.dependencies]
 {{ dev_dependencies }}
@@ -646,11 +563,7 @@ license = { text = "{{ license }}" }
 {% endif -%}
 requires-python = ">={{ min_python_version }}"
 dynamic = ["version", "readme"]
-{%- if dependencies %}
-dependencies = {{ dependencies }}
-{%- else %}
 dependencies = []
-{%- endif %}
 
 [tool.setuptools.dynamic]
 version = {attr = "{{ module }}.__version__"}
@@ -680,11 +593,7 @@ license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">={{ min_python_version }}"
 dynamic = ["version"]
-{%- if dependencies %}
-dependencies = {{ dependencies }}
-{%- else %}
 dependencies = []
-{%- endif %}
 
 [dependency-groups]
 dev = {{ dev_dependencies }}
@@ -710,11 +619,7 @@ license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">={{ min_python_version }}"
 dynamic = ["version"]
-{%- if dependencies %}
-dependencies = {{ dependencies }}
-{%- else %}
 dependencies = []
-{%- endif %}
 
 [tool.pixi.project]
 channels = ["conda-forge", "bioconda"]
@@ -814,7 +719,6 @@ ignore=[
         creator_email => project_info.creator_email,
         license => license_text,
         min_python_version => project_info.min_python_version,
-        dependencies => dependencies,
         dev_dependencies => build_latest_dev_dependencies(project_info)?,
         max_line_length => project_info.max_line_length,
         module => module,
@@ -1391,8 +1295,6 @@ mod tests {
             use_multi_os_ci: true,
             include_docs: false,
             docs_info: None,
-            extra_python_packages: None,
-            extra_python_dev_packages: None,
             download_latest_packages: false,
             project_root_dir: Some(tempdir().unwrap().path().to_path_buf()),
         }
@@ -1475,77 +1377,6 @@ mod tests {
 
         insta::with_settings!({filters => vec![
             (r#""\d+\.\d+\.\d+"#, "\"1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_poetry_pyproject_toml_application_with_python_extras() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
-        project_info.is_application = true;
-        project_info.extra_python_packages = Some(vec![
-            "fastapi@0.115.0".to_string(),
-            "camel-converter@4.0.0".to_string(),
-        ]);
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r#""\d+\.\d+\.\d+"#, "\"1.0.0"),
-            (r#"">=\d+\.\d+\.\d+"#, "\">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_poetry_pyproject_toml_lib_with_python_extras() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
-        project_info.is_application = false;
-        project_info.extra_python_packages = Some(vec![
-            "fastapi@0.115.0".to_string(),
-            "camel-converter@4.0.0".to_string(),
-        ]);
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r#""\d+\.\d+\.\d+"#, "\"1.0.0"),
-            (r#"">=\d+\.\d+\.\d+"#, "\">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_poetry_pyproject_toml_with_python_dev_extras() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
-        project_info.extra_python_dev_packages = Some(vec![
-            "pytest-xdist@3.6.1".to_string(),
-            "types-ujson@5.10.0.20240515".to_string(),
-        ]);
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r#""\d+\.\d+\.\d+"#, "\"1.0.0"),
-            (r#"">=\d+\.\d+\.\d+"#, "\">=1.0.0"),
         ]}, { assert_yaml_snapshot!(content)});
     }
 
@@ -1634,77 +1465,6 @@ mod tests {
     }
 
     #[test]
-    fn test_save_pyproject_toml_file_pyo3_application_with_python_extras() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Maturin;
-        project_info.is_application = true;
-        project_info.extra_python_packages = Some(vec![
-            "fastapi@0.115.0".to_string(),
-            "camel-converter@4.0.0".to_string(),
-        ]);
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_pyproject_toml_file_pyo3_lib_with_python_extras() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Maturin;
-        project_info.is_application = false;
-        project_info.extra_python_packages = Some(vec![
-            "fastapi@0.115.0".to_string(),
-            "camel-converter@4.0.0".to_string(),
-        ]);
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_pyo3_pyproject_toml_with_python_dev_extras() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Maturin;
-        project_info.extra_python_dev_packages = Some(vec![
-            "pytest-xdist@3.6.1".to_string(),
-            "types-ujson@5.10.0.20240515".to_string(),
-        ]);
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
     fn test_save_pyproject_toml_file_apache_pyo3() {
         let mut project_info = project_info_dummy();
         project_info.license = LicenseType::Apache2;
@@ -1765,74 +1525,6 @@ mod tests {
             (r"==\d+\.\d+\.\d+", "==1.0.0"),
             (r">=\d+\.\d+\.\d+", ">=1.0.0"),
         ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_pyproject_toml_file_setuptools_application_with_python_extras() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Setuptools;
-        project_info.is_application = true;
-        project_info.extra_python_packages = Some(vec![
-            "fastapi@0.115.0".to_string(),
-            "camel-converter@4.0.0".to_string(),
-        ]);
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_pyproject_toml_file_setuptools_lib_with_python_extras() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Setuptools;
-        project_info.is_application = false;
-        project_info.extra_python_packages = Some(vec![
-            "fastapi@0.115.0".to_string(),
-            "camel-converter@4.0.0".to_string(),
-        ]);
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_setuptools_pyproject_toml_with_python_dev_extras() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Setuptools;
-        project_info.extra_python_dev_packages = Some(vec![
-            "pytest-xdist@3.6.1".to_string(),
-            "types-ujson@5.10.0.20240515".to_string(),
-        ]);
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        assert_yaml_snapshot!(content);
     }
 
     #[test]
@@ -1920,77 +1612,6 @@ mod tests {
     }
 
     #[test]
-    fn test_save_pyproject_toml_file_uv_application_with_python_extras() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Uv;
-        project_info.is_application = true;
-        project_info.extra_python_packages = Some(vec![
-            "fastapi@0.115.0".to_string(),
-            "camel-converter@4.0.0".to_string(),
-        ]);
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_pyproject_toml_file_uv_lib_with_python_extras() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Uv;
-        project_info.is_application = false;
-        project_info.extra_python_packages = Some(vec![
-            "fastapi@0.115.0".to_string(),
-            "camel-converter@4.0.0".to_string(),
-        ]);
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_uv_pyproject_toml_with_python_dev_extras() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Uv;
-        project_info.extra_python_dev_packages = Some(vec![
-            "pytest-xdist@3.6.1".to_string(),
-            "types-ujson@5.10.0.20240515".to_string(),
-        ]);
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
     fn test_save_uv_pyproject_toml_file_apache_application() {
         let mut project_info = project_info_dummy();
         project_info.license = LicenseType::Apache2;
@@ -2059,77 +1680,6 @@ mod tests {
         project_info.license = LicenseType::Mit;
         project_info.project_manager = ProjectManager::Pixi;
         project_info.is_application = true;
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_pyproject_toml_file_pixi_application_with_python_extras() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Pixi;
-        project_info.is_application = true;
-        project_info.extra_python_packages = Some(vec![
-            "fastapi@0.115.0".to_string(),
-            "camel-converter@4.0.0".to_string(),
-        ]);
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_pyproject_toml_file_pixi_lib_with_python_extras() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Pixi;
-        project_info.is_application = false;
-        project_info.extra_python_packages = Some(vec![
-            "fastapi@0.115.0".to_string(),
-            "camel-converter@4.0.0".to_string(),
-        ]);
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_pixi_pyproject_toml_with_python_dev_extras() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Pixi;
-        project_info.extra_python_dev_packages = Some(vec![
-            "pytest-xdist@3.6.1".to_string(),
-            "types-ujson@5.10.0.20240515".to_string(),
-        ]);
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("pyproject.toml");
@@ -2267,29 +1817,6 @@ mod tests {
     }
 
     #[test]
-    fn test_save_pyo3_dev_requirements_extras_file() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Maturin;
-        project_info.extra_python_dev_packages = Some(vec![
-            "pytest-xdist@3.6.1".to_string(),
-            "types-ujson@5.10.0.20240515".to_string(),
-        ]);
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("requirements-dev.txt");
-        save_dev_requirements(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
     fn test_save_setuptools_dev_requirements_application_file() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
@@ -2316,29 +1843,6 @@ mod tests {
         project_info.project_manager = ProjectManager::Maturin;
         project_info.pyo3_python_manager = Some(Pyo3PythonManager::Setuptools);
         project_info.is_application = false;
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("requirements-dev.txt");
-        save_dev_requirements(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_setuptools_dev_requirements_extras_file() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Setuptools;
-        project_info.extra_python_dev_packages = Some(vec![
-            "pytest-xdist@3.6.1".to_string(),
-            "types-ujson@5.10.0.20240515".to_string(),
-        ]);
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("requirements-dev.txt");
