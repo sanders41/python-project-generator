@@ -66,8 +66,12 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.7.5
-      - name: Install uv
+      - name: Install uv on Linux and Mac
+        if: runner.os != 'Windows'
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install uv on Windows
+        if: runner.os == 'Windows'
+        run: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -104,8 +108,12 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.7.5
-      - name: Install uv
+      - name: Install uv on Linux and Mac
+        if: runner.os != 'Windows'
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install uv on Windows
+        if: runner.os == 'Windows'
+        run: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -225,8 +233,12 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.7.5
-      - name: Install uv
+      - name: Install uv on Linux and Mac
+        if: runner.os != 'Windows'
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install uv on Windows
+        if: runner.os == 'Windows'
+        run: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -270,8 +282,12 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.7.5
-      - name: Install uv
+      - name: Install uv on Linux and Mac
+        if: runner.os != 'Windows'
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install uv on Windows
+        if: runner.os == 'Windows'
+        run: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
