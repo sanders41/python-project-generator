@@ -91,12 +91,6 @@ $use_multi_os_ci
 EOF
 fi
 
-status=$?
-if [ $status -ne 0 ]; then
-  echo "Error: python-project create failed with status $status."
-  exit 1
-fi
-
 if [ ! -d $project_slug ]; then
   echo "Directory not created"
   exit 1
