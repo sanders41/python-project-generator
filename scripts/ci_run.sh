@@ -94,4 +94,6 @@ fi
 if [ ! -d $project_slug ]; then
   echo "Directory not created"
   exit 1
+else
+  echo "$project_slug directory corrected"
 fi
