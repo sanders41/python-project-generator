@@ -25,6 +25,10 @@ jobs:
             artifact_name: python-project
             asset_name: python-project-generator-macos-aarch64
             target: aarch64-apple-darwin
+          - os: windows-latest
+            artifact_name: python-project.exe
+            asset_name: python-project-generator-windows-amd64.exe
+            target: x86_64-pc-windows-msvc
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust
