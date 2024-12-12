@@ -39,7 +39,11 @@ jobs:
         run: cargo fmt --all -- --check
   test:
     name: Tests
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust
@@ -62,8 +66,12 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.7.5
-      - name: Install uv
+      - name: Install uv on Linux and Mac
+        if: runner.os != 'Windows'
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install uv on Windows
+        if: runner.os == 'Windows'
+        run: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -71,8 +79,7 @@ jobs:
       - name: Build package
         run: cargo build --release
       - name: Run creation
-        run: |
-          ./scripts/ci_run.sh ${{ matrix.project_type }} 1
+        run: ./scripts/ci_run.sh ${{ matrix.project_type }} 1
       - name: Install Dependencies
         working-directory: ${{ env.WORKING_DIR }}
         run: |
@@ -92,7 +99,7 @@ jobs:
       fail-fast: false
       matrix:
         project_type: ["application", "lib"]
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -101,8 +108,12 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.7.5
-      - name: Install uv
+      - name: Install uv on Linux and Mac
+        if: runner.os != 'Windows'
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install uv on Windows
+        if: runner.os == 'Windows'
+        run: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -110,8 +121,8 @@ jobs:
       - name: Build package
         run: cargo build --release
       - name: Run creation
-        run: |
-          ./scripts/ci_run.sh ${{ matrix.project_type }} 1
+        run: ./scripts/ci_run.sh ${{ matrix.project_type }} 1
+        shell: bash
       - name: Install Dependencies
         working-directory: ${{ env.WORKING_DIR }}
         run: |
@@ -153,8 +164,7 @@ jobs:
       - name: Build package
         run: cargo build --release
       - name: Run creation
-        run: |
-          ./scripts/ci_run.sh ${{ matrix.project_type }} 2
+        run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
       - name: Install Dependencies
         working-directory: ${{ env.WORKING_DIR }}
         run: poetry install
@@ -172,7 +182,7 @@ jobs:
       fail-fast: false
       matrix:
         project_type: ["application", "lib"]
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -194,8 +204,8 @@ jobs:
       - name: Build package
         run: cargo build --release
       - name: Run creation
-        run: |
-          ./scripts/ci_run.sh ${{ matrix.project_type }} 2
+        run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
+        shell: bash
       - name: Install Dependencies
         working-directory: ${{ env.WORKING_DIR }}
         run: poetry install
@@ -223,8 +233,12 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.7.5
-      - name: Install uv
+      - name: Install uv on Linux and Mac
+        if: runner.os != 'Windows'
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install uv on Windows
+        if: runner.os == 'Windows'
+        run: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -259,7 +273,7 @@ jobs:
       fail-fast: false
       matrix:
         project_type: ["application", "lib"]
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -268,8 +282,12 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.7.5
-      - name: Install uv
+      - name: Install uv on Linux and Mac
+        if: runner.os != 'Windows'
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install uv on Windows
+        if: runner.os == 'Windows'
+        run: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -278,6 +296,7 @@ jobs:
         run: cargo build --release
       - name: Run creation
         run: ./scripts/ci_run.sh ${{ matrix.project_type }} 3
+        shell: bash
       - name: Install Dependencies
         working-directory: ${{ env.WORKING_DIR }}
         run: |
@@ -334,7 +353,7 @@ jobs:
       fail-fast: false
       matrix:
         project_type: ["application", "lib"]
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -350,8 +369,8 @@ jobs:
       - name: Build package
         run: cargo build --release
       - name: Run creation
-        run: |
-          ./scripts/ci_run.sh ${{ matrix.project_type }} 4
+        run: ./scripts/ci_run.sh ${{ matrix.project_type }} 4
+        shell: bash
       - name: Install Dependencies
         working-directory: ${{ env.WORKING_DIR }}
         run: |
@@ -383,8 +402,8 @@ jobs:
       - name: Build package
         run: cargo build --release
       - name: Run creation
-        run: |
-          ./scripts/ci_run.sh ${{ matrix.project_type }} 5
+        run: ./scripts/ci_run.sh ${{ matrix.project_type }} 5
+        shell: bash
       - name: Install Pixi
         uses: prefix-dev/setup-pixi@v0.8.1
         with:
@@ -407,7 +426,7 @@ jobs:
       fail-fast: false
       matrix:
         project_type: ["application", "lib"]
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -419,8 +438,8 @@ jobs:
       - name: Build package
         run: cargo build --release
       - name: Run creation
-        run: |
-          ./scripts/ci_run.sh ${{ matrix.project_type }} 5
+        run: ./scripts/ci_run.sh ${{ matrix.project_type }} 5
+        shell: bash
       - name: Install Pixi
         uses: prefix-dev/setup-pixi@v0.8.1
         with:
