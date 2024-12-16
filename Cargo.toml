@@ -19,7 +19,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0.94"
 clap = { version = "4.5.22", features = ["color", "suggestions", "derive"] }
-colored = "2.0.4"
+colored = "2.2.0"
 dirs = "5.0.1"
 exponential-backoff = "2.0.0"
 indicatif = "0.17.9"
