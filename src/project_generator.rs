@@ -498,6 +498,9 @@ module-name = "{{ module }}._{{ module }}"
 binding = "pyo3"
 features = ["pyo3/extension-module"]
 
+[tool.hatch.version]
+path = "{{ module }}/_version.py"
+
 "#
                     .to_string(),
                     Pyo3PythonManager::Setuptools => r#"[build-system]
@@ -512,6 +515,7 @@ authors = [{name = "{{ creator }}", email =  "{{ creator_email }}"}]
 license = "{{ license }}"
 {% endif -%}
 readme = "README.md"
+version = {attr = "{{ module }}.__version__"}
 dependencies = []
 
 [tool.maturin]
