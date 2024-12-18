@@ -487,6 +487,7 @@ authors = [
 license = { file = "LICENSE" }
 {% endif -%}
 readme = "README.md"
+dynamic = ["version"]
 requires-python = ">={{ min_python_version }}"
 dependencies = []
 
@@ -512,6 +513,7 @@ authors = [{name = "{{ creator }}", email =  "{{ creator_email }}"}]
 license = "{{ license }}"
 {% endif -%}
 readme = "README.md"
+dynamic = ["version"]
 dependencies = []
 
 [tool.maturin]
