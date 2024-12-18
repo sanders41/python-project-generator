@@ -487,6 +487,7 @@ authors = [
 license = { file = "LICENSE" }
 {% endif -%}
 readme = "README.md"
+dynamic = ["version"]
 requires-python = ">={{ min_python_version }}"
 dependencies = []
 
@@ -497,9 +498,6 @@ dev = {{ dev_dependencies }}
 module-name = "{{ module }}._{{ module }}"
 binding = "pyo3"
 features = ["pyo3/extension-module"]
-
-[tool.hatch.version]
-path = "{{ module }}/_version.py"
 
 "#
                     .to_string(),
@@ -515,7 +513,7 @@ authors = [{name = "{{ creator }}", email =  "{{ creator_email }}"}]
 license = "{{ license }}"
 {% endif -%}
 readme = "README.md"
-version = {attr = "{{ module }}.__version__"}
+dynamic = ["version"]
 dependencies = []
 
 [tool.maturin]
