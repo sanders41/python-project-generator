@@ -256,8 +256,9 @@ mod tests {
     use crate::project_info::ProjectManager;
     use insta::assert_yaml_snapshot;
     use std::fs::create_dir_all;
-    use tempfile::tempdir;
+    use tmp_path::tmp_path;
 
+    #[tmp_path]
     fn project_info_dummy() -> ProjectInfo {
         ProjectInfo {
             project_name: "My project".to_string(),
@@ -290,7 +291,7 @@ mod tests {
             include_docs: false,
             docs_info: None,
             download_latest_packages: false,
-            project_root_dir: Some(tempdir().unwrap().path().to_path_buf()),
+            project_root_dir: Some(tmp_path),
         }
     }
 
