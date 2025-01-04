@@ -1047,6 +1047,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "time",
+ "tmp-path",
 ]
 
 [[package]]
@@ -1494,6 +1495,17 @@ checksum = "9117f5d4db391c1cf6927e7bea3db74b9a1c1add8f7eda9ffd5364f40f57b82f"
 dependencies = [
  "displaydoc",
  "zerovec",
+]
+
+[[package]]
+name = "tmp-path"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8616eb2c0c6f66cb5b2ef293ae1a6af7356b181f9f470ecb9414f41ec0a9dd49"
+dependencies = [
+ "quote",
+ "syn",
+ "tempfile",
 ]
 
 [[package]]

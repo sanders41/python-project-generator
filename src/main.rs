@@ -406,13 +406,13 @@ mod tests {
     use super::project_info::{LicenseType, ProjectManager};
     use super::*;
     use std::fs::create_dir_all;
-    use tempfile::tempdir;
+    use tmp_path::tmp_path;
 
     #[test]
+    #[tmp_path]
     fn test_delete_slug() {
-        let base = tempdir().unwrap().path().to_path_buf();
         let project_slug = "test-project";
-        let slug_dir = base.join(project_slug);
+        let slug_dir = tmp_path.join(project_slug);
         let project_info = ProjectInfo {
             project_name: "My project".to_string(),
             project_slug: project_slug.to_string(),
@@ -445,7 +445,7 @@ mod tests {
             include_docs: false,
             docs_info: None,
             download_latest_packages: false,
-            project_root_dir: Some(base),
+            project_root_dir: Some(tmp_path),
         };
         create_dir_all(&slug_dir).unwrap();
         assert!(slug_dir.exists());

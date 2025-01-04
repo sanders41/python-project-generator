@@ -445,15 +445,15 @@ fn print_config_value<T: Display>(label: &str, value: &Option<T>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempdir;
+    use tmp_path::tmp_path;
 
+    #[tmp_path]
     fn mock_config() -> Config {
-        let mut base = tempdir().unwrap().path().to_path_buf();
-        base.push("python-project-generator");
-        let config_dir = base.clone();
+        tmp_path.push("python-project-generator");
+        let config_dir = tmp_path.clone();
         create_dir_all(&config_dir).unwrap();
-        base.push("config.json");
-        let config_file_path = base;
+        tmp_path.push("config.json");
+        let config_file_path = tmp_path;
 
         let config = Config {
             config_dir: Some(config_dir).into(),
