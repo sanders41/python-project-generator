@@ -124,7 +124,7 @@ python-project create -s
 
   Selecting yes for this option will add [pytest-asyncio](https://github.com/pytest-dev/pytest-asyncio)
   to the dev dependencies. Additionally if the project is an application the `main` function will
-  be maid async.
+  be made async.
 
 - Max Line Length
 
