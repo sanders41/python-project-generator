@@ -24,7 +24,7 @@ dirs = "5.0.1"
 exponential-backoff = "2.0.0"
 indicatif = "0.17.9"
 insta = { version = "1.42.0", features = ["filters"] }
-minijinja = "2.5.0"
+minijinja = "2.6.0"
 rayon = "1.10.0"
 reqwest = { version = "0.12.12", features = ["json", "blocking"] }
 serde = { version = "1.0.217", features = ["derive"] }
