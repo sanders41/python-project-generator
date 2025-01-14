@@ -20,7 +20,7 @@ path = "src/main.rs"
 anyhow = "1.0.95"
 clap = { version = "4.5.26", features = ["color", "suggestions", "derive"] }
 colored = "3.0.0"
-dirs = "5.0.1"
+dirs = "6.0.0"
 exponential-backoff = "2.0.0"
 indicatif = "0.17.9"
 insta = { version = "1.42.0", features = ["filters"] }
