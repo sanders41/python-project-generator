@@ -168,7 +168,7 @@ pub fn default_version(package: &PythonPackage) -> String {
     match package {
         PythonPackage::Maturin => "1.8.1".to_string(),
         PythonPackage::Mkdocs => "1.6.1".to_string(),
-        PythonPackage::MkdocsMaterial => "9.5.50".to_string(),
+        PythonPackage::MkdocsMaterial => "9.6.1".to_string(),
         PythonPackage::Mkdocstrings => "0.27.0".to_string(),
         PythonPackage::MyPy => "1.14.1".to_string(),
         PythonPackage::PreCommit => "4.1.0".to_string(),
