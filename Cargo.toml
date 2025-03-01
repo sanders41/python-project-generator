@@ -1,6 +1,6 @@
 [package]
 name = "python-project-generator"
-version = "2.0.14"
+version = "2.0.15"
 edition = "2021"
 authors = ["Paul Sanders <paul@paulsanders.dev>"]
 description = "Generates a Python project structure."
