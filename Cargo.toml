@@ -25,7 +25,7 @@ exponential-backoff = "2.0.0"
 indicatif = "0.17.11"
 minijinja = "2.8.0"
 rayon = "1.10.0"
-reqwest = { version = "0.12.13", features = ["json", "blocking"] }
+reqwest = { version = "0.12.14", features = ["json", "blocking"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 time = { version = "0.3.39", features = ["local-offset"] }
