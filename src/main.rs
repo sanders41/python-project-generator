@@ -103,7 +103,7 @@ fn main() {
                     exit(1);
                 }
             }
-            Param::ResetCreator {} => {
+            Param::ResetCreator => {
                 if let Err(e) = Config::default().reset_creator() {
                     print_error(e);
                     exit(1);
@@ -115,7 +115,7 @@ fn main() {
                     exit(1);
                 }
             }
-            Param::ResetCreatorEmail {} => {
+            Param::ResetCreatorEmail => {
                 if let Err(e) = Config::default().reset_creator_email() {
                     print_error(e);
                     exit(1);
@@ -127,7 +127,7 @@ fn main() {
                     exit(1);
                 }
             }
-            Param::ResetLicense {} => {
+            Param::ResetLicense => {
                 if let Err(e) = Config::default().reset_license() {
                     print_error(e);
                     exit(1);
@@ -139,7 +139,7 @@ fn main() {
                     exit(1);
                 }
             }
-            Param::ResetPythonVersion {} => {
+            Param::ResetPythonVersion => {
                 if let Err(e) = Config::default().reset_python_version() {
                     print_error(e);
                     exit(1);
@@ -151,7 +151,7 @@ fn main() {
                     exit(1);
                 }
             }
-            Param::ResetMinPythonVersion {} => {
+            Param::ResetMinPythonVersion => {
                 if let Err(e) = Config::default().reset_min_python_version() {
                     print_error(e);
                     exit(1);
@@ -163,7 +163,7 @@ fn main() {
                     exit(1);
                 }
             }
-            Param::ResetProjectManager {} => {
+            Param::ResetProjectManager => {
                 if let Err(e) = Config::default().reset_project_manager() {
                     print_error(e);
                     exit(1);
@@ -175,7 +175,7 @@ fn main() {
                     exit(1);
                 }
             }
-            Param::ResetPyo3PythonManager {} => {
+            Param::ResetPyo3PythonManager => {
                 if let Err(e) = Config::default().reset_pyo3_python_manager() {
                     print_error(e);
                     exit(1);
@@ -195,7 +195,7 @@ fn main() {
                     }
                 }
             },
-            Param::ResetApplicationOrLibrary {} => {
+            Param::ResetApplicationOrLibrary => {
                 if let Err(e) = Config::default().reset_is_application() {
                     print_error(e);
                     exit(1);
@@ -215,7 +215,7 @@ fn main() {
                     }
                 }
             },
-            Param::ResetIsAsyncProject {} => {
+            Param::ResetIsAsyncProject => {
                 if let Err(e) = Config::default().reset_is_async_project() {
                     print_error(e);
                     exit(1);
@@ -227,7 +227,7 @@ fn main() {
                     exit(1);
                 }
             }
-            Param::ResetGithubActionPythonTestVersions {} => {
+            Param::ResetGithubActionPythonTestVersions => {
                 if let Err(e) = Config::default().reset_github_actions_python_test_versions() {
                     print_error(e);
                     exit(1);
@@ -239,7 +239,7 @@ fn main() {
                     exit(1);
                 }
             }
-            Param::ResetMaxLineLength {} => {
+            Param::ResetMaxLineLength => {
                 if let Err(e) = Config::default().reset_max_line_length() {
                     print_error(e);
                     exit(1);
@@ -259,7 +259,7 @@ fn main() {
                     }
                 }
             },
-            Param::ResetUseDependabot {} => {
+            Param::ResetUseDependabot => {
                 if let Err(e) = Config::default().reset_use_dependabot() {
                     print_error(e);
                     exit(1);
@@ -271,7 +271,7 @@ fn main() {
                     exit(1);
                 }
             }
-            Param::ResetDependabotSchedule {} => {
+            Param::ResetDependabotSchedule => {
                 if let Err(e) = Config::default().reset_dependabot_schedule() {
                     print_error(e);
                     exit(1);
@@ -283,7 +283,7 @@ fn main() {
                     exit(1);
                 }
             }
-            Param::ResetDependabotDay {} => {
+            Param::ResetDependabotDay => {
                 if let Err(e) = Config::default().reset_dependabot_day() {
                     print_error(e);
                     exit(1);
@@ -303,7 +303,7 @@ fn main() {
                     }
                 }
             },
-            Param::ResetUseContinuousDeployment {} => {
+            Param::ResetUseContinuousDeployment => {
                 if let Err(e) = Config::default().reset_use_continuous_deployment() {
                     print_error(e);
                     exit(1);
@@ -323,7 +323,7 @@ fn main() {
                     }
                 }
             },
-            Param::ResetUseReleaseDrafter {} => {
+            Param::ResetUseReleaseDrafter => {
                 if let Err(e) = Config::default().reset_use_release_drafter() {
                     print_error(e);
                     exit(1);
@@ -343,7 +343,7 @@ fn main() {
                     }
                 }
             },
-            Param::ResetUseMultiOsCi {} => {
+            Param::ResetUseMultiOsCi => {
                 if let Err(e) = Config::default().reset_use_multi_os_ci() {
                     print_error(e);
                     exit(1);
@@ -363,7 +363,7 @@ fn main() {
                     }
                 }
             },
-            Param::ResetIncludeDocs {} => {
+            Param::ResetIncludeDocs => {
                 if let Err(e) = Config::default().reset_include_docs() {
                     print_error(e);
                     exit(1);
@@ -383,7 +383,7 @@ fn main() {
                     }
                 }
             },
-            Param::ResetDownloadLatestPackages {} => {
+            Param::ResetDownloadLatestPackages => {
                 if let Err(e) = Config::default().reset_download_latest_packages() {
                     print_error(e);
                     exit(1);
