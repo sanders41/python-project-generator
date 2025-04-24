@@ -1,6 +1,5 @@
 ---
 source: src/github_actions.rs
 expression: content
-snapshot_kind: text
 ---
-"name: Docs Publish\non:\n  release:\n    types:\n    - published\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v4\n    - name: Install uv\n      uses: astral-sh/setup-uv@v5\n      with:\n        enable-cache: true\n    - name: Set up Python\n      uses: actions/setup-python@v5\n      with:\n        python-version: \"3.12\"\n    - name: Install Dependencies\n      run: uv sync --frozen\n    - name: Deploy Docs\n      run: uv run mkdocs gh-deploy --force\n"
+"name: Docs Publish\non:\n  release:\n    types:\n    - published\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v4\n    - name: Install uv\n      uses: astral-sh/setup-uv@v6\n      with:\n        enable-cache: true\n    - name: Set up Python\n      uses: actions/setup-python@v5\n      with:\n        python-version: \"3.12\"\n    - name: Install Dependencies\n      run: uv sync --frozen\n    - name: Deploy Docs\n      run: uv run mkdocs gh-deploy --force\n"
