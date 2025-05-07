@@ -23,7 +23,7 @@ colored = "3.0.0"
 dirs = "6.0.0"
 exponential-backoff = "2.0.0"
 indicatif = "0.17.11"
-minijinja = "2.10.1"
+minijinja = "2.10.2"
 rayon = "1.10.0"
 reqwest = { version = "0.12.15", features = ["json", "blocking"] }
 serde = { version = "1.0.219", features = ["derive"] }
