@@ -1419,9 +1419,9 @@ dependencies = [
 
 [[package]]
 name = "tempfile"
-version = "3.19.1"
+version = "3.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7437ac7763b9b123ccf33c338a5cc1bac6f69b45a136c19bdd8a65e3916435bf"
+checksum = "e8a64e3985349f2441a1a9ef0b853f869006c3855f2cda6862a94d26ebb9d6a1"
 dependencies = [
  "fastrand",
  "getrandom 0.3.3",
@@ -1483,9 +1483,9 @@ dependencies = [
 
 [[package]]
 name = "tmp-path"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3b081f724d145831481704fc7d03070ad76217a8828dd959e653e01c1fe4512"
+checksum = "a626bc67f14c4647484ad5b5f1fe946349d83aa20ccd65cbf290e8ef03716d7c"
 dependencies = [
  "quote",
  "syn",
