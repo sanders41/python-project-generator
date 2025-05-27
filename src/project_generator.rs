@@ -664,6 +664,8 @@ minversion = "6.0"
 addopts = "--cov={{ module }} --cov-report term-missing --no-cov-on-fail"
 {%- if is_async_project %}
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+asyncio_default_test_loop_scope = "function"
 {%- endif %}
 
 [tool.coverage.report]
