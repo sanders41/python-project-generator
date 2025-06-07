@@ -2,4 +2,4 @@
 source: src/python_files.rs
 expression: dunder_main_content
 ---
-"from __future__ import annotations\n\nfrom my_project.main import main  #  pragma: no cover\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n"
+"from __future__ import annotations  # pragma: no cover\n\nfrom my_project.main import main  #  pragma: no cover\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n"

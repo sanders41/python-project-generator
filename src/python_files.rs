@@ -7,7 +7,7 @@ use crate::project_info::{ProjectInfo, ProjectManager};
 use crate::utils::is_python_312_or_greater;
 
 fn create_dunder_main_file(module: &str, is_async_project: bool) -> String {
-    let mut file = "from __future__ import annotations\n\n".to_string();
+    let mut file = "from __future__ import annotations  # pragma: no cover\n\n".to_string();
 
     if is_async_project {
         file.push_str("import asyncio\n\n");
@@ -139,44 +139,12 @@ fn save_pyo3_test_file(project_info: &ProjectInfo) -> Result<()> {
 fn create_project_init_file(module: &str, project_manager: &ProjectManager) -> String {
     match project_manager {
         ProjectManager::Maturin => {
-            // 118 = the letter v
-            let v_ascii: u8 = 118;
-            if let Some(first_char) = module.chars().next() {
-                if (first_char as u8) < v_ascii {
-                    format!(
-                        r#"from {module}._{module} import sum_as_string
-from {module}._version import VERSION
+            format!(
+                r#"from {module}._{module} import __version__, sum_as_string
 
-__version__ = VERSION
-
-
-__all__ = ["sum_as_string"]
+__all__ = ["__version__", "sum_as_string"]
 "#
-                    )
-                } else {
-                    format!(
-                        r#"from {module}._version import VERSION
-from {module}._{module} import sum_as_string
-
-__version__ = VERSION
-
-
-__all__ = ["sum_as_string"]
-"#
-                    )
-                }
-            } else {
-                format!(
-                    r#"from {module}._{module} import sum_as_string
-r#"from {module}._version import VERSION
-
-__version__ = VERSION
-
-
-__all__ = ["sum_as_string"]
-"#
-                )
-            }
+            )
         }
         _ => {
             format!(
@@ -210,6 +178,8 @@ fn save_project_init_file(project_info: &ProjectInfo) -> Result<()> {
 
 fn create_pyi_file() -> String {
     r#"from __future__ import annotations
+
+__version__: str
 
 def sum_as_string(a: int, b: int) -> str: ...
 "#
@@ -250,15 +220,6 @@ fn create_version_test_file(
     min_python_version: &str,
 ) -> Result<Option<String>> {
     let version_test: Option<&str> = match project_manager {
-        ProjectManager::Maturin => Some(
-            r#"def test_versions_match():
-    cargo = Path().absolute() / "Cargo.toml"
-    with open(cargo, "rb") as f:
-        data = tomllib.load(f)
-        cargo_version = data["package"]["version"]
-
-    assert VERSION == cargo_version"#,
-        ),
         ProjectManager::Poetry => Some(
             r#"def test_versions_match():
     pyproject = Path().absolute() / "pyproject.toml"
@@ -340,7 +301,9 @@ pub fn generate_python_files(project_info: &ProjectInfo) -> Result<()> {
         }
     }
 
-    if save_version_file(project_info).is_err() {
+    if project_info.project_manager != ProjectManager::Maturin
+        && save_version_file(project_info).is_err()
+    {
         bail!("Error creating version file");
     }
 
@@ -615,22 +578,6 @@ mod tests {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
         project_info.min_python_version = "3.12".to_string();
-        let base = project_info.base_dir();
-        create_dir_all(base.join("tests")).unwrap();
-        let expected_file = base.join("tests/test_version.py");
-        save_version_test_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        assert_yaml_snapshot!(content);
-    }
-
-    #[test]
-    fn test_save_version_test_file_pyo3() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Maturin;
         let base = project_info.base_dir();
         create_dir_all(base.join("tests")).unwrap();
         let expected_file = base.join("tests/test_version.py");
