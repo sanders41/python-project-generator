@@ -2,4 +2,4 @@
 source: src/python_files.rs
 expression: content
 ---
-"from my_project._my_project import sum_as_string\nfrom my_project._version import VERSION\n\n__version__ = VERSION\n\n\n__all__ = [\"sum_as_string\"]\n"
+"from my_project._my_project import __version__, sum_as_string\n\n__all__ = [\"__version__\", \"sum_as_string\"]\n"
