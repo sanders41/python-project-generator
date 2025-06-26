@@ -175,7 +175,7 @@ pub fn default_version(package: &PythonPackage) -> String {
         PythonPackage::Pytest => "8.4.1".to_string(),
         PythonPackage::PytestAsyncio => "1.0.0".to_string(),
         PythonPackage::PytestCov => "6.2.1".to_string(),
-        PythonPackage::Ruff => "0.12.0".to_string(),
+        PythonPackage::Ruff => "0.12.1".to_string(),
         PythonPackage::Tomli => "2.0.1".to_string(),
     }
 }
@@ -184,7 +184,7 @@ pub fn default_pre_commit_rev(hook: &PreCommitHook) -> String {
     match hook {
         PreCommitHook::MyPy => "v1.16.1".to_string(),
         PreCommitHook::PreCommit => "v5.0.0".to_string(),
-        PreCommitHook::Ruff => "v0.12.0".to_string(),
+        PreCommitHook::Ruff => "v0.12.1".to_string(),
     }
 }
 
@@ -197,7 +197,7 @@ pub fn pre_commit_repo(hook: &PreCommitHook) -> String {
 }
 
 fn get_latest_python_version(name: &str) -> Result<String> {
-    let url = format!("https://pypi.org/pypi/{}/json", name);
+    let url = format!("https://pypi.org/pypi/{name}/json");
     let client = reqwest::blocking::Client::new();
     let attempts = 3;
     let min = Duration::from_millis(100); // 10ms
