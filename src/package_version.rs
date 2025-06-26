@@ -197,7 +197,7 @@ pub fn pre_commit_repo(hook: &PreCommitHook) -> String {
 }
 
 fn get_latest_python_version(name: &str) -> Result<String> {
-    let url = format!("https://pypi.org/pypi/{}/json", name);
+    let url = format!("https://pypi.org/pypi/{name}/json");
     let client = reqwest::blocking::Client::new();
     let attempts = 3;
     let min = Duration::from_millis(100); // 10ms
