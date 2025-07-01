@@ -22,7 +22,7 @@ clap = { version = "4.5.40", features = ["color", "suggestions", "derive"] }
 colored = "3.0.0"
 dirs = "6.0.0"
 exponential-backoff = "2.0.0"
-indicatif = "0.17.11"
+indicatif = "0.17.12"
 minijinja = "2.10.2"
 rayon = "1.10.0"
 reqwest = { version = "0.12.20", features = ["json", "blocking"] }
