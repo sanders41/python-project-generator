@@ -1006,20 +1006,27 @@ fn create_dependabot_schedule(
 }
 
 fn create_dependabot_file(
+    project_manager: &ProjectManager,
     dependabot_schedule: &Option<DependabotSchedule>,
     dependabot_day: &Option<Day>,
 ) -> String {
     let schedule = create_dependabot_schedule(dependabot_schedule, dependabot_day);
+    let package_ecosystem = if let ProjectManager::Uv = project_manager {
+        "uv"
+    } else {
+        "pip"
+    };
+
     format!(
         r#"version: 2
 updates:
-  - package-ecosystem: pip
+  - package-ecosystem: "{package_ecosystem}"
     directory: "/"
     {schedule}
     labels:
     - skip-changelog
     - dependencies
-  - package-ecosystem: github-actions
+  - package-ecosystem: "github-actions"
     directory: '/'
     {schedule}
     labels:
@@ -1030,26 +1037,33 @@ updates:
 }
 
 fn create_dependabot_file_pyo3(
+    pyo3_python_manager: &Pyo3PythonManager,
     dependabot_schedule: &Option<DependabotSchedule>,
     dependabot_day: &Option<Day>,
 ) -> String {
     let schedule = create_dependabot_schedule(dependabot_schedule, dependabot_day);
+    let package_ecosystem = if let Pyo3PythonManager::Uv = pyo3_python_manager {
+        "uv"
+    } else {
+        "pip"
+    };
+
     format!(
         r#"version: 2
 updates:
-  - package-ecosystem: pip
+  - package-ecosystem: "{package_ecosystem}"
     directory: "/"
     {schedule}
     labels:
     - skip-changelog
     - dependencies
-  - package-ecosystem: cargo
+  - package-ecosystem: "cargo"
     directory: "/"
     {schedule}
     labels:
     - skip-changelog
     - dependencies
-  - package-ecosystem: github-actions
+  - package-ecosystem: "github-actions"
     directory: '/'
     {schedule}
     labels:
@@ -1062,11 +1076,19 @@ updates:
 pub fn save_dependabot_file(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info.base_dir().join(".github/dependabot.yml");
     let content = match &project_info.project_manager {
-        ProjectManager::Maturin => create_dependabot_file_pyo3(
-            &project_info.dependabot_schedule,
-            &project_info.dependabot_day,
-        ),
+        ProjectManager::Maturin => {
+            if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
+                create_dependabot_file_pyo3(
+                    pyo3_python_manager,
+                    &project_info.dependabot_schedule,
+                    &project_info.dependabot_day,
+                )
+            } else {
+                bail!("A PyO3 Python manager is required for maturin projects");
+            }
+        }
         _ => create_dependabot_file(
+            &project_info.project_manager,
             &project_info.dependabot_schedule,
             &project_info.dependabot_day,
         ),
