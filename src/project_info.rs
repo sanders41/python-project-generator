@@ -395,7 +395,7 @@ fn pyo3_python_manager_prompt(default: Option<Pyo3PythonManager>) -> Result<Pyo3
 
     if input == "1" {
         Ok(Pyo3PythonManager::Uv)
-    } else if input == "4" {
+    } else if input == "2" {
         Ok(Pyo3PythonManager::Setuptools)
     } else {
         bail!("Invalid selection");
