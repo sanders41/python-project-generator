@@ -42,7 +42,7 @@ jobs:
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ env.PYTHON_VERSION }}}}
         cache: "poetry"
@@ -69,7 +69,7 @@ jobs:
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
     - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ matrix.python-version }}}}
         cache: "poetry"
@@ -104,7 +104,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ env.PYTHON_VERSION }}}}
         cache: "pip"
@@ -127,7 +127,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ matrix.python-version }}}}
         cache: "pip"
@@ -168,7 +168,7 @@ jobs:
       with:
         enable-cache: true
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ env.PYTHON_VERSION }}}}
     - name: Install Dependencies
@@ -192,7 +192,7 @@ jobs:
       with:
         enable-cache: true
     - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ matrix.python-version }}}}
     - name: Install Dependencies
@@ -309,7 +309,7 @@ jobs:
       with:
         enable-cache: true
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ env.PYTHON_VERSION }}}}
     - name: Install Dependencies
@@ -335,7 +335,7 @@ jobs:
       with:
         enable-cache: true
     - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ matrix.python-version }}}}
     - name: Install Dependencies
@@ -387,7 +387,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ env.PYTHON_VERSION }}}}
         cache: "pip"
@@ -412,7 +412,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ matrix.python-version }}}}
         cache: "pip"
@@ -501,7 +501,7 @@ jobs:
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ env.PYTHON_VERSION }}}}
         cache: "poetry"
@@ -529,7 +529,7 @@ jobs:
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
     - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ matrix.python-version }}}}
         cache: "poetry"
@@ -564,7 +564,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ env.PYTHON_VERSION }}}}
         cache: "pip"
@@ -588,7 +588,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ matrix.python-version }}}}
         cache: "pip"
@@ -655,7 +655,7 @@ jobs:
       with:
         enable-cache: true
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ env.PYTHON_VERSION }}}}
     - name: Install Dependencies
@@ -682,7 +682,7 @@ jobs:
       with:
         enable-cache: true
     - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ matrix.python-version }}}}
     - name: Install Dependencies
@@ -734,7 +734,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ env.PYTHON_VERSION }}}}
         cache: "pip"
@@ -760,7 +760,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ matrix.python-version }}}}
         cache: "pip"
@@ -805,7 +805,7 @@ jobs:
       with:
         enable-cache: true
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ env.PYTHON_VERSION }}}}
     - name: Install Dependencies
@@ -830,7 +830,7 @@ jobs:
       with:
         enable-cache: true
     - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{{{ matrix.python-version }}}}
     - name: Install Dependencies
@@ -1106,7 +1106,7 @@ jobs:
     - name: Install Poetry
       run: pipx install poetry
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: "{python_version}"
         cache: "poetry"
@@ -1136,7 +1136,7 @@ jobs:
         target: [x86_64, x86, aarch64, armv7, s390x, ppc64le]
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "{python_version}"
       - name: Build wheels
@@ -1158,7 +1158,7 @@ jobs:
         target: [x64, x86]
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "{python_version}"
           architecture: ${{{{ matrix.target }}}}
@@ -1180,7 +1180,7 @@ jobs:
         target: [x86_64, aarch64]
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "{python_version}"
       - name: Build wheels
@@ -1198,7 +1198,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "{python_version}"
       - name: Build sdist
@@ -1221,7 +1221,7 @@ jobs:
     needs: [linux, windows, macos, sdist]
     steps:
       - uses: actions/download-artifact@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "{python_version}"
       - name: Publish to PyPI
@@ -1249,7 +1249,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: "{python_version}"
         cache: "pip"
@@ -1286,7 +1286,7 @@ jobs:
       with:
         enable-cache: true
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: "{python_version}"
     - name: Install Dependencies
@@ -1362,7 +1362,7 @@ jobs:
     - name: Install Poetry
       run: pipx install poetry
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: "{python_version}"
         cache: "poetry"
@@ -1388,7 +1388,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: "{python_version}"
         cache: "pip"
@@ -1443,7 +1443,7 @@ jobs:
       with:
         enable-cache: true
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: "{python_version}"
     - name: Install Dependencies
