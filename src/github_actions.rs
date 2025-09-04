@@ -284,8 +284,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      uses: dtolnay/rust-toolchain@stable
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo clippy
@@ -296,8 +295,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      uses: dtolnay/rust-toolchain@stable
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo fmt
@@ -368,8 +366,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      uses: dtolnay/rust-toolchain@stable
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo clippy
@@ -380,8 +377,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      uses: dtolnay/rust-toolchain@stable
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo fmt
@@ -634,8 +630,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      uses: dtolnay/rust-toolchain@stable
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo clippy
@@ -646,8 +641,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      uses: dtolnay/rust-toolchain@stable
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo fmt
@@ -719,8 +713,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      uses: dtolnay/rust-toolchain@stable
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo clippy
@@ -731,8 +724,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      uses: dtolnay/rust-toolchain@stable
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo fmt
