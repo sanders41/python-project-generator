@@ -174,7 +174,7 @@ pub fn default_version(package: &PythonPackage) -> String {
         PythonPackage::PreCommit => "4.3.0".to_string(),
         PythonPackage::Pytest => "8.4.2".to_string(),
         PythonPackage::PytestAsyncio => "1.1.0".to_string(),
-        PythonPackage::PytestCov => "6.2.1".to_string(),
+        PythonPackage::PytestCov => "6.3.0".to_string(),
         PythonPackage::Ruff => "0.12.12".to_string(),
         PythonPackage::Tomli => "2.2.1".to_string(),
     }
