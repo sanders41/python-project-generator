@@ -2,7 +2,7 @@ use std::{fs::File, io::prelude::*, path::PathBuf};
 
 use anyhow::Result;
 
-use crate::project_info::ProjectInfo;
+use crate::{project_info::ProjectInfo, utils::module_name};
 
 pub fn save_file_with_content(file_path: &PathBuf, file_content: &str) -> Result<()> {
     let mut file = File::create(file_path)?;
@@ -12,7 +12,7 @@ pub fn save_file_with_content(file_path: &PathBuf, file_content: &str) -> Result
 }
 
 pub fn save_empty_src_file(project_info: &ProjectInfo, file_name: &str) -> Result<()> {
-    let module = project_info.source_dir.replace([' ', '-'], "_");
+    let module = module_name(project_info);
     let file_path = project_info
         .base_dir()
         .join(format!("{}/{}", &module, file_name));

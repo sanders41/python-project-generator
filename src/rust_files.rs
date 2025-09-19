@@ -7,6 +7,7 @@ use crate::{
     licenses::license_str,
     package_version::{LatestVersion, RustPackageVersion},
     project_info::{LicenseType, ProjectInfo},
+    utils::module_name,
 };
 
 fn build_latest_dependencies(download_latest_packages: bool) -> String {
@@ -99,8 +100,8 @@ pub fn save_cargo_toml_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_lib_file(source_dir: &str) -> String {
-    let module = source_dir.replace([' ', '-'], "_");
+fn create_lib_file(project_info: &ProjectInfo) -> String {
+    let module = module_name(project_info);
     format!(
         r#"use pyo3::prelude::*;
 
@@ -121,7 +122,7 @@ fn _{module}(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {{
 
 pub fn save_lib_file(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info.base_dir().join("src/lib.rs");
-    let content = create_lib_file(&project_info.source_dir);
+    let content = create_lib_file(project_info);
 
     save_file_with_content(&file_path, &content)?;
 
@@ -171,6 +172,12 @@ mod tests {
             docs_info: None,
             download_latest_packages: false,
             project_root_dir: Some(tmp_path),
+
+            #[cfg(feature = "fastapi")]
+            is_fastapi_project: false,
+
+            #[cfg(feature = "fastapi")]
+            database_manager: None,
         }
     }
 

@@ -202,7 +202,10 @@ pub struct ProjectInfo {
     pub project_root_dir: Option<PathBuf>,
 
     #[cfg(feature = "fastapi")]
-    pub database_manager: DatabaseManager,
+    pub is_fastapi_project: bool,
+
+    #[cfg(feature = "fastapi")]
+    pub database_manager: Option<DatabaseManager>,
 }
 
 impl ProjectInfo {
@@ -636,6 +639,40 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         true,
         use_defaults,
     )?;
+
+    #[cfg(feature = "fastapi")]
+    let is_fastapi_project = default_or_prompt_bool(
+        "FastAPI Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+        config.is_fastapi_project,
+        false,
+        use_defaults,
+    )?;
+
+    #[cfg(feature = "fastapi")]
+    let database_manager = if is_fastapi_project {
+        if use_defaults {
+            Some(config.database_manager.unwrap_or_default())
+        } else {
+            let default = config.database_manager.unwrap_or_default();
+            Some(database_manager_prompt(Some(default))?)
+        }
+    } else {
+        None
+    };
+
+    #[cfg(feature = "fastapi")]
+    let is_async_project = if is_fastapi_project {
+        true
+    } else {
+        default_or_prompt_bool(
+            "Async Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+            config.is_async_project,
+            false,
+            use_defaults,
+        )?
+    };
+
+    #[cfg(not(feature = "fastapi"))]
     let is_async_project = default_or_prompt_bool(
         "Async Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
         config.is_async_project,
@@ -701,14 +738,6 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         use_defaults,
     )?;
 
-    #[cfg(feature = "fastapi")]
-    let database_manager = if use_defaults {
-        config.database_manager.unwrap_or_default()
-    } else {
-        let default = config.database_manager.unwrap_or_default();
-        database_manager_prompt(Some(default))?
-    };
-
     let docs_info = if include_docs {
         let site_name = string_prompt("Docs Site Name".to_string(), None)?;
         let site_description = string_prompt("Docs Site Description".to_string(), None)?;
@@ -757,6 +786,9 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         docs_info,
         download_latest_packages: false,
         project_root_dir: None,
+
+        #[cfg(feature = "fastapi")]
+        is_fastapi_project,
 
         #[cfg(feature = "fastapi")]
         database_manager,

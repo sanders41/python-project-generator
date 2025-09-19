@@ -5,7 +5,7 @@ use anyhow::{bail, Result};
 use crate::{
     file_manager::save_file_with_content,
     project_info::{ProjectInfo, ProjectManager},
-    utils::is_python_312_or_greater,
+    utils::{is_python_312_or_greater, module_name, source_path},
 };
 
 fn create_dunder_main_file(module: &str, is_async_project: bool) -> String {
@@ -68,8 +68,8 @@ if __name__ == "__main__":
 }
 
 fn save_main_files(project_info: &ProjectInfo) -> Result<()> {
-    let module = project_info.source_dir.replace([' ', '-'], "_");
-    let src = project_info.base_dir().join(&module);
+    let module = module_name(project_info);
+    let src = source_path(project_info);
     let main = src.join("main.py");
     let main_content = create_main_file(project_info.is_async_project);
 
@@ -106,7 +106,7 @@ def test_main():
 }
 
 fn save_main_test_file(project_info: &ProjectInfo) -> Result<()> {
-    let module = project_info.source_dir.replace([' ', '-'], "_");
+    let module = module_name(project_info);
     let file_path = project_info.base_dir().join("tests/test_main.py");
     let content = create_main_test_file(&module, project_info.is_async_project);
 
@@ -127,7 +127,7 @@ def test_sum_as_string():
 }
 
 fn save_pyo3_test_file(project_info: &ProjectInfo) -> Result<()> {
-    let module = project_info.source_dir.replace([' ', '-'], "_");
+    let module = module_name(project_info);
     let file_path = project_info
         .base_dir()
         .join(format!("tests/test_{}.py", &module));
@@ -167,7 +167,7 @@ fn save_test_init_file(project_info: &ProjectInfo) -> Result<()> {
 }
 
 fn save_project_init_file(project_info: &ProjectInfo) -> Result<()> {
-    let module = project_info.source_dir.replace([' ', '-'], "_");
+    let module = module_name(project_info);
     let file_path = project_info
         .base_dir()
         .join(format!("{}/__init__.py", &module));
@@ -189,7 +189,7 @@ def sum_as_string(a: int, b: int) -> str: ...
 }
 
 pub fn save_pyi_file(project_info: &ProjectInfo) -> Result<()> {
-    let module = project_info.source_dir.replace([' ', '-'], "_");
+    let module = module_name(project_info);
     let file_path = project_info
         .base_dir()
         .join(format!("{}/_{}.pyi", &module, &module));
@@ -205,7 +205,7 @@ fn create_version_file(version: &str) -> String {
 }
 
 fn save_version_file(project_info: &ProjectInfo) -> Result<()> {
-    let module = project_info.source_dir.replace([' ', '-'], "_");
+    let module = module_name(project_info);
     let file_path = project_info
         .base_dir()
         .join(format!("{}/_version.py", &module));
@@ -269,7 +269,7 @@ else:
 }
 
 fn save_version_test_file(project_info: &ProjectInfo) -> Result<()> {
-    let module = project_info.source_dir.replace([' ', '-'], "_");
+    let module = module_name(project_info);
     let file_path = project_info.base_dir().join("tests/test_version.py");
     let content = create_version_test_file(
         &module,
@@ -293,7 +293,19 @@ pub fn generate_python_files(project_info: &ProjectInfo) -> Result<()> {
         bail!("Error creating __init__.py file");
     }
 
+    #[cfg(not(feature = "fastapi"))]
     if project_info.is_application {
+        if save_main_files(project_info).is_err() {
+            bail!("Error creating main files");
+        }
+
+        if save_main_test_file(project_info).is_err() {
+            bail!("Error creating main test file");
+        }
+    }
+
+    #[cfg(feature = "fastapi")]
+    if project_info.is_application && !project_info.is_fastapi_project {
         if save_main_files(project_info).is_err() {
             bail!("Error creating main files");
         }
@@ -369,6 +381,12 @@ mod tests {
             docs_info: None,
             download_latest_packages: false,
             project_root_dir: Some(tmp_path),
+
+            #[cfg(feature = "fastapi")]
+            is_fastapi_project: false,
+
+            #[cfg(feature = "fastapi")]
+            database_manager: None,
         }
     }
 

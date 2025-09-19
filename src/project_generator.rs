@@ -18,13 +18,12 @@ use crate::{
     project_info::{ProjectInfo, ProjectManager, Pyo3PythonManager},
     python_files::generate_python_files,
     rust_files::{save_cargo_toml_file, save_lib_file},
-    utils::is_python_312_or_greater,
+    utils::{is_python_312_or_greater, module_name, source_path},
 };
 
 fn create_directories(project_info: &ProjectInfo) -> Result<()> {
-    let module = project_info.source_dir.replace([' ', '-'], "_");
     let base = project_info.base_dir();
-    let src = base.join(module);
+    let src = source_path(project_info);
     create_dir_all(src)?;
 
     let github_dir = base.join(".github/workflows");
@@ -468,7 +467,7 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
 }
 
 fn create_pyproject_toml(project_info: &ProjectInfo) -> Result<String> {
-    let module = project_info.source_dir.replace([' ', '-'], "_");
+    let module = module_name(project_info);
     let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
     let license_text = license_str(&project_info.license);
     let mut pyproject = match &project_info.project_manager {
@@ -1115,7 +1114,7 @@ fn create_pixi_justfile() -> String {
 }
 
 fn save_justfile(project_info: &ProjectInfo) -> Result<()> {
-    let module = project_info.source_dir.replace([' ', '-'], "_");
+    let module = module_name(project_info);
     let file_path = project_info.base_dir().join("justfile");
     let content = match &project_info.project_manager {
         ProjectManager::Poetry => create_poetry_justfile(&module),
@@ -1304,6 +1303,12 @@ mod tests {
             docs_info: None,
             download_latest_packages: false,
             project_root_dir: Some(tmp_path),
+
+            #[cfg(feature = "fastapi")]
+            is_fastapi_project: false,
+
+            #[cfg(feature = "fastapi")]
+            database_manager: None,
         }
     }
 

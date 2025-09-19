@@ -1,4 +1,8 @@
+use std::path::PathBuf;
+
 use anyhow::Result;
+
+use crate::project_info::ProjectInfo;
 
 pub fn is_python_312_or_greater(version: &str) -> Result<bool> {
     let mut split_version = version.split('.');
@@ -12,6 +16,15 @@ pub fn is_python_312_or_greater(version: &str) -> Result<bool> {
     } else {
         Ok(false)
     }
+}
+
+pub fn source_path(project_info: &ProjectInfo) -> PathBuf {
+    let module = module_name(project_info);
+    project_info.base_dir().join(&module)
+}
+
+pub fn module_name(project_info: &ProjectInfo) -> String {
+    project_info.source_dir.replace([' ', '-'], "_")
 }
 
 #[cfg(test)]

@@ -34,7 +34,7 @@ pub fn install_fastapi_dependencies(project_info: &ProjectInfo) -> Result<()> {
 
 fn uv_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result<()> {
     let mut dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
-    if project_info.database_manager == DatabaseManager::SqlAlchemy {
+    if project_info.database_manager == Some(DatabaseManager::SqlAlchemy) {
         dependencies.push("sqlalchemy");
         dependencies.push("alembic");
     }
@@ -68,7 +68,7 @@ fn uv_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result<()> {
 
 fn poetry_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result<()> {
     let mut dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
-    if project_info.database_manager == DatabaseManager::SqlAlchemy {
+    if project_info.database_manager == Some(DatabaseManager::SqlAlchemy) {
         dependencies.push("sqlalchemy");
         dependencies.push("alembic");
     }
@@ -113,7 +113,7 @@ fn setuptools_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result
 
     let mut dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
     let dev_dependencies = FASTAPI_BASE_DEV_DEPENDENCIES.to_vec();
-    if project_info.database_manager == DatabaseManager::SqlAlchemy {
+    if project_info.database_manager == Some(DatabaseManager::SqlAlchemy) {
         dependencies.push("sqlalchemy");
         dependencies.push("alembic");
     }
@@ -135,7 +135,7 @@ fn setuptools_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result
 
 fn pixi_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result<()> {
     let mut dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
-    if project_info.database_manager == DatabaseManager::SqlAlchemy {
+    if project_info.database_manager == Some(DatabaseManager::SqlAlchemy) {
         dependencies.push("sqlalchemy");
         dependencies.push("alembic");
     }

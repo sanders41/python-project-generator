@@ -294,6 +294,12 @@ mod tests {
             docs_info: None,
             download_latest_packages: false,
             project_root_dir: Some(tmp_path),
+
+            #[cfg(feature = "fastapi")]
+            is_fastapi_project: false,
+
+            #[cfg(feature = "fastapi")]
+            database_manager: None,
         }
     }
 

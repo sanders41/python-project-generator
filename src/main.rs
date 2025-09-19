@@ -29,7 +29,9 @@ use crate::{
 };
 
 #[cfg(feature = "fastapi")]
-use crate::fastapi::fastapi_installer::install_fastapi_dependencies;
+use crate::fastapi::{
+    fastapi_files::generate_fastapi, fastapi_installer::install_fastapi_dependencies,
+};
 
 fn create(project_info: &ProjectInfo) -> Result<()> {
     generate_project(project_info)?;
@@ -40,6 +42,9 @@ fn create(project_info: &ProjectInfo) -> Result<()> {
 
     #[cfg(feature = "fastapi")]
     install_fastapi_dependencies(project_info)?;
+
+    #[cfg(feature = "fastapi")]
+    generate_fastapi(project_info)?;
 
     Ok(())
 }
@@ -400,8 +405,40 @@ fn main() {
             }
 
             #[cfg(feature = "fastapi")]
+            Param::IsFastapiProject { value } => match value {
+                BooleanChoice::True => {
+                    if let Err(e) = Config::default().save_is_fastapi_project(true) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
+                BooleanChoice::False => {
+                    if let Err(e) = Config::default().save_is_fastapi_project(false) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
+            },
+
+            #[cfg(feature = "fastapi")]
+            Param::ResetIsFastapiProject => {
+                if let Err(e) = Config::default().reset_is_fastapi_project() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+
+            #[cfg(feature = "fastapi")]
             Param::DatabaseManager { value } => {
                 if let Err(e) = Config::default().save_database_manager(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+
+            #[cfg(feature = "fastapi")]
+            Param::ResetDatabaseManager => {
+                if let Err(e) = Config::default().reset_database_manager() {
                     print_error(e);
                     exit(1);
                 }
@@ -464,6 +501,12 @@ mod tests {
             docs_info: None,
             download_latest_packages: false,
             project_root_dir: Some(tmp_path),
+
+            #[cfg(feature = "fastapi")]
+            is_fastapi_project: false,
+
+            #[cfg(feature = "fastapi")]
+            database_manager: None,
         };
         create_dir_all(&slug_dir).unwrap();
         assert!(slug_dir.exists());

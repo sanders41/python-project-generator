@@ -171,8 +171,20 @@ pub enum Param {
     ResetDownloadLatestPackages,
 
     #[cfg(feature = "fastapi")]
+    /// Save a default value for is FastAPI project
+    IsFastapiProject { value: BooleanChoice },
+
+    #[cfg(feature = "fastapi")]
+    /// Remove the is FastAPI project value
+    ResetIsFastapiProject,
+
+    #[cfg(feature = "fastapi")]
     /// Save a default database manager
     DatabaseManager { value: DatabaseManager },
+
+    #[cfg(feature = "fastapi")]
+    /// Remove the database manager value
+    ResetDatabaseManager,
 
     /// Rerset the config to the default values
     Reset,
