@@ -16,6 +16,9 @@ license = "MIT"
 name = "python-project"
 path = "src/main.rs"
 
+[features]
+fastapi = []
+
 [dependencies]
 anyhow = "1.0.99"
 clap = { version = "4.5.47", features = ["color", "suggestions", "derive"] }

@@ -14,6 +14,9 @@ use crate::project_info::{
     Pyo3PythonManager,
 };
 
+#[cfg(feature = "fastapi")]
+use crate::project_info::DatabaseManager;
+
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Config {
     pub creator: Option<String>,
@@ -35,6 +38,9 @@ pub struct Config {
     pub use_multi_os_ci: Option<bool>,
     pub include_docs: Option<bool>,
     pub download_latest_packages: Option<bool>,
+
+    #[cfg(feature = "fastapi")]
+    pub database_manager: Option<DatabaseManager>,
 
     #[serde(skip)]
     config_dir: Rc<Option<PathBuf>>,
@@ -66,6 +72,9 @@ impl Default for Config {
             download_latest_packages: None,
             config_dir: config_dir(),
             config_file_path: config_file_path(),
+
+            #[cfg(feature = "fastapi")]
+            database_manager: None,
         }
     }
 }
@@ -99,6 +108,9 @@ impl Config {
                             download_latest_packages: config.download_latest_packages,
                             config_dir: self.config_dir.clone(),
                             config_file_path: self.config_file_path.clone(),
+
+                            #[cfg(feature = "fastapi")]
+                            database_manager: config.database_manager,
                         };
                     }
                 }
@@ -365,6 +377,12 @@ impl Config {
         *field = value;
         config.save()?;
 
+        Ok(())
+    }
+
+    #[cfg(feature = "fastapi")]
+    pub fn save_database_manager(&self, value: DatabaseManager) -> Result<()> {
+        self.handle_save_config(|config| &mut config.database_manager, Some(value))?;
         Ok(())
     }
 

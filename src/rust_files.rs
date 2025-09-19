@@ -2,10 +2,12 @@ use anyhow::Result;
 use colored::*;
 use rayon::prelude::*;
 
-use crate::file_manager::save_file_with_content;
-use crate::licenses::license_str;
-use crate::package_version::{LatestVersion, RustPackageVersion};
-use crate::project_info::{LicenseType, ProjectInfo};
+use crate::{
+    file_manager::save_file_with_content,
+    licenses::license_str,
+    package_version::{LatestVersion, RustPackageVersion},
+    project_info::{LicenseType, ProjectInfo},
+};
 
 fn build_latest_dependencies(download_latest_packages: bool) -> String {
     let mut version_string = String::new();

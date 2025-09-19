@@ -10,9 +10,10 @@ mod python_files;
 mod rust_files;
 mod utils;
 
-use std::fs::remove_dir_all;
-use std::process::exit;
-use std::time::Duration;
+#[cfg(feature = "fastapi")]
+mod fastapi;
+
+use std::{fs::remove_dir_all, process::exit, time::Duration};
 
 use anyhow::{Error, Result};
 use clap::Parser;
@@ -20,10 +21,15 @@ use cli::ApplicationOrLib;
 use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
 
-use crate::cli::{Args, BooleanChoice, Command, Param};
-use crate::config::Config;
-use crate::project_generator::generate_project;
-use crate::project_info::{get_project_info, ProjectInfo};
+use crate::{
+    cli::{Args, BooleanChoice, Command, Param},
+    config::Config,
+    project_generator::generate_project,
+    project_info::{get_project_info, ProjectInfo},
+};
+
+#[cfg(feature = "fastapi")]
+use crate::fastapi::fastapi_installer::install_fastapi_dependencies;
 
 fn create(project_info: &ProjectInfo) -> Result<()> {
     generate_project(project_info)?;
@@ -31,6 +37,9 @@ fn create(project_info: &ProjectInfo) -> Result<()> {
         .args(["init", &project_info.project_slug])
         .output()
         .expect("Failed to initialize git");
+
+    #[cfg(feature = "fastapi")]
+    install_fastapi_dependencies(project_info)?;
 
     Ok(())
 }
@@ -389,6 +398,15 @@ fn main() {
                     exit(1);
                 }
             }
+
+            #[cfg(feature = "fastapi")]
+            Param::DatabaseManager { value } => {
+                if let Err(e) = Config::default().save_database_manager(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+
             Param::Reset => {
                 if Config::reset().is_err() {
                     let message = "Error resetting config.";

@@ -2,9 +2,11 @@ use std::fs::File;
 
 use anyhow::{bail, Result};
 
-use crate::file_manager::save_file_with_content;
-use crate::project_info::{ProjectInfo, ProjectManager};
-use crate::utils::is_python_312_or_greater;
+use crate::{
+    file_manager::save_file_with_content,
+    project_info::{ProjectInfo, ProjectManager},
+    utils::is_python_312_or_greater,
+};
 
 fn create_dunder_main_file(module: &str, is_async_project: bool) -> String {
     let mut file = "from __future__ import annotations  # pragma: no cover\n\n".to_string();

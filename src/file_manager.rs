@@ -1,6 +1,4 @@
-use std::fs::File;
-use std::io::prelude::*;
-use std::path::PathBuf;
+use std::{fs::File, io::prelude::*, path::PathBuf};
 
 use anyhow::Result;
 

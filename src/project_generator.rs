@@ -5,19 +5,21 @@ use colored::*;
 use minijinja::render;
 use rayon::prelude::*;
 
-use crate::file_manager::{save_empty_src_file, save_file_with_content};
-use crate::github_actions::{
-    save_ci_testing_linux_only_file, save_ci_testing_multi_os_file, save_dependabot_file,
-    save_docs_publish_file, save_pypi_publish_file, save_release_drafter_file,
+use crate::{
+    file_manager::{save_empty_src_file, save_file_with_content},
+    github_actions::{
+        save_ci_testing_linux_only_file, save_ci_testing_multi_os_file, save_dependabot_file,
+        save_docs_publish_file, save_pypi_publish_file, save_release_drafter_file,
+    },
+    licenses::{generate_license, license_str},
+    package_version::{
+        LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackage, PythonPackageVersion,
+    },
+    project_info::{ProjectInfo, ProjectManager, Pyo3PythonManager},
+    python_files::generate_python_files,
+    rust_files::{save_cargo_toml_file, save_lib_file},
+    utils::is_python_312_or_greater,
 };
-use crate::licenses::{generate_license, license_str};
-use crate::package_version::{
-    LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackage, PythonPackageVersion,
-};
-use crate::project_info::{ProjectInfo, ProjectManager, Pyo3PythonManager};
-use crate::python_files::generate_python_files;
-use crate::rust_files::{save_cargo_toml_file, save_lib_file};
-use crate::utils::is_python_312_or_greater;
 
 fn create_directories(project_info: &ProjectInfo) -> Result<()> {
     let module = project_info.source_dir.replace([' ', '-'], "_");

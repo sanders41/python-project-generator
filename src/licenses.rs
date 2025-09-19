@@ -1,7 +1,9 @@
 use anyhow::{bail, Result};
 
-use crate::file_manager::save_file_with_content;
-use crate::project_info::{LicenseType, ProjectInfo};
+use crate::{
+    file_manager::save_file_with_content,
+    project_info::{LicenseType, ProjectInfo},
+};
 
 fn create_apache_license() -> String {
     r#"                               Apache License

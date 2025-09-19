@@ -111,6 +111,24 @@ impl fmt::Display for ProjectManager {
     }
 }
 
+#[cfg(feature = "fastapi")]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
+pub enum DatabaseManager {
+    AsyncPg,
+    #[default]
+    SqlAlchemy,
+}
+
+#[cfg(feature = "fastapi")]
+impl fmt::Display for DatabaseManager {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::AsyncPg => write!(f, "asyncpg"),
+            Self::SqlAlchemy => write!(f, "SQLAlchemy"),
+        }
+    }
+}
+
 struct Prompt {
     prompt_text: String,
     default: Option<String>,
@@ -182,6 +200,9 @@ pub struct ProjectInfo {
     pub docs_info: Option<DocsInfo>,
     pub download_latest_packages: bool,
     pub project_root_dir: Option<PathBuf>,
+
+    #[cfg(feature = "fastapi")]
+    pub database_manager: DatabaseManager,
 }
 
 impl ProjectInfo {
@@ -284,7 +305,7 @@ fn dependabot_day_prompt(default: Option<Day>) -> Result<Option<Day>> {
         None => "1".to_string(),
     };
     let prompt_text =
-        "Dependabot Day\n  1 - Monday\n  2 - Tuesday\n  3 - Wednesday\n  4 - Thursday\n  5 - Friday\n  6 - Saturday\n  7 - Sunday\n  Choose from[1, 2, 3, 4, 5, 6, 7]"
+        "Dependabot Day\n  1 - Monday\n  2 - Tuesday\n  3 - Wednesday\n  4 - Thursday\n  5 - Friday\n  6 - Saturday\n  7 - Sunday\n  Choose from [1, 2, 3, 4, 5, 6, 7]"
             .to_string();
     let prompt = Prompt {
         prompt_text,
@@ -323,7 +344,7 @@ fn dependabot_schedule_prompt(
         None => "1".to_string(),
     };
     let prompt_text =
-        "Dependabot Schedule\n  1 - Daily\n  2 - Weekly\n  3 - Monthly\n  Choose from[1, 2, 3]"
+        "Dependabot Schedule\n  1 - Daily\n  2 - Weekly\n  3 - Monthly\n  Choose from [1, 2, 3]"
             .to_string();
     let prompt = Prompt {
         prompt_text,
@@ -354,7 +375,7 @@ fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectMana
         None => "poetry".to_string(),
     };
     let prompt_text =
-        "Project Manager\n  1 - uv\n  2 - Poetry\n  3 - Maturin\n  4 - setuptools\n  5 - Pixi\n  Choose from[1, 2, 3, 4, 5]"
+        "Project Manager\n  1 - uv\n  2 - Poetry\n  3 - Maturin\n  4 - setuptools\n  5 - Pixi\n  Choose from [1, 2, 3, 4, 5]"
             .to_string();
     let prompt = Prompt {
         prompt_text,
@@ -386,7 +407,7 @@ fn pyo3_python_manager_prompt(default: Option<Pyo3PythonManager>) -> Result<Pyo3
         None => "Uv".to_string(),
     };
     let prompt_text =
-        "PyO3 Python Manager\n  1 - uv\n  2 - setuptools\n  Choose from[1, 2]".to_string();
+        "PyO3 Python Manager\n  1 - uv\n  2 - setuptools\n  Choose from [1, 2]".to_string();
     let prompt = Prompt {
         prompt_text,
         default: Some(default_str),
@@ -451,6 +472,32 @@ fn copyright_year_prompt(license: &LicenseType, default: Option<String>) -> Resu
     }
 
     Ok(input)
+}
+
+#[cfg(feature = "fastapi")]
+fn database_manager_prompt(default: Option<DatabaseManager>) -> Result<DatabaseManager> {
+    let default_str = match default {
+        Some(d) => match d {
+            DatabaseManager::AsyncPg => "1".to_string(),
+            DatabaseManager::SqlAlchemy => "2".to_string(),
+        },
+        None => "SqlAlchemy".to_string(),
+    };
+    let prompt_text =
+        "Database Manager\n  1 - asyncpg\n  2 - SQLAlchemy Choose from [1, 2]".to_string();
+    let prompt = Prompt {
+        prompt_text,
+        default: Some(default_str),
+    };
+    let input = prompt.show_prompt()?;
+
+    if input == "1" {
+        Ok(DatabaseManager::AsyncPg)
+    } else if input == "2" || input.is_empty() {
+        Ok(DatabaseManager::SqlAlchemy)
+    } else {
+        bail!("Invalid selection");
+    }
 }
 
 pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
@@ -654,6 +701,14 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         use_defaults,
     )?;
 
+    #[cfg(feature = "fastapi")]
+    let database_manager = if use_defaults {
+        config.database_manager.unwrap_or_default()
+    } else {
+        let default = config.database_manager.unwrap_or_default();
+        database_manager_prompt(Some(default))?
+    };
+
     let docs_info = if include_docs {
         let site_name = string_prompt("Docs Site Name".to_string(), None)?;
         let site_description = string_prompt("Docs Site Description".to_string(), None)?;
@@ -702,6 +757,9 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         docs_info,
         download_latest_packages: false,
         project_root_dir: None,
+
+        #[cfg(feature = "fastapi")]
+        database_manager,
     })
 }
 

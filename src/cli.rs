@@ -4,6 +4,9 @@ use crate::project_info::{
     Day, DependabotSchedule, LicenseType, ProjectManager, Pyo3PythonManager,
 };
 
+#[cfg(feature = "fastapi")]
+use crate::project_info::DatabaseManager;
+
 #[derive(Clone, Debug, ValueEnum)]
 pub enum ApplicationOrLib {
     Application,
@@ -166,6 +169,10 @@ pub enum Param {
 
     /// Remove the save download latest packages value
     ResetDownloadLatestPackages,
+
+    #[cfg(feature = "fastapi")]
+    /// Save a default database manager
+    DatabaseManager { value: DatabaseManager },
 
     /// Rerset the config to the default values
     Reset,
