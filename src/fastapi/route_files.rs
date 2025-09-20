@@ -220,7 +220,7 @@ api_router.include_router(version.router)
 pub fn save_router_file(project_info: &ProjectInfo) -> Result<()> {
     let base = &project_info.source_dir_path();
     let file_path = base.join("api/router.py");
-    let file_content = create_health_route();
+    let file_content = create_router_file();
 
     save_file_with_content(&file_path, &file_content)?;
 
