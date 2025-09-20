@@ -40,6 +40,7 @@ pub fn generate_fastapi(project_info: &ProjectInfo) -> Result<()> {
         save_deps_file,
         save_health_route,
         save_security_file,
+        save_types_file,
         save_user_models_file,
     ]
     .into_par_iter()
@@ -189,6 +190,27 @@ fn save_main_file(project_info: &ProjectInfo) -> Result<()> {
     let base = project_info.source_dir_path();
     let file_path = base.join("main.py");
     let file_content = create_main_file(project_info);
+
+    save_file_with_content(&file_path, &file_content)?;
+
+    Ok(())
+}
+
+fn create_types_file() -> String {
+    r#" from typing import Any, BinaryIO, Literal, NamedTuple
+
+import asyncpg
+
+type ActiveFilter = Literal["all", "active", "inactive"]
+type Json = dict[str, Any]
+"#
+    .to_string()
+}
+
+fn save_types_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = project_info.source_dir_path();
+    let file_path = base.join("types.py");
+    let file_content = create_types_file();
 
     save_file_with_content(&file_path, &file_content)?;
 
