@@ -197,3 +197,32 @@ pub fn save_health_route(project_info: &ProjectInfo) -> Result<()> {
 
     Ok(())
 }
+
+fn create_router_file() -> String {
+    r#"from app.api.routes import (
+    health,
+    login,
+    users,
+    version,
+)
+from app.core.utils import APIRouter
+
+api_router = APIRouter()
+api_router.include_router(health.router)
+api_router.include_router(login.router)
+api_router.include_router(users.router)
+api_router.include_router(version.router)
+
+"#
+    .to_string()
+}
+
+pub fn save_router_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = &project_info.source_dir_path();
+    let file_path = base.join("api/router.py");
+    let file_content = create_health_route();
+
+    save_file_with_content(&file_path, &file_content)?;
+
+    Ok(())
+}
