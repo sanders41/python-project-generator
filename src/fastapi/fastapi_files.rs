@@ -15,21 +15,130 @@ pub fn generate_fastapi(project_info: &ProjectInfo) -> Result<()> {
     create_directories(project_info)?;
 
     [
-        save_example_env_file,
+        save_db_file,
         save_dockercompose_file,
         save_dockercompose_override_file,
         save_dockercompose_traefik_file,
         save_dockerfileignore,
         save_dockerfile,
+        save_example_env_file,
+        save_exceptions_file,
         save_main_file,
         save_config_file,
         save_core_utils_file,
         save_deps_file,
         save_health_route,
+        save_security_file,
     ]
     .into_par_iter()
     .map(|f| f(project_info))
     .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(())
+}
+
+fn create_db_file() -> String {
+    r#"from __future__ import annotations
+
+import asyncpg
+from loguru import logger
+
+from app.core.config import settings
+from app.core.security import get_password_hash
+from app.core.utils import create_db_primary_key
+from app.exceptions import NoDbPoolError
+from app.services.db.user_services import get_user_by_email
+
+
+class Database:
+    def __init__(self, db_name: str | None = None) -> None:
+        self.db_name = db_name or settings.POSTGRES_DB
+        self.db_pool: asyncpg.Pool | None = None
+
+    async def create_pool(self, min_size: int | None = None, max_size: int | None = None) -> None:
+        min_size = min_size or settings.POSTGRES_POOL_MIN_SIZE
+        max_size = max_size or settings.POSTGRES_POOL_MAX_SIZE
+
+        self.db_pool = await asyncpg.create_pool(
+            user=settings.POSTGRES_USER,
+            password=settings.POSTGRES_PASSWORD.get_secret_value(),
+            database=self.db_name,
+            host=settings.POSTGRES_HOST,
+            port=settings.POSTGRES_PORT,
+            min_size=min_size,
+            max_size=max_size,
+            max_inactive_connection_lifetime=settings.POSTGRES_POOL_MAX_LIFETIME,
+        )
+
+    async def close_pool(self) -> None:
+        if self.db_pool:
+            await self.db_pool.close()
+
+    async def create_first_superuser(self) -> None:
+        if self.db_pool is None:  # pragma: no cover
+            logger.error("No db pool created")
+            raise NoDbPoolError("No db pool created")
+
+        db_user = await get_user_by_email(self.db_pools, email=settings.FIRST_SUPERUSER_EMAIL)
+
+        if db_user:  # pragma: no cover
+            if db_user.is_active and db_user.is_superuser:
+                logger.debug("First super user already exists, skipping.")
+                return None
+            else:
+                logger.info(
+                    f"User with email {settings.FIRST_SUPERUSER_EMAIL} found, but is not active or is not a superuser, updating."
+                )
+                update_query = """
+                UPDATE users
+                SET is_active = true, is_superuser = true
+                WHERE email = $1
+                """
+
+                async with self.db_pools.acquire() as conn:
+                    try:
+                        await conn.execute(update_query, settings.FIRST_SUPERUSER_EMAIL)
+                    except asyncpg.exceptions.UniqueViolationError:
+                        logger.info("first superuser already added, skipping")
+
+                return None
+
+        logger.debug(f"User with email {settings.FIRST_SUPERUSER_EMAIL} not found, adding")
+        query = """
+            INSERT INTO users (
+              id, email, full_name, hashed_password, is_active, is_superuser
+            )
+            VALUES ($1, $2, $3, $4, $5, $6)
+        """
+
+        hashed_password = get_password_hash(settings.FIRST_SUPERUSER_PASSWORD.get_secret_value())
+        async with self.db_pool.acquire() as conn:
+            try:
+                await conn.execute(
+                    query,
+                    create_db_primary_key(),
+                    settings.FIRST_SUPERUSER_EMAIL,
+                    settings.FIRST_SUPERUSER_NAME,
+                    hashed_password,
+                    True,
+                    True,
+                )
+            # Check this because there could be a race condition between workers where the user wasn't
+            # found by multiple workers and they all try to add it at the same time
+            except asyncpg.exceptions.UniqueViolationError:  # pragma: no cover
+                logger.info("First superuser already added, skipping")
+
+
+db = Database()
+"#.to_string()
+}
+
+fn save_db_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = &project_info.source_dir_path();
+    let file_path = base.join("core/db.py");
+    let file_content = create_db_file();
+
+    save_file_with_content(&file_path, &file_content)?;
 
     Ok(())
 }
@@ -669,6 +778,23 @@ fn save_example_env_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
+fn create_exceptions_file() -> String {
+    r#"class NoDbPoolError(Exception):
+    pass
+"#
+    .to_string()
+}
+
+fn save_exceptions_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = &project_info.source_dir_path();
+    let file_path = base.join("exceptions.py");
+    let file_content = create_exceptions_file();
+
+    save_file_with_content(&file_path, &file_content)?;
+
+    Ok(())
+}
+
 fn create_health_route() -> String {
     r#"from __future__ import annotations
 
@@ -949,6 +1075,68 @@ fn save_core_utils_file(project_info: &ProjectInfo) -> Result<()> {
     let base = project_info.source_dir_path();
     let file_path = base.join("core/utils.py");
     let file_content = create_core_utils_file();
+
+    save_file_with_content(&file_path, &file_content)?;
+
+    Ok(())
+}
+
+fn create_security_file() -> String {
+    r#"from __future__ import annotations
+
+from datetime import UTC, datetime, timedelta
+
+import jwt
+from fastapi import Request
+from pwdlib import PasswordHash
+from pwdlib.hashers.argon2 import Argon2Hasher
+
+from app.core.config import settings
+
+password_hash = PasswordHash((Argon2Hasher(),))
+
+
+ALGORITHM = "HS256"
+_ALLOWED_PATHS = {
+    f"{settings.API_V1_PREFIX}/login/access-token",
+    f"{settings.API_V1_PREFIX}/login/test-token",
+    f"{settings.API_V1_PREFIX}/users/me/password",
+    f"{settings.API_V1_PREFIX}/users/me",
+}
+
+
+def create_access_token(subject: str, is_superuser: bool, expires_delta: timedelta) -> str:
+    expire = datetime.now(UTC) + expires_delta
+    to_encode = {"exp": expire, "sub": subject, "is_superuser": is_superuser}
+    encoded_jwt = jwt.encode(
+        to_encode, key=settings.SECRET_KEY.get_secret_value(), algorithm=ALGORITHM
+    )
+    return encoded_jwt
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return password_hash.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password: str) -> str:
+    return password_hash.hash(password)
+
+
+def verify_password_changed(password_changed: bool, request: Request) -> bool:
+    if not password_changed:
+        if request.url.path not in _ALLOWED_PATHS:
+            return False
+
+    return True
+
+"#
+    .to_string()
+}
+
+fn save_security_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = project_info.source_dir_path();
+    let file_path = base.join("core/security.py");
+    let file_content = create_security_file();
 
     save_file_with_content(&file_path, &file_content)?;
 
