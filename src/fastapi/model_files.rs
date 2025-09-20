@@ -2,6 +2,36 @@ use anyhow::Result;
 
 use crate::{file_manager::save_file_with_content, project_info::ProjectInfo};
 
+fn create_token_models_file() -> String {
+    r#"from pydantic import BaseModel
+
+
+class Token(BaseModel):
+    """Don't use CamelBase here because FastAPI requires snake case vairables for the token."""
+
+    access_token: str
+    token_type: str = "bearer"
+
+
+class TokenPayload(BaseModel):
+    """Contents of the JWT token."""
+
+    sub: str | None = None
+    is_superuser: bool = False
+"#
+    .to_string()
+}
+
+pub fn save_token_models_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = &project_info.source_dir_path();
+    let file_path = base.join("models/token.py");
+    let file_content = create_token_models_file();
+
+    save_file_with_content(&file_path, &file_content)?;
+
+    Ok(())
+}
+
 fn create_user_models_file() -> String {
     r#"from __future__ import annotations
 
@@ -99,7 +129,6 @@ def _validate_password(password: str) -> str:
             "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character. They must be a minimum of 8 characters."
         )
     return password
-
 "#.to_string()
 }
 

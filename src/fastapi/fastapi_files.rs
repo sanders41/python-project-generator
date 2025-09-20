@@ -13,7 +13,7 @@ use crate::{
             save_dockercompose_file, save_dockercompose_override_file,
             save_dockercompose_traefik_file, save_dockerfile, save_dockerfileignore,
         },
-        model_files::save_user_models_file,
+        model_files::{save_token_models_file, save_user_models_file},
         route_files::{save_deps_file, save_health_route},
         service_files::save_db_user_services_file,
     },
@@ -40,6 +40,7 @@ pub fn generate_fastapi(project_info: &ProjectInfo) -> Result<()> {
         save_deps_file,
         save_health_route,
         save_security_file,
+        save_token_models_file,
         save_types_file,
         save_user_models_file,
     ]
@@ -197,9 +198,8 @@ fn save_main_file(project_info: &ProjectInfo) -> Result<()> {
 }
 
 fn create_types_file() -> String {
-    r#" from typing import Any, BinaryIO, Literal, NamedTuple
+    r#" from typing import Any, Literal
 
-import asyncpg
 
 type ActiveFilter = Literal["all", "active", "inactive"]
 type Json = dict[str, Any]
