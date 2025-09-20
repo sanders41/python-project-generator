@@ -1,8 +1,8 @@
 use anyhow::{bail, Result};
 
-use crate::file_manager::save_file_with_content;
-use crate::project_info::{
-    Day, DependabotSchedule, ProjectInfo, ProjectManager, Pyo3PythonManager,
+use crate::{
+    file_manager::save_file_with_content,
+    project_info::{Day, DependabotSchedule, ProjectInfo, ProjectManager, Pyo3PythonManager},
 };
 
 fn build_actions_python_test_versions(github_action_python_test_versions: &[String]) -> String {
@@ -1597,6 +1597,12 @@ mod tests {
             docs_info: None,
             download_latest_packages: false,
             project_root_dir: Some(tmp_path),
+
+            #[cfg(feature = "fastapi")]
+            is_fastapi_project: false,
+
+            #[cfg(feature = "fastapi")]
+            database_manager: None,
         }
     }
 

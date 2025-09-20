@@ -111,6 +111,24 @@ impl fmt::Display for ProjectManager {
     }
 }
 
+#[cfg(feature = "fastapi")]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
+pub enum DatabaseManager {
+    #[default]
+    AsyncPg,
+    SqlAlchemy,
+}
+
+#[cfg(feature = "fastapi")]
+impl fmt::Display for DatabaseManager {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::AsyncPg => write!(f, "asyncpg"),
+            Self::SqlAlchemy => write!(f, "SQLAlchemy"),
+        }
+    }
+}
+
 struct Prompt {
     prompt_text: String,
     default: Option<String>,
@@ -182,6 +200,12 @@ pub struct ProjectInfo {
     pub docs_info: Option<DocsInfo>,
     pub download_latest_packages: bool,
     pub project_root_dir: Option<PathBuf>,
+
+    #[cfg(feature = "fastapi")]
+    pub is_fastapi_project: bool,
+
+    #[cfg(feature = "fastapi")]
+    pub database_manager: Option<DatabaseManager>,
 }
 
 impl ProjectInfo {
@@ -190,6 +214,15 @@ impl ProjectInfo {
             Some(root) => PathBuf::from(&format!("{}/{}", root.display(), self.project_slug)),
             None => PathBuf::from(&self.project_slug),
         }
+    }
+
+    pub fn module_name(&self) -> String {
+        self.source_dir.replace([' ', '-'], "_")
+    }
+
+    pub fn source_dir_path(&self) -> PathBuf {
+        let base = self.base_dir();
+        base.join(&self.source_dir)
     }
 }
 
@@ -284,7 +317,7 @@ fn dependabot_day_prompt(default: Option<Day>) -> Result<Option<Day>> {
         None => "1".to_string(),
     };
     let prompt_text =
-        "Dependabot Day\n  1 - Monday\n  2 - Tuesday\n  3 - Wednesday\n  4 - Thursday\n  5 - Friday\n  6 - Saturday\n  7 - Sunday\n  Choose from[1, 2, 3, 4, 5, 6, 7]"
+        "Dependabot Day\n  1 - Monday\n  2 - Tuesday\n  3 - Wednesday\n  4 - Thursday\n  5 - Friday\n  6 - Saturday\n  7 - Sunday\n  Choose from [1, 2, 3, 4, 5, 6, 7]"
             .to_string();
     let prompt = Prompt {
         prompt_text,
@@ -323,7 +356,7 @@ fn dependabot_schedule_prompt(
         None => "1".to_string(),
     };
     let prompt_text =
-        "Dependabot Schedule\n  1 - Daily\n  2 - Weekly\n  3 - Monthly\n  Choose from[1, 2, 3]"
+        "Dependabot Schedule\n  1 - Daily\n  2 - Weekly\n  3 - Monthly\n  Choose from [1, 2, 3]"
             .to_string();
     let prompt = Prompt {
         prompt_text,
@@ -354,7 +387,7 @@ fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectMana
         None => "poetry".to_string(),
     };
     let prompt_text =
-        "Project Manager\n  1 - uv\n  2 - Poetry\n  3 - Maturin\n  4 - setuptools\n  5 - Pixi\n  Choose from[1, 2, 3, 4, 5]"
+        "Project Manager\n  1 - uv\n  2 - Poetry\n  3 - Maturin\n  4 - setuptools\n  5 - Pixi\n  Choose from [1, 2, 3, 4, 5]"
             .to_string();
     let prompt = Prompt {
         prompt_text,
@@ -386,7 +419,7 @@ fn pyo3_python_manager_prompt(default: Option<Pyo3PythonManager>) -> Result<Pyo3
         None => "Uv".to_string(),
     };
     let prompt_text =
-        "PyO3 Python Manager\n  1 - uv\n  2 - setuptools\n  Choose from[1, 2]".to_string();
+        "PyO3 Python Manager\n  1 - uv\n  2 - setuptools\n  Choose from [1, 2]".to_string();
     let prompt = Prompt {
         prompt_text,
         default: Some(default_str),
@@ -451,6 +484,32 @@ fn copyright_year_prompt(license: &LicenseType, default: Option<String>) -> Resu
     }
 
     Ok(input)
+}
+
+#[cfg(feature = "fastapi")]
+fn database_manager_prompt(default: Option<DatabaseManager>) -> Result<DatabaseManager> {
+    let default_str = match default {
+        Some(d) => match d {
+            DatabaseManager::AsyncPg => "1".to_string(),
+            DatabaseManager::SqlAlchemy => "2".to_string(),
+        },
+        None => "AsyncPg".to_string(),
+    };
+    let prompt_text =
+        "Database Manager\n  1 - asyncpg\n  2 - SQLAlchemy Choose from [1, 2]".to_string();
+    let prompt = Prompt {
+        prompt_text,
+        default: Some(default_str),
+    };
+    let input = prompt.show_prompt()?;
+
+    if input == "1" {
+        Ok(DatabaseManager::AsyncPg)
+    } else if input == "2" || input.is_empty() {
+        Ok(DatabaseManager::SqlAlchemy)
+    } else {
+        bail!("Invalid selection");
+    }
 }
 
 pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
@@ -589,6 +648,40 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         true,
         use_defaults,
     )?;
+
+    #[cfg(feature = "fastapi")]
+    let is_fastapi_project = default_or_prompt_bool(
+        "FastAPI Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+        config.is_fastapi_project,
+        false,
+        use_defaults,
+    )?;
+
+    #[cfg(feature = "fastapi")]
+    let database_manager = if is_fastapi_project {
+        if use_defaults {
+            Some(config.database_manager.unwrap_or_default())
+        } else {
+            let default = config.database_manager.unwrap_or_default();
+            Some(database_manager_prompt(Some(default))?)
+        }
+    } else {
+        None
+    };
+
+    #[cfg(feature = "fastapi")]
+    let is_async_project = if is_fastapi_project {
+        true
+    } else {
+        default_or_prompt_bool(
+            "Async Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+            config.is_async_project,
+            false,
+            use_defaults,
+        )?
+    };
+
+    #[cfg(not(feature = "fastapi"))]
     let is_async_project = default_or_prompt_bool(
         "Async Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
         config.is_async_project,
@@ -702,6 +795,12 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         docs_info,
         download_latest_packages: false,
         project_root_dir: None,
+
+        #[cfg(feature = "fastapi")]
+        is_fastapi_project,
+
+        #[cfg(feature = "fastapi")]
+        database_manager,
     })
 }
 

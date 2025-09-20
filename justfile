@@ -21,10 +21,10 @@
   just --justfile {{justfile()}} clippy
 
 @clippy:
-  cargo clippy --all-targets
+  cargo clippy --all-features
 
 @check:
-  cargo check --all-targets
+  cargo check --all-features
 
 @fmt:
   cargo fmt --all
