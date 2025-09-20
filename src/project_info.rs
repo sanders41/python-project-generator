@@ -114,8 +114,8 @@ impl fmt::Display for ProjectManager {
 #[cfg(feature = "fastapi")]
 #[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
 pub enum DatabaseManager {
-    AsyncPg,
     #[default]
+    AsyncPg,
     SqlAlchemy,
 }
 
@@ -493,7 +493,7 @@ fn database_manager_prompt(default: Option<DatabaseManager>) -> Result<DatabaseM
             DatabaseManager::AsyncPg => "1".to_string(),
             DatabaseManager::SqlAlchemy => "2".to_string(),
         },
-        None => "SqlAlchemy".to_string(),
+        None => "AsyncPg".to_string(),
     };
     let prompt_text =
         "Database Manager\n  1 - asyncpg\n  2 - SQLAlchemy Choose from [1, 2]".to_string();

@@ -627,26 +627,59 @@ fn save_init_file(path: &Path) -> Result<()> {
 }
 
 fn create_directories(project_info: &ProjectInfo) -> Result<()> {
-    let base = project_info.base_dir();
+    [
+        create_api_dir,
+        create_core_dir,
+        create_migrations_dir,
+        create_models_dir,
+        create_services_dir,
+    ]
+    .into_par_iter()
+    .map(|f| f(project_info))
+    .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(())
+}
+
+fn create_api_dir(project_info: &ProjectInfo) -> Result<()> {
     let src = &project_info.source_dir_path();
-
-    let migrations_dir = base.join("migrations");
-    create_dir_all(migrations_dir)?;
-
-    let core_dir = src.join("core");
-    create_dir_all(&core_dir)?;
-    save_init_file(&core_dir)?;
-
-    let models_dir = src.join("models");
-    create_dir_all(&models_dir)?;
-    save_init_file(&models_dir)?;
-
     let api_dir = src.join("api");
     let routes_dir = api_dir.join("routes");
     create_dir_all(&routes_dir)?;
     save_init_file(&api_dir)?;
     save_init_file(&routes_dir)?;
 
+    Ok(())
+}
+
+fn create_core_dir(project_info: &ProjectInfo) -> Result<()> {
+    let src = &project_info.source_dir_path();
+    let core_dir = src.join("core");
+    create_dir_all(&core_dir)?;
+    save_init_file(&core_dir)?;
+
+    Ok(())
+}
+
+fn create_migrations_dir(project_info: &ProjectInfo) -> Result<()> {
+    let base = project_info.base_dir();
+    let migrations_dir = base.join("migrations");
+    create_dir_all(migrations_dir)?;
+
+    Ok(())
+}
+
+fn create_models_dir(project_info: &ProjectInfo) -> Result<()> {
+    let src = &project_info.source_dir_path();
+    let models_dir = src.join("models");
+    create_dir_all(&models_dir)?;
+    save_init_file(&models_dir)?;
+
+    Ok(())
+}
+
+fn create_services_dir(project_info: &ProjectInfo) -> Result<()> {
+    let src = &project_info.source_dir_path();
     let services_dir = src.join("services");
     let services_db_dir = services_dir.join("db");
     create_dir_all(&services_db_dir)?;

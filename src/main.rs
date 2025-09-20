@@ -44,7 +44,9 @@ fn create(project_info: &ProjectInfo) -> Result<()> {
     install_fastapi_dependencies(project_info)?;
 
     #[cfg(feature = "fastapi")]
-    generate_fastapi(project_info)?;
+    if project_info.is_fastapi_project {
+        generate_fastapi(project_info)?;
+    }
 
     Ok(())
 }
