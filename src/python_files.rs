@@ -5,7 +5,7 @@ use anyhow::{bail, Result};
 use crate::{
     file_manager::save_file_with_content,
     project_info::{ProjectInfo, ProjectManager},
-    utils::{is_python_312_or_greater, module_name, source_path},
+    utils::is_python_312_or_greater,
 };
 
 fn create_dunder_main_file(module: &str, is_async_project: bool) -> String {
@@ -68,8 +68,8 @@ if __name__ == "__main__":
 }
 
 fn save_main_files(project_info: &ProjectInfo) -> Result<()> {
-    let module = module_name(project_info);
-    let src = source_path(project_info);
+    let module = project_info.module_name();
+    let src = project_info.source_dir_path();
     let main = src.join("main.py");
     let main_content = create_main_file(project_info.is_async_project);
 
@@ -106,7 +106,7 @@ def test_main():
 }
 
 fn save_main_test_file(project_info: &ProjectInfo) -> Result<()> {
-    let module = module_name(project_info);
+    let module = project_info.module_name();
     let file_path = project_info.base_dir().join("tests/test_main.py");
     let content = create_main_test_file(&module, project_info.is_async_project);
 
@@ -127,7 +127,7 @@ def test_sum_as_string():
 }
 
 fn save_pyo3_test_file(project_info: &ProjectInfo) -> Result<()> {
-    let module = module_name(project_info);
+    let module = project_info.module_name();
     let file_path = project_info
         .base_dir()
         .join(format!("tests/test_{}.py", &module));
@@ -167,7 +167,7 @@ fn save_test_init_file(project_info: &ProjectInfo) -> Result<()> {
 }
 
 fn save_project_init_file(project_info: &ProjectInfo) -> Result<()> {
-    let module = module_name(project_info);
+    let module = project_info.module_name();
     let file_path = project_info
         .base_dir()
         .join(format!("{}/__init__.py", &module));
@@ -189,7 +189,7 @@ def sum_as_string(a: int, b: int) -> str: ...
 }
 
 pub fn save_pyi_file(project_info: &ProjectInfo) -> Result<()> {
-    let module = module_name(project_info);
+    let module = project_info.module_name();
     let file_path = project_info
         .base_dir()
         .join(format!("{}/_{}.pyi", &module, &module));
@@ -205,7 +205,7 @@ fn create_version_file(version: &str) -> String {
 }
 
 fn save_version_file(project_info: &ProjectInfo) -> Result<()> {
-    let module = module_name(project_info);
+    let module = project_info.module_name();
     let file_path = project_info
         .base_dir()
         .join(format!("{}/_version.py", &module));
@@ -269,7 +269,7 @@ else:
 }
 
 fn save_version_test_file(project_info: &ProjectInfo) -> Result<()> {
-    let module = module_name(project_info);
+    let module = project_info.module_name();
     let file_path = project_info.base_dir().join("tests/test_version.py");
     let content = create_version_test_file(
         &module,

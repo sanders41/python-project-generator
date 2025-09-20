@@ -7,7 +7,6 @@ use crate::{
     licenses::license_str,
     package_version::{LatestVersion, RustPackageVersion},
     project_info::{LicenseType, ProjectInfo},
-    utils::module_name,
 };
 
 fn build_latest_dependencies(download_latest_packages: bool) -> String {
@@ -101,7 +100,7 @@ pub fn save_cargo_toml_file(project_info: &ProjectInfo) -> Result<()> {
 }
 
 fn create_lib_file(project_info: &ProjectInfo) -> String {
-    let module = module_name(project_info);
+    let module = project_info.module_name();
     format!(
         r#"use pyo3::prelude::*;
 

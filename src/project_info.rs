@@ -215,6 +215,15 @@ impl ProjectInfo {
             None => PathBuf::from(&self.project_slug),
         }
     }
+
+    pub fn module_name(&self) -> String {
+        self.source_dir.replace([' ', '-'], "_")
+    }
+
+    pub fn source_dir_path(&self) -> PathBuf {
+        let base = self.base_dir();
+        base.join(&self.source_dir)
+    }
 }
 
 /// `selected_default` is the value passed from the saved `default` values. default is used if
