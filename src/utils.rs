@@ -10,6 +10,7 @@ pub fn is_python_312_or_greater(version: &str) -> Result<bool> {
     }
 }
 
+#[cfg(feature = "fastapi")]
 pub fn is_allowed_fastapi_python_version(version: &str) -> Result<bool> {
     let version_parts = split_version(version)?;
 
@@ -54,18 +55,21 @@ mod tests {
         assert!(!result);
     }
 
+    #[cfg(feature = "fastapi")]
     #[test]
     fn test_is_allowed_fastapi_python_version() {
         let result = is_allowed_fastapi_python_version("3.11").unwrap();
         assert!(result);
     }
 
+    #[cfg(feature = "fastapi")]
     #[test]
     fn test_is_unallowed_major_fastapi_python_version() {
         let result = is_allowed_fastapi_python_version("2.11").unwrap();
         assert!(!result);
     }
 
+    #[cfg(feature = "fastapi")]
     #[test]
     fn test_is_unallowed_minor_fastapi_python_version() {
         let result = is_allowed_fastapi_python_version("3.10").unwrap();

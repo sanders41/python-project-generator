@@ -24,7 +24,7 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2.7.5
       - name: Run cargo clippy
-        run: cargo clippy --all-targets -- --deny warnings
+        run: cargo clippy --all-targets --all-features -- --deny warnings
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
