@@ -14,7 +14,10 @@ use crate::{
             save_dockercompose_traefik_file, save_dockerfile, save_dockerfileignore,
         },
         model_files::{save_token_models_file, save_user_models_file},
-        route_files::{save_deps_file, save_health_route, save_router_file},
+        route_files::{
+            save_deps_file, save_health_route, save_login_route, save_router_file,
+            save_users_route, save_version_route,
+        },
         service_files::save_db_user_services_file,
     },
     file_manager::save_file_with_content,
@@ -39,11 +42,14 @@ pub fn generate_fastapi(project_info: &ProjectInfo) -> Result<()> {
         save_core_utils_file,
         save_deps_file,
         save_health_route,
+        save_login_route,
         save_router_file,
         save_security_file,
         save_token_models_file,
         save_types_file,
         save_user_models_file,
+        save_users_route,
+        save_version_route,
     ]
     .into_par_iter()
     .map(|f| f(project_info))
@@ -132,7 +138,6 @@ from starlette.middleware.cors import CORSMiddleware
 from {module}.api.router import api_router
 from {module}.core.config import settings
 from {module}.core.db import db
-from {module}.exceptions import NoDbPoolError
 
 logger.remove()  # Remove the default logger so log level can be set
 logger.add(sys.stderr, level=settings.LOG_LEVEL)

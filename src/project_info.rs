@@ -11,6 +11,9 @@ use time::OffsetDateTime;
 
 use crate::config::Config;
 
+#[cfg(feature = "fastapi")]
+use crate::utils::is_allowed_fastapi_python_version;
+
 #[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
 pub enum DependabotSchedule {
     #[default]
@@ -562,6 +565,15 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     let default_version = "0.1.0".to_string();
     let version =
         default_or_prompt_string("Version".to_string(), Some(default_version), use_defaults)?;
+
+    #[cfg(feature = "fastapi")]
+    let is_fastapi_project = default_or_prompt_bool(
+        "FastAPI Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+        config.is_fastapi_project,
+        false,
+        use_defaults,
+    )?;
+
     let python_version_default = match config.python_version {
         Some(python) => python,
         None => "3.13".to_string(),
@@ -572,15 +584,45 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         python_version_prompt(python_version_default)?
     };
 
-    let min_python_version_default = match config.min_python_version {
-        Some(python) => python,
-        None => "3.9".to_string(),
+    #[cfg(feature = "fastapi")]
+    if is_fastapi_project && !is_allowed_fastapi_python_version(&python_version)? {
+        bail!("The minimum supported Python version for FastAPI projects is 3.11");
+    }
+
+    let min_python_version_default = {
+        #[cfg(feature = "fastapi")]
+        {
+            if is_fastapi_project {
+                match config.min_python_version {
+                    Some(python) => python,
+                    None => "3.11".to_string(),
+                }
+            } else {
+                match config.min_python_version {
+                    Some(python) => python,
+                    None => "3.9".to_string(),
+                }
+            }
+        }
+        #[cfg(not(feature = "fastapi"))]
+        {
+            match config.min_python_version {
+                Some(python) => python,
+                None => "3.9".to_string(),
+            }
+        }
     };
+
     let min_python_version = if use_defaults {
         min_python_version_default
     } else {
         python_min_version_prompt(min_python_version_default)?
     };
+
+    #[cfg(feature = "fastapi")]
+    if is_fastapi_project && !is_allowed_fastapi_python_version(&min_python_version)? {
+        bail!("The minimum supported Python version for FastAPI projects is 3.11");
+    }
 
     let github_actions_python_test_version_default =
         match config.github_actions_python_test_versions {
@@ -602,13 +644,29 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
                         versions
                     }
                 } else {
-                    vec![
-                        "3.9".to_string(),
-                        "3.10".to_string(),
-                        "3.11".to_string(),
-                        "3.12".to_string(),
-                        "3.13".to_string(),
-                    ]
+                    #[cfg(feature = "fastapi")]
+                    if is_fastapi_project {
+                        vec!["3.11".to_string(), "3.12".to_string(), "3.13".to_string()]
+                    } else {
+                        vec![
+                            "3.9".to_string(),
+                            "3.10".to_string(),
+                            "3.11".to_string(),
+                            "3.12".to_string(),
+                            "3.13".to_string(),
+                        ]
+                    }
+
+                    #[cfg(not(feature = "fastapi"))]
+                    {
+                        vec![
+                            "3.9".to_string(),
+                            "3.10".to_string(),
+                            "3.11".to_string(),
+                            "3.12".to_string(),
+                            "3.13".to_string(),
+                        ]
+                    }
                 }
             }
         };
@@ -650,14 +708,6 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     )?;
 
     #[cfg(feature = "fastapi")]
-    let is_fastapi_project = default_or_prompt_bool(
-        "FastAPI Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
-        config.is_fastapi_project,
-        false,
-        use_defaults,
-    )?;
-
-    #[cfg(feature = "fastapi")]
     let database_manager = if is_fastapi_project {
         if use_defaults {
             Some(config.database_manager.unwrap_or_default())
@@ -669,25 +719,30 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         None
     };
 
-    #[cfg(feature = "fastapi")]
-    let is_async_project = if is_fastapi_project {
-        true
-    } else {
-        default_or_prompt_bool(
-            "Async Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
-            config.is_async_project,
-            false,
-            use_defaults,
-        )?
+    let is_async_project = {
+        #[cfg(feature = "fastapi")]
+        {
+            if is_fastapi_project {
+                true
+            } else {
+                default_or_prompt_bool(
+                    "Async Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+                    config.is_async_project,
+                    false,
+                    use_defaults,
+                )?
+            }
+        }
+        #[cfg(not(feature = "fastapi"))]
+        {
+            default_or_prompt_bool(
+                "Async Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+                config.is_async_project,
+                false,
+                use_defaults,
+            )?
+        }
     };
-
-    #[cfg(not(feature = "fastapi"))]
-    let is_async_project = default_or_prompt_bool(
-        "Async Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
-        config.is_async_project,
-        false,
-        use_defaults,
-    )?;
 
     let max_line_length = if use_defaults {
         config.max_line_length.unwrap_or(100)

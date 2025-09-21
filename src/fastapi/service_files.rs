@@ -75,13 +75,13 @@ async def create_user(*, pool: Pool, user: UserCreate) -> UserInDb:
     return UserInDb(**dict(result))
 
 
-async def delete_user(*, pool: Pool, db_id: str) -> None:
+async def delete_user(*, pool: Pool, user_id: str) -> None:
     query = "DELETE FROM users WHERE id = $1"
     async with pool.acquire() as conn:
-        result = await conn.execute(query, db_id)
+        result = await conn.execute(query, user_id)
 
     if result == "DELETE 0":
-        raise UserNotFoundError(f"Study with id {db_id} not found")
+        raise UserNotFoundError(f"Study with id {user_id} not found")
 
 
 async def get_users(
@@ -158,7 +158,7 @@ async def get_user_public_by_email(
     return UserPublic(**user.model_dump())
 
 
-async def get_user_by_id(*, pool: Pool, db_id: str) -> UserInDb | None:
+async def get_user_by_id(*, pool: Pool, user_id: str) -> UserInDb | None:
     query = """
     SELECT id,
         email,
@@ -172,7 +172,7 @@ async def get_user_by_id(*, pool: Pool, db_id: str) -> UserInDb | None:
     """
 
     async with pool.acquire() as conn:
-        db_user = await conn.fetchrow(query, db_id)
+        db_user = await conn.fetchrow(query, user_id)
 
     if not db_user:
         return None
@@ -183,10 +183,10 @@ async def get_user_by_id(*, pool: Pool, db_id: str) -> UserInDb | None:
 async def get_user_public_by_id(
     pool: Pool,
     *,
-    db_id: str,
+    user_id: str,
     active_filter: ActiveFilter = "all",
 ) -> UserPublic | None:
-    user = await get_user_by_id(pool=pool, db_id=user_id)
+    user = await get_user_by_id(pool=pool, user_id=user_id)
 
     if not user:
         return None
