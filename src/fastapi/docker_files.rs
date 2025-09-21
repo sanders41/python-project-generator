@@ -483,3 +483,25 @@ pub fn save_migratoin_runner_dockerfile(project_info: &ProjectInfo) -> Result<()
 
     Ok(())
 }
+
+fn create_entrypoint_script() -> String {
+    r#"#!/bin/bash
+
+CORES=$(nproc --all)
+WORKERS=$((($CORES * 2 + 1) > 8 ? 8 : ($CORES * 2 + 1)))
+
+echo Starting Granian with $WORKERS workers
+
+.venv/bin/granian ./app/main:app --host 0.0.0.0 --port 8000 --interface asgi --no-ws --workers ${WORKERS} --runtime-mode st --loop uvloop --log-level info --log --workers-lifetime 10800 --respawn-interval 30 --process-name granian-at-reporter
+"#.to_string()
+}
+
+pub fn save_entrypoint_script(project_info: &ProjectInfo) -> Result<()> {
+    let base = &project_info.base_dir();
+    let file_path = base.join("scripts/entrypoint.sh");
+    let file_content = create_entrypoint_script();
+
+    save_file_with_content(&file_path, &file_content)?;
+
+    Ok(())
+}

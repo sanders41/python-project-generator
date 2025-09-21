@@ -12,7 +12,7 @@ use crate::{
         docker_files::{
             save_dockercompose_file, save_dockercompose_override_file,
             save_dockercompose_traefik_file, save_dockerfile, save_dockerfileignore,
-            save_migratoin_runner_dockerfile,
+            save_entrypoint_script, save_migratoin_runner_dockerfile,
         },
         migration_files::save_initial_migrations,
         model_files::{save_token_models_file, save_user_models_file},
@@ -37,6 +37,7 @@ pub fn generate_fastapi(project_info: &ProjectInfo) -> Result<()> {
         save_dockercompose_traefik_file,
         save_dockerfileignore,
         save_dockerfile,
+        save_entrypoint_script,
         save_example_env_file,
         save_exceptions_file,
         save_initial_migrations,
@@ -234,6 +235,7 @@ fn create_directories(project_info: &ProjectInfo) -> Result<()> {
         create_migration_runner_dir,
         create_migrations_dir,
         create_models_dir,
+        create_scripts_dir,
         create_services_dir,
     ]
     .into_par_iter()
@@ -284,6 +286,14 @@ fn create_models_dir(project_info: &ProjectInfo) -> Result<()> {
     let models_dir = src.join("models");
     create_dir_all(&models_dir)?;
     save_init_file(&models_dir)?;
+
+    Ok(())
+}
+
+fn create_scripts_dir(project_info: &ProjectInfo) -> Result<()> {
+    let src = &project_info.base_dir();
+    let models_dir = src.join("scripts");
+    create_dir_all(&models_dir)?;
 
     Ok(())
 }
