@@ -2,6 +2,57 @@ use anyhow::Result;
 
 use crate::{file_manager::save_file_with_content, project_info::ProjectInfo};
 
+fn create_cache_file(project_info: &ProjectInfo) -> String {
+    let module = &project_info.module_name();
+
+    format!(
+        r#"from __future__ import annotations
+
+import valkey.asyncio as valkey
+
+ from {module}.core.config import settings
+
+
+class Cache:
+    def __init__(self) -> None:
+        self._pool: valkey.ConnectionPool | None = None
+        self.client: valkey.Valkey | None = None
+
+    async def create_client(self, *, db: int = 0) -> None:
+        self._pool = await self._create_pool(db)
+        self.client = valkey.Valkey.from_pool(self._pool)
+
+    async def close_client(self) -> None:
+        if self.client:
+            await self.client.aclose()
+
+        if self._pool:
+            await self._pool.aclose()
+
+    async def _create_pool(self, db: int = 0) -> valkey.ConnectionPool:
+        return valkey.ConnectionPool(
+            host=settings.VALKEY_HOST,
+            port=settings.VALKEY_PORT,
+            password=settings.VALKEY_PASSWORD.get_secret_value(),
+            db=db,
+        )
+
+
+cache = Cache()
+"#
+    )
+}
+
+pub fn save_cache_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = &project_info.source_dir_path();
+    let file_path = base.join("core/cache.py");
+    let file_content = create_cache_file(project_info);
+
+    save_file_with_content(&file_path, &file_content)?;
+
+    Ok(())
+}
+
 fn create_config_file() -> String {
     r#"from __future__ import annotations
 
@@ -162,69 +213,20 @@ pub fn save_core_utils_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_security_file() -> String {
-    r#"from __future__ import annotations
+fn create_db_file(project_info: &ProjectInfo) -> String {
+    let module = &project_info.module_name();
 
-from datetime import UTC, datetime, timedelta
-
-import jwt
-from fastapi import Request
-from pwdlib import PasswordHash
-from pwdlib.hashers.argon2 import Argon2Hasher
-
-from app.core.config import settings
-
-password_hash = PasswordHash((Argon2Hasher(),))
-
-
-ALGORITHM = "HS256"
-_ALLOWED_PATHS = {
-    f"{settings.API_V1_PREFIX}/login/access-token",
-    f"{settings.API_V1_PREFIX}/login/test-token",
-    f"{settings.API_V1_PREFIX}/users/me/password",
-    f"{settings.API_V1_PREFIX}/users/me",
-}
-
-
-def create_access_token(subject: str, is_superuser: bool, expires_delta: timedelta) -> str:
-    expire = datetime.now(UTC) + expires_delta
-    to_encode = {"exp": expire, "sub": subject, "is_superuser": is_superuser}
-    encoded_jwt = jwt.encode(
-        to_encode, key=settings.SECRET_KEY.get_secret_value(), algorithm=ALGORITHM
-    )
-    return encoded_jwt
-
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return password_hash.verify(plain_password, hashed_password)
-
-
-def get_password_hash(password: str) -> str:
-    return password_hash.hash(password)
-
-
-def verify_password_changed(password_changed: bool, request: Request) -> bool:
-    if not password_changed:
-        if request.url.path not in _ALLOWED_PATHS:
-            return False
-
-    return True
-
-"#
-    .to_string()
-}
-
-fn create_db_file() -> String {
-    r#"from __future__ import annotations
+    format!(
+        r#"from __future__ import annotations
 
 import asyncpg
 from loguru import logger
 
-from app.core.config import settings
-from app.core.security import get_password_hash
-from app.core.utils import create_db_primary_key
-from app.exceptions import NoDbPoolError
-from app.services.db.user_services import get_user_by_email
+ from {module}.core.config import settings
+ from {module}.core.security import get_password_hash
+ from {module}.core.utils import create_db_primary_key
+ from {module}.exceptions import NoDbPoolError
+ from {module}.services.db.user_services import get_user_by_email
 
 
 class Database:
@@ -264,7 +266,7 @@ class Database:
                 return None
             else:
                 logger.info(
-                    f"User with email {settings.FIRST_SUPERUSER_EMAIL} found, but is not active or is not a superuser, updating."
+                    f"User with email {{settings.FIRST_SUPERUSER_EMAIL}} found, but is not active or is not a superuser, updating."
                 )
                 update_query = """
                 UPDATE users
@@ -280,7 +282,7 @@ class Database:
 
                 return None
 
-        logger.debug(f"User with email {settings.FIRST_SUPERUSER_EMAIL} not found, adding")
+        logger.debug(f"User with email {{settings.FIRST_SUPERUSER_EMAIL}} not found, adding")
         query = """
             INSERT INTO users (
               id, email, full_name, hashed_password, is_active, is_superuser
@@ -307,23 +309,79 @@ class Database:
 
 
 db = Database()
-"#.to_string()
+"#
+    )
 }
 
 pub fn save_db_file(project_info: &ProjectInfo) -> Result<()> {
     let base = &project_info.source_dir_path();
     let file_path = base.join("core/db.py");
-    let file_content = create_db_file();
+    let file_content = create_db_file(project_info);
 
     save_file_with_content(&file_path, &file_content)?;
 
     Ok(())
 }
 
+fn create_security_file(project_info: &ProjectInfo) -> String {
+    let module = &project_info.module_name();
+
+    format!(
+        r#"from __future__ import annotations
+
+from datetime import UTC, datetime, timedelta
+
+import jwt
+from fastapi import Request
+from pwdlib import PasswordHash
+from pwdlib.hashers.argon2 import Argon2Hasher
+
+ from {module}.core.config import settings
+
+password_hash = PasswordHash((Argon2Hasher(),))
+
+
+ALGORITHM = "HS256"
+_ALLOWED_PATHS = {{
+    f"{{settings.API_V1_PREFIX}}/login/access-token",
+    f"{{settings.API_V1_PREFIX}}/login/test-token",
+    f"{{settings.API_V1_PREFIX}}/users/me/password",
+    f"{{settings.API_V1_PREFIX}}/users/me",
+}}
+
+
+def create_access_token(subject: str, is_superuser: bool, expires_delta: timedelta) -> str:
+    expire = datetime.now(UTC) + expires_delta
+    to_encode = {{"exp": expire, "sub": subject, "is_superuser": is_superuser}}
+    encoded_jwt = jwt.encode(
+        to_encode, key=settings.SECRET_KEY.get_secret_value(), algorithm=ALGORITHM
+    )
+    return encoded_jwt
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return password_hash.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password: str) -> str:
+    return password_hash.hash(password)
+
+
+def verify_password_changed(password_changed: bool, request: Request) -> bool:
+    if not password_changed:
+        if request.url.path not in _ALLOWED_PATHS:
+            return False
+
+    return True
+
+"#
+    )
+}
+
 pub fn save_security_file(project_info: &ProjectInfo) -> Result<()> {
     let base = project_info.source_dir_path();
     let file_path = base.join("core/security.py");
-    let file_content = create_security_file();
+    let file_content = create_security_file(project_info);
 
     save_file_with_content(&file_path, &file_content)?;
 

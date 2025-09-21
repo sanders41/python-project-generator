@@ -16,6 +16,7 @@ const FASTAPI_BASE_DEPENDENCIES: &[&str] = &[
     "pyjwt",
     "python-multipart",
     "uvloop",
+    "valkey",
 ];
 
 const FASTAPI_BASE_DEV_DEPENDENCIES: &[&str] = &["httpx"];

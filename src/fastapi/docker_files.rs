@@ -29,12 +29,16 @@ fn create_dockercompose_file(project_info: &ProjectInfo) -> String {
       db:
         condition: service_healthy
         restart: true
+      valkey:
+        condition: service_healthy
+        restart: true
       migrations:
         condition: service_completed_successfully
     env_file:
       - .env
     environment:
       - POSTGRES_HOST=db
+      - VALKEY_HOST=valkey
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik-public-{base_name}
@@ -87,10 +91,36 @@ fn create_dockercompose_file(project_info: &ProjectInfo) -> String {
     volumes:
       - {base_name}-db-data:/var/lib/postgresql/data
 
+  valkey:
+    image: valkey/valkey:8-alpine
+    restart: unless-stopped
+    container_name: {base_name}-valkey
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "valkey-cli",
+          "--no-auth-warning",
+          "-a",
+          "${{VALKEY_PASSWORD?Variable not set}}",
+          "ping",
+        ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    expose:
+      - 6379
+    env_file:
+      - .env
+    command: valkey-server --requirepass ${{VALKEY_PASSWORD?Variable not set}}
+    volumes:
+      - {base_name}-valkey-data:/var/lib/valkey/data
+
   migrations:
     image: {base_name}-migrations:latest
     build:
-      context: ./migration-runner
+      context: ./migration_runner
     container_name: {base_name}-migrations
     env_file:
       - .env
@@ -106,6 +136,7 @@ fn create_dockercompose_file(project_info: &ProjectInfo) -> String {
 
 volumes:
   {base_name}-db-data:
+  {base_name}-valkey-data:
 
 networks:
   traefik-public-{base_name}:
@@ -182,10 +213,13 @@ fn create_dockercompose_override_file(project_info: &ProjectInfo) -> String {
       - traefik-public-{base_name}
       - default
     build:
-      context: ./backend
+      context: .
     container_name: {base_name}-backend
     depends_on:
       db:
+        condition: service_healthy
+        restart: true
+      valkey:
         condition: service_healthy
         restart: true
     env_file:
@@ -196,6 +230,8 @@ fn create_dockercompose_override_file(project_info: &ProjectInfo) -> String {
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=test_password
       - POSTGRES_DB={db_name}
+      - VALKEY_HOST=valkey
+      - VALKEY_PASSWORD=test_password
       - ENVIRONMENT=local
     labels:
       - traefik.enable=true
@@ -220,6 +256,28 @@ fn create_dockercompose_override_file(project_info: &ProjectInfo) -> String {
       timeout: 10s
     ports:
       - "5432:5432"
+
+  valkey:
+    restart: "no"
+    # By default only 16 databases are allowed. Bumping this just for testing so that tests can
+    # run in parallel without impacting each other
+    command: valkey-server --requirepass test_password --databases 100
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "valkey-cli",
+          "--no-auth-warning",
+          "-a",
+          "${{VALKEY_PASSWORD?Variable not set}}",
+          "ping",
+        ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    ports:
+      - 6379:6379
 
 networks:
   traefik-public-{base_name}:
@@ -354,6 +412,14 @@ ENV \
   UV_PYTHON_INSTALL_DIR=/opt/uv/python \
   UV_LINK_MODE=copy
 
+RUN : \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  curl \
+  ca-certificates \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
 # Install uv
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
 
@@ -390,7 +456,7 @@ ENV \
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/{source_dir} /app/{source_dir}
 COPY --from=builder /opt/uv/python /opt/uv/python
-COPY ./scripts/entrypoint.sh /{source_dir}
+COPY ./scripts/entrypoint.sh /app
 
 RUN chmod +x /app/entrypoint.sh
 

@@ -8,7 +8,10 @@ use rayon::prelude::*;
 
 use crate::{
     fastapi::{
-        core_files::{save_config_file, save_core_utils_file, save_db_file, save_security_file},
+        core_files::{
+            save_cache_file, save_config_file, save_core_utils_file, save_db_file,
+            save_security_file,
+        },
         docker_files::{
             save_dockercompose_file, save_dockercompose_override_file,
             save_dockercompose_traefik_file, save_dockerfile, save_dockerfileignore,
@@ -20,7 +23,7 @@ use crate::{
             save_deps_file, save_health_route, save_login_route, save_router_file,
             save_users_route, save_version_route,
         },
-        service_files::save_db_user_services_file,
+        service_files::{save_cache_user_services_file, save_db_user_services_file},
     },
     file_manager::save_file_with_content,
     project_info::{DatabaseManager, ProjectInfo},
@@ -30,6 +33,8 @@ pub fn generate_fastapi(project_info: &ProjectInfo) -> Result<()> {
     create_directories(project_info)?;
 
     [
+        save_cache_file,
+        save_cache_user_services_file,
         save_db_file,
         save_db_user_services_file,
         save_dockercompose_file,
@@ -73,6 +78,8 @@ POSTGRES_PORT=5432
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=some_password
 POSTGRES_DB=changethis
+VALKEY_HOST=127.0.0.1
+VALKEY_PASSWORD=test_password
 STACK_NAME=changethis
 DOMAIN=127.0.0.1
 "#
@@ -141,6 +148,7 @@ from loguru import logger
 from starlette.middleware.cors import CORSMiddleware
 
 from {module}.api.router import api_router
+from {module}.core.cache import cache
 from {module}.core.config import settings
 from {module}.core.db import db
 
@@ -157,6 +165,13 @@ async def lifespan(_: FastAPI) -> AsyncGenerator:  # pragma: no cover
         logger.error(f"Error creating db connection pool: {{e}}")
         raise
 
+    logger.info("Initializing cache client")
+    try:
+        await cache.create_client()
+    except Exception as e:
+        logger.error(f"Error creating cache client: {{e}}")
+        raise
+
     logger.info("Saving first superuser")
     try:
         await db.create_first_superuser()
@@ -171,6 +186,13 @@ async def lifespan(_: FastAPI) -> AsyncGenerator:  # pragma: no cover
         await db.close_pool()
     except Exception as e:
         logger.error(f"Error closing db connection pool: {{e}}")
+        raise
+
+    logger.info("Closing cache client")
+    try:
+        await cache.close_client()
+    except Exception as e:
+        logger.error(f"Error closing cache client: {{e}}")
         raise
 
 
@@ -302,9 +324,12 @@ fn create_services_dir(project_info: &ProjectInfo) -> Result<()> {
     let src = &project_info.source_dir_path();
     let services_dir = src.join("services");
     let services_db_dir = services_dir.join("db");
+    let services_cache_dir = services_dir.join("cache");
     create_dir_all(&services_db_dir)?;
+    create_dir_all(&services_cache_dir)?;
     save_init_file(&services_dir)?;
     save_init_file(&services_db_dir)?;
+    save_init_file(&services_cache_dir)?;
 
     Ok(())
 }
