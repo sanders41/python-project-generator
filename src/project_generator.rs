@@ -659,7 +659,11 @@ disallow_untyped_defs = true
 [[tool.mypy.overrides]]
 module = ["tests.*"]
 disallow_untyped_defs = false
-
+{% if is_fastapi_project %}
+[[tool.mypy.overrides]]
+module = ["asyncpg.*"]
+ignore_missing_imports = true
+{% endif %}
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "--cov={{ module }} --cov-report term-missing --no-cov-on-fail"
@@ -731,6 +735,7 @@ ignore=[
         is_async_project => project_info.is_async_project,
         include_docs => project_info.include_docs,
         pyupgrade_version => pyupgrade_version,
+        is_fastapi_project => project_info.is_fastapi_project,
     ))
 }
 

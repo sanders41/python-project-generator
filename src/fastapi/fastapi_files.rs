@@ -18,7 +18,7 @@ use crate::{
             save_entrypoint_script, save_migratoin_runner_dockerfile,
         },
         migration_files::save_initial_migrations,
-        model_files::{save_token_models_file, save_user_models_file},
+        model_files::{save_message_model_file, save_token_models_file, save_user_models_file},
         route_files::{
             save_deps_file, save_health_route, save_login_route, save_router_file,
             save_users_route, save_version_route,
@@ -47,6 +47,7 @@ pub fn generate_fastapi(project_info: &ProjectInfo) -> Result<()> {
         save_exceptions_file,
         save_initial_migrations,
         save_main_file,
+        save_message_model_file,
         save_migratoin_runner_dockerfile,
         save_config_file,
         save_core_utils_file,
@@ -82,6 +83,7 @@ VALKEY_HOST=127.0.0.1
 VALKEY_PASSWORD=test_password
 STACK_NAME=changethis
 DOMAIN=127.0.0.1
+PRODUCTION_MODE=false
 "#
     .to_string();
 

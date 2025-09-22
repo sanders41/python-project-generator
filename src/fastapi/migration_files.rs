@@ -32,8 +32,8 @@ pub fn save_initial_migrations(project_info: &ProjectInfo) -> Result<()> {
         now.minute(),
         now.second()
     );
-    let up_file_name = format!("{migration_prefix}_init_up.sql");
-    let down_file_name = format!("{migration_prefix}_init_down.sql");
+    let up_file_name = format!("{migration_prefix}_init.up.sql");
+    let down_file_name = format!("{migration_prefix}_init.down.sql");
 
     let base = project_info.base_dir();
     let up_file_path = base.join(format!("migrations/{up_file_name}"));

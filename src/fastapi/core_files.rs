@@ -10,7 +10,7 @@ fn create_cache_file(project_info: &ProjectInfo) -> String {
 
 import valkey.asyncio as valkey
 
- from {module}.core.config import settings
+from {module}.core.config import settings
 
 
 class Cache:
@@ -53,8 +53,11 @@ pub fn save_cache_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_config_file() -> String {
-    r#"from __future__ import annotations
+fn create_config_file(project_info: &ProjectInfo) -> String {
+    let project_name = &project_info.project_name;
+
+    format!(
+        r#"from __future__ import annotations
 
 import warnings
 from typing import Annotated, Any, Literal, Self
@@ -85,6 +88,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file_encoding="utf-8", extra="ignore")
 
     API_V1_PREFIX: str = "/api/v1"
+    TITLE: str = "{project_name}"
+    PRODUCTION_MODE: bool = True
     SECRET_KEY: SecretStr
     # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
@@ -104,27 +109,28 @@ class Settings(BaseSettings):
     POSTGRES_POOL_MAX_SIZE: int = 50
     POSTGRES_POOL_ACQUIRE_TIMEOUT: int = 30
     POSTGRES_POOL_MAX_LIFETIME: int = 3600
+    VALKEY_HOST: str = "127.0.0.1"
+    VALKEY_PASSWORD: SecretStr
+    VALKEY_PORT: int = 6379
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def all_cors_origins(self) -> list[str]:
-        return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [
-            self.FRONTEND_HOST
-        ]
+        return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS]
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def server_host(self) -> str:
         # Use HTTPS for anything other than local development
         if self.ENVIRONMENT == "local":
-            return f"http://{self.DOMAIN}"
-        return f"https://{self.DOMAIN}"
+            return f"http://{{self.DOMAIN}}"
+        return f"https://{{self.DOMAIN}}"
 
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
             message = (
-                f'The value of {var_name} is "changethis", '
+                f'The value of {{var_name}} is "changethis", '
                 "for security, please change it, at least for deployments."
             )
             if self.ENVIRONMENT == "local":
@@ -145,13 +151,13 @@ class Settings(BaseSettings):
 
 settings = Settings()  # type: ignore
 "#
-    .to_string()
+    )
 }
 
 pub fn save_config_file(project_info: &ProjectInfo) -> Result<()> {
     let base = project_info.source_dir_path();
     let file_path = base.join("core/config.py");
-    let file_content = create_config_file();
+    let file_content = create_config_file(project_info);
 
     save_file_with_content(&file_path, &file_content)?;
 
@@ -222,11 +228,11 @@ fn create_db_file(project_info: &ProjectInfo) -> String {
 import asyncpg
 from loguru import logger
 
- from {module}.core.config import settings
- from {module}.core.security import get_password_hash
- from {module}.core.utils import create_db_primary_key
- from {module}.exceptions import NoDbPoolError
- from {module}.services.db.user_services import get_user_by_email
+from {module}.core.config import settings
+from {module}.core.security import get_password_hash
+from {module}.core.utils import create_db_primary_key
+from {module}.exceptions import NoDbPoolError
+from {module}.services.db.user_services import get_user_by_email
 
 
 class Database:
@@ -258,7 +264,7 @@ class Database:
             logger.error("No db pool created")
             raise NoDbPoolError("No db pool created")
 
-        db_user = await get_user_by_email(self.db_pools, email=settings.FIRST_SUPERUSER_EMAIL)
+        db_user = await get_user_by_email(pool=self.db_pool, email=settings.FIRST_SUPERUSER_EMAIL)
 
         if db_user:  # pragma: no cover
             if db_user.is_active and db_user.is_superuser:
@@ -274,7 +280,7 @@ class Database:
                 WHERE email = $1
                 """
 
-                async with self.db_pools.acquire() as conn:
+                async with self.db_pool.acquire() as conn:
                     try:
                         await conn.execute(update_query, settings.FIRST_SUPERUSER_EMAIL)
                     except asyncpg.exceptions.UniqueViolationError:
@@ -336,7 +342,7 @@ from fastapi import Request
 from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
 
- from {module}.core.config import settings
+from {module}.core.config import settings
 
 password_hash = PasswordHash((Argon2Hasher(),))
 

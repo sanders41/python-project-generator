@@ -2,6 +2,30 @@ use anyhow::Result;
 
 use crate::{file_manager::save_file_with_content, project_info::ProjectInfo};
 
+fn create_message_model_file() -> String {
+    r#"from __future__ import annotations
+
+from camel_converter.pydantic_base import CamelBase
+
+
+class Message(CamelBase):
+    """Used for generic messages."""
+
+    message: str
+"#
+    .to_string()
+}
+
+pub fn save_message_model_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = &project_info.source_dir_path();
+    let file_path = base.join("models/message.py");
+    let file_content = create_message_model_file();
+
+    save_file_with_content(&file_path, &file_content)?;
+
+    Ok(())
+}
+
 fn create_token_models_file() -> String {
     r#"from pydantic import BaseModel
 
@@ -134,7 +158,7 @@ def _validate_password(password: str) -> str:
 
 pub fn save_user_models_file(project_info: &ProjectInfo) -> Result<()> {
     let base = &project_info.source_dir_path();
-    let file_path = base.join("models/user_models.py");
+    let file_path = base.join("models/users.py");
     let file_content = create_user_models_file();
 
     save_file_with_content(&file_path, &file_content)?;

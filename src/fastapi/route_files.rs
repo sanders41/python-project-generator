@@ -9,9 +9,11 @@ fn create_deps_file(project_info: &ProjectInfo) -> String {
         r#"from __future__ import annotations
 
 from collections.abc import AsyncGenerator
-from typing import Annotated, Any, cast, TYPE_CHECKING
+from typing import Annotated, Any, cast
 
+import asyncpg
 import jwt
+import valkey.asyncio as valkey
 from fastapi import Depends, HTTPException, Request
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.security import OAuth2
@@ -33,10 +35,6 @@ from {module}.core.security import ALGORITHM
 from {module}.models.token import TokenPayload
 from {module}.models.users import UserInDb
 from {module}.services.db.user_services import get_user_by_id
-
-if TYPE_CHECKING:
-    import asyncpg
-    from valkey.asyncio import  Valkey
 
 
 class OAuth2PasswordBearerWithCookie(OAuth2):
@@ -95,7 +93,7 @@ reusable_oauth2 = OAuth2PasswordBearerWithCookie(
 TokenDep = Annotated[str, Depends(reusable_oauth2)]
 
 
-async def get_cache_client() -> AsyncGenerator[Valkey]:
+async def get_cache_client() -> AsyncGenerator[valkey.Valkey]:
     if cache.client is None:  # pragma: no cover
         logger.error("No cache client created")
         raise HTTPException(
@@ -105,7 +103,7 @@ async def get_cache_client() -> AsyncGenerator[Valkey]:
     yield cache.client
 
 
-CacheClient = Annotated[Valkey, Depends(get_cache_client)]
+CacheClient = Annotated[valkey.Valkey, Depends(get_cache_client)]
 
 
 async def get_db_pool() -> AsyncGenerator[asyncpg.Pool]:
@@ -121,7 +119,7 @@ async def get_db_pool() -> AsyncGenerator[asyncpg.Pool]:
 DbPool = Annotated[asyncpg.Pool, Depends(get_db_pool)]
 
 
-async def get_current_user(pool: DbPool, token: TokenDep) -> UserInDb:
+async def get_current_user(pool: DbPool, cache_client: CacheClient, token: TokenDep) -> UserInDb:
     try:
         logger.debug("Decoding JWT token")
         payload = jwt.decode(
@@ -140,7 +138,7 @@ async def get_current_user(pool: DbPool, token: TokenDep) -> UserInDb:
             status_code=HTTP_403_FORBIDDEN, detail="Count not validate credientials"
         )
     user_id = token_data.sub
-    user = await get_user_by_id(pool, user_id=user_id)
+    user = await get_user_by_id(pool=pool, cache_client=cache_client, user_id=user_id)
     if not user:  # pragma: no cover
         logger.debug("User not found")
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="User not found")
@@ -184,7 +182,6 @@ from loguru import logger
 from {module}.api.deps import DbPool
 from {module}.core.config import settings
 from {module}.core.utils import APIRouter
-from {module}.services.db.db_services import ping
 
 router = APIRouter(tags=["Health"], prefix=f"{{settings.API_V1_PREFIX}}/health")
 
@@ -198,7 +195,8 @@ async def health(*, pool: DbPool) -> dict[str, str]:
 
     logger.debug("Checking db health")
     try:
-        await ping(pool)
+        async with pool.acquire() as conn:
+            await conn.execute("SELECT 1")
         health["db"] = "healthy"
     except Exception as e:
         logger.error(f"Unable to ping the database: {{e}}")
@@ -237,7 +235,7 @@ from starlette.status import (
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 
-from {module}.api.deps import CurrentUser, DbPool
+from {module}.api.deps import CacheClient, CurrentUser, DbPool
 from {module}.core import security
 from {module}.core.config import settings
 from {module}.core.utils import APIRouter
@@ -256,7 +254,7 @@ async def login_access_token(
 
     logger.debug("Authenticating user")
     user = await user_services.authenticate(
-        pool, email=form_data.username, password=form_data.password
+        pool=pool, email=form_data.username, password=form_data.password
     )
 
     if not user:
@@ -282,12 +280,14 @@ async def login_access_token(
 
 
 @router.post("/login/test-token")
-async def test_token(*, db_pool: DbPool, current_user: CurrentUser) -> UserPublic:
+async def test_token(
+    *, db_pool: DbPool, cache_client: CacheClient, current_user: CurrentUser
+) -> UserPublic:
     """Test access token."""
 
     try:
         user_public = await user_services.get_user_public_by_id(
-            pool=db_pool, user_id=current_user.id
+            pool=db_pool, cache_client=cache_client, user_id=current_user.id
         )
     except Exception as e:  # pragma: no cover
         logger.error(f"An error occurred while testing the user token: {{e}}")
@@ -314,8 +314,11 @@ pub fn save_login_route(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_router_file() -> String {
-    r#"from {module}.api.routes import (
+fn create_router_file(project_info: &ProjectInfo) -> String {
+    let module = &project_info.module_name();
+
+    format!(
+        r#"from {module}.api.routes import (
     health,
     login,
     users,
@@ -330,13 +333,13 @@ api_router.include_router(users.router)
 api_router.include_router(version.router)
 
 "#
-    .to_string()
+    )
 }
 
 pub fn save_router_file(project_info: &ProjectInfo) -> Result<()> {
     let base = &project_info.source_dir_path();
     let file_path = base.join("api/router.py");
-    let file_content = create_router_file();
+    let file_content = create_router_file(project_info);
 
     save_file_with_content(&file_path, &file_content)?;
 
@@ -354,9 +357,8 @@ import asyncio
 from fastapi import Depends, HTTPException
 from loguru import logger
 from starlette.status import (
-    HTTP_204_NO_CONTENT
+    HTTP_204_NO_CONTENT,
     HTTP_400_BAD_REQUEST,
-    HTTP_401_UNAUTHORIZED,
     HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
     HTTP_409_CONFLICT,
@@ -392,7 +394,6 @@ async def read_users(
     *,
     db_pool: DbPool,
     cache_client: CacheClient,
-    active_filter: ActiveFilter = "active",
     offset: int = 0,
     limit: int = 100,
 ) -> UsersPublic:
@@ -403,13 +404,11 @@ async def read_users(
 
     logger.debug(f"Getting users with offset {{offset}} and limit {{limit}}")
     try:
-        users_public = awaituser_services.get_users_public(
-                pool=db_pool,
-                cache_client=cache_client,
-                active_filter=active_filter,
-                offset=offset,
-                limit=limit,
-            )
+        users_public = await user_services.get_users_public(
+            pool=db_pool,
+            cache_client=cache_client,
+            offset=offset,
+            limit=limit,
         )
     except* Exception as eg:  # pragma: no cover
         for e in eg.exceptions:
@@ -434,7 +433,7 @@ async def create_user(
 
     logger.debug("Creating new user")
     try:
-        user = await user_services.get_user_by_email(db_pool, email=user_in.email)
+        user = await user_services.get_user_by_email(pool=db_pool, email=user_in.email)
     except Exception as e:  # pragma: no cover
         logger.error(
             f"An error occurred while checking if the email {{user_in.email}} already exists for creating a user: {{e}}"
@@ -467,6 +466,7 @@ async def create_user(
     try:
         user_public = await user_services.get_user_public_by_id(
             pool=db_pool,
+            cache_client=cache_client,
             user_id=created_user.id,
         )
     except Exception as e:  # pragma: no cover
@@ -499,7 +499,7 @@ async def update_user_me(
     logger.debug("Updating current user")
     if user_in.email:
         try:
-            existing_user = await user_services.get_user_by_email(db_pool, email=user_in.email)
+            existing_user = await user_services.get_user_by_email(pool=db_pool, email=user_in.email)
         except Exception as e:  # pragma: no cover
             logger.error(
                 f"An error occurred while updating me, checking if the email already exists: {{e}}"
@@ -530,6 +530,7 @@ async def update_user_me(
     try:
         user_public = await user_services.get_user_public_by_id(
             pool=db_pool,
+            cache_client=cache_client,
             user_id=updated_user.id,
         )
     except Exception as e:  # pragma: no cover
@@ -572,7 +573,7 @@ async def update_password_me(
     try:
         logger.debug("Updating password")
         await user_services.update_user(
-            pool=db_pool, db_user=current_user, user_in=user_in
+            pool=db_pool, cache_client=cache_client, db_user=current_user, user_in=user_in
         )
     except Exception as e:  # pragma: no cover
         logger.error(f"An error occurred updating the password: {{e}}")
@@ -586,7 +587,7 @@ async def update_password_me(
 async def read_user_me(
     *,
     db_pool: DbPool,
-    cache_client; CacheClient,
+    cache_client: CacheClient,
     current_user: CurrentUser,
     active_filter: ActiveFilter = "active",
 ) -> UserPublic:
@@ -633,8 +634,8 @@ async def delete_user_me(
             pool=db_pool, cache_client=cache_client, user_id=current_user.id
         )
     except* Exception as eg:  # pragma: no cover
-        for e in eg.exceptions:  # type: ignore[assignment]
-            logger.error(f"An error occurred while deleting the user: {{e}}")
+        for ex in eg.exceptions:  # type: ignore[assignment]
+            logger.error(f"An error occurred while deleting the user: {{ex}}")
 
         raise HTTPException(
             status_code=HTTP_500_INTERNAL_SERVER_ERROR,
@@ -708,7 +709,7 @@ async def update_user(
     logger.debug(f"Updating user {{user_id}}")
     try:
         db_user = await user_services.get_user_by_id(
-            db_pool, cache_client:CacheClient, user_id=stripped_user_id
+            pool=db_pool, cache_client=cache_client, user_id=stripped_user_id
         )
     except Exception as e:  # pragma: no cover
         logger.error(f"An error occurred while retrieving user {{user_id}} for updating: {{e}}")
@@ -724,7 +725,7 @@ async def update_user(
             detail="The user with this id does not exist in the system",
         )
     if user_in.email:
-        existing_user = await user_services.get_user_by_email(db_pool, email=user_in.email)
+        existing_user = await user_services.get_user_by_email(pool=db_pool, email=user_in.email)
         if existing_user and existing_user.id != user_id:
             logger.debug(f"A user with email {{user_in.email}} already exists")
             raise HTTPException(
@@ -735,7 +736,7 @@ async def update_user(
         if user_in.password:
             db_user = await user_services.update_user(
                 pool=db_pool,
-                cache_client=cache_client
+                cache_client=cache_client,
                 db_user=db_user,
                 user_in=user_in,
             )
@@ -744,8 +745,8 @@ async def update_user(
                 pool=db_pool, cache_client=cache_client, db_user=db_user, user_in=user_in
             )
     except* Exception as eg:  # pragma: no cover
-        for e in eg.exceptions:
-            logger.error(f"An error occurred while updating user {{stripped_user_id}}: {{e}}")
+        for ex in eg.exceptions:
+            logger.error(f"An error occurred while updating user {{stripped_user_id}}: {{ex}}")
 
         raise HTTPException(
             status_code=HTTP_500_INTERNAL_SERVER_ERROR,
@@ -805,10 +806,12 @@ async def delete_user(
             detail="Super users are not allowed to delete themselves",
         )
     try:
-        await user_services.delete_user(pool=db_pool, cache_client=cache_client, user_id=stripped_user_id)
+        await user_services.delete_user(
+            pool=db_pool, cache_client=cache_client, user_id=stripped_user_id
+        )
     except* Exception as eg:  # pragma: no cover
-        for e in eg.execptions:
-            logger.error(f"An error occurred while delete the user: {{e}}")
+        for ex in eg.exceptions:
+            logger.error(f"An error occurred while delete the user: {{ex}}")
 
         raise HTTPException(
             status_code=HTTP_500_INTERNAL_SERVER_ERROR,

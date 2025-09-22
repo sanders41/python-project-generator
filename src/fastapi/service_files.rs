@@ -12,44 +12,41 @@ from typing import TYPE_CHECKING
 
 import orjson
 
-from {module}.models.users import UserInDb, UserPublic
+from {module}.models.users import UserInDb, UsersPublic
 
 if TYPE_CHECKING:
     from valkey.asyncio import Valkey
 
 
 async def delete_all_users_public(*, cache_client: Valkey) -> None:
-    keys = [key async for key in cache_client.scan_iter("users:public:*"]
+    keys = [key async for key in cache_client.scan_iter("users:public:*")]
     await cache_client.unlink(*keys)
 
 
 async def get_users_public(
     *, cache_client: Valkey, offset: int, limit: int
-) -> list[UserPublic] | None:
+) -> UsersPublic:
     users = await cache_client.get(name=f"users:public:{{offset}}:{{limit}}")  # type: ignore[misc]
 
-    if users is None:
-        return None
-
-    return [UserPublic(**user) for user in orjson.loads(users)]
+    return UsersPublic(**orjson.loads(users))
 
 
 async def cache_users_public(
-    *, cache_client: Valkey, users: list[UserPublic], offset: int, limit: int
+    *, cache_client: Valkey, users_public: UsersPublic, offset: int, limit: int
 ) -> None:
     """Cache users by page, expire cache after 1 minutes."""
 
     await cache_client.setex(
         name=f"users:public:{{offset}}:{{limit}}",
         time=60,
-        value=orjson.dumps([user.model_dump() for user in users]),
+        value=orjson.dumps(users_public),
     )
 
 
 async def cache_user(*, cache_client: Valkey, user: UserInDb) -> None:
     """Cache user, expire cache after 1 minutes."""
 
-    await cache_client.setx(f"user:{{user.id}}", orjson.dumps(user.model_dump()))
+    await cache_client.setex(name=f"user:{{user.id}}", time=60, value=orjson.dumps(user.model_dump()))
 
 
 async def delete_cached_user(*, cache_client: Valkey, user_id: str) -> None:
@@ -87,10 +84,10 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
- from {module}.core.security import get_password_hash, verify_password
- from {module}.core.utils import create_db_primary_key
- from {module}.exceptions import DbInsertError, DbUpdateError, UserNotFoundError
- from {module}.models.users import (
+from {module}.core.security import get_password_hash, verify_password
+from {module}.core.utils import create_db_primary_key
+from {module}.exceptions import DbInsertError, DbUpdateError, UserNotFoundError
+from {module}.models.users import (
     UpdatePassword,
     UserCreate,
     UserInDb,
@@ -99,17 +96,17 @@ from loguru import logger
     UserUpdate,
     UserUpdateMe,
 )
- from {module}.services.cache import user_cache_services
+from {module}.services.cache import user_cache_services
 
 if TYPE_CHECKING:  # pragma: no cover
     from asyncpg import Pool
     from valkey.asyncio import Valkey
 
-     from {module}.types import ActiveFilter, SortOrder
+    from {module}.types import ActiveFilter
 
 
 async def authenticate(*, pool: Pool, email: str, password: str) -> UserInDb | None:
-    db_user = await get_user_by_email(pool, email=email)
+    db_user = await get_user_by_email(pool=pool, email=email)
 
     if not db_user or not verify_password(password, db_user.hashed_password):
         return None
@@ -154,7 +151,7 @@ async def create_user(*, pool: Pool, cache_client: Valkey, user: UserCreate) -> 
         raise DbInsertError("Unable to find user after inserting")
 
     logger.debug("Deleting cached users public")
-    await user_cache_services.delete_all_users_public(cache_client=cache_client))
+    await user_cache_services.delete_all_users_public(cache_client=cache_client)
 
     return UserInDb(**dict(result))
 
@@ -164,8 +161,10 @@ async def delete_user(*, pool: Pool, cache_client: Valkey, user_id: str) -> None
     async with pool.acquire() as conn:
         async with asyncio.TaskGroup() as tg:
             db_task = tg.create_task(conn.execute(query, user_id))
-            cache_task = tg.create_task(
-                user_cache_services.delete_user(cache_client=cache_client, user_id=user_id)
+            tg.create_task(
+                user_cache_services.delete_cached_user(
+                    cache_client=cache_client, user_id=user_id
+                )
             )
 
         result = await db_task
@@ -177,7 +176,7 @@ async def delete_user(*, pool: Pool, cache_client: Valkey, user_id: str) -> None
 async def get_users(
     *, pool: Pool, offset: int = 0, limit: int = 100
 ) -> list[UserInDb] | None:
-    query = f"""
+    query = """
     SELECT id,
         email,
         full_name,
@@ -204,10 +203,9 @@ async def get_users_public(
     *,
     pool: Pool,
     cache_client: Valkey,
-    active_filter: ActiveFilter = "all",
     offset: int = 0,
     limit: int = 100,
-) -> UsersPublic | None:
+) -> UsersPublic:
     cached_users = await user_cache_services.get_users_public(
         cache_client=cache_client,
         offset=offset,
@@ -218,17 +216,14 @@ async def get_users_public(
         logger.debug("Users page found in cache, returning")
         return cached_users
 
-    async with TaskGroup() as tg:
-        users_task = tg.create_task(get_users(pool, offset=offset, limit=limit))
+    async with asyncio.TaskGroup() as tg:
+        users_task = tg.create_task(get_users(pool=pool, offset=offset, limit=limit))
         total_task = tg.create_task(get_total_user_count(pool=pool))
 
     db_users = await users_task
     total = await total_task
-    if not db_users:
-        return None
-
-    data = [UserPublic(**users.model_dump()) for user in db_users]
-    users_public = UsersPublic(data=data, count=len(data), total=total)
+    data = [UserPublic(**user.model_dump()) for user in db_users] if db_users else []
+    users_public = UsersPublic(data=data, count=len(data), total_users=total)
 
     logger.debug("Caching users public")
     await user_cache_services.cache_users_public(
@@ -270,7 +265,9 @@ async def get_user_public_by_email(
 
 
 async def get_user_by_id(*, pool: Pool, cache_client: Valkey, user_id: str) -> UserInDb | None:
-    cached_user = await user_cache_services.get_user(cache_client=cache_client, user_id=user_id)
+    cached_user = await user_cache_services.get_cached_user(
+        cache_client=cache_client, user_id=user_id
+    )
 
     if cached_user:
         logger.debug("User found in cache, returning")
@@ -352,14 +349,16 @@ async def update_user(
         """
 
         async with pool.acquire() as conn:
-            async with TaskGroup() as tg:
+            async with asyncio.TaskGroup() as tg:
                 db_task = tg.create_task(
                     conn.fetchrow(
                         query, get_password_hash(user_in.new_password), db_user.id
                     )
                 )
                 tg.create_task(
-                    user_cache_services.delete_user(cache_client=cache_client, user_id=db_user.id)
+                    user_cache_services.delete_cached_user(
+                        cache_client=cache_client, user_id=db_user.id
+                    )
                 )
 
             result = await db_task
@@ -384,10 +383,12 @@ async def update_user(
         """
 
         async with pool.acquire() as conn:
-            async with TaskGroup() as tg:
+            async with asyncio.TaskGroup() as tg:
                 db_task = tg.create_task(conn.fetchrow(query, db_user.id, *user_data.values()))
                 tg.create_task(
-                    user_cache_services.delete_user(cache_client=cache_client, user_id=db_user.id)
+                    user_cache_services.delete_cached_user(
+                        cache_client=cache_client, user_id=db_user.id
+                    )
                 )
 
             result = await db_task
