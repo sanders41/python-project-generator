@@ -683,6 +683,11 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         project_manager_prompt(Some(default))?
     };
 
+    #[cfg(feature = "fastapi")]
+    if is_fastapi_project && project_manager == ProjectManager::Pixi {
+        bail!("Pixi is not currently supported for FastAPI projects");
+    }
+
     let pyo3_python_manager = if project_manager == ProjectManager::Maturin {
         if use_defaults {
             if let Some(default) = config.pyo3_python_manager {

@@ -26,7 +26,7 @@ pub fn install_fastapi_dependencies(project_info: &ProjectInfo) -> Result<()> {
         ProjectManager::Uv => uv_fastapi_depencency_installer(project_info)?,
         ProjectManager::Poetry => poetry_fastapi_depencency_installer(project_info)?,
         ProjectManager::Setuptools => setuptools_fastapi_depencency_installer(project_info)?,
-        ProjectManager::Pixi => pixi_fastapi_depencency_installer(project_info)?,
+        ProjectManager::Pixi => bail!("Pixi is not currently supported for FastAPI projects"),
         ProjectManager::Maturin => maturin_fastapi_depencency_installer(project_info)?,
     };
 
@@ -123,40 +123,6 @@ fn setuptools_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result
     args.extend(dev_dependencies);
     let output = std::process::Command::new(".venv/bin/python")
         .args(args)
-        .current_dir(project_info.base_dir())
-        .output()?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("Failed to install FastAPI dependencies: {stderr}");
-    }
-
-    Ok(())
-}
-
-fn pixi_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result<()> {
-    let mut dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
-    if project_info.database_manager == Some(DatabaseManager::SqlAlchemy) {
-        dependencies.push("sqlalchemy");
-        dependencies.push("alembic");
-    }
-    let mut args = vec!["add"];
-    args.extend(dependencies);
-    let output = std::process::Command::new("pixi")
-        .args(args)
-        .current_dir(project_info.base_dir())
-        .output()?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("Failed to install FastAPI dependencies: {stderr}");
-    }
-
-    let dev_dependencies = FASTAPI_BASE_DEV_DEPENDENCIES.to_vec();
-    let mut dev_args = vec!["add", "--group=dev"];
-    dev_args.extend(dev_dependencies);
-    let output = std::process::Command::new("pixi")
-        .args(dev_args)
         .current_dir(project_info.base_dir())
         .output()?;
 
