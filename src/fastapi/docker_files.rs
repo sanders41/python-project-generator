@@ -118,7 +118,7 @@ fn create_dockercompose_file(project_info: &ProjectInfo) -> String {
       - {base_name}-valkey-data:/var/lib/valkey/data
 
   migrations:
-    image: ghcr.io/sanders41/sqlx-migration-runner:latest
+    image: ghcr.io/sanders41/sqlx-migration-runner:1
     container_name: {base_name}-migrations
     env_file:
       - .env
