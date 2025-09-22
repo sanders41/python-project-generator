@@ -729,6 +729,11 @@ ignore=[
 "#,
     );
 
+    // I have no idea why this is needed, but if fastapi is enabled things work as expected,
+    // if not there is no new line at the end and pre-commit fails.
+    #[cfg(not(feature = "fastapi"))]
+    pyproject.push_str("\n");
+
     Ok(render!(
         &pyproject,
         project_name => module.replace('_', "-"),
