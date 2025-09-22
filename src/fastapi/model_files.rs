@@ -110,17 +110,6 @@ class User(_UserBase):
     hashed_password: str
 
 
-class UserStudy(CamelBase):
-    user_id: str
-    study_id: str
-
-
-class UserStudyPublic(CamelBase):
-    id: str = Field(max_length=255)
-    is_active: bool
-    created: datetime
-
-
 class UserPublic(_UserBase):
     id: str
 

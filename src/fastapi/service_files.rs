@@ -166,7 +166,7 @@ async def delete_user(*, pool: Pool, cache_client: Valkey, user_id: str) -> None
         result = await db_task
 
     if result == "DELETE 0":
-        raise UserNotFoundError(f"Study with id {{user_id}} not found")
+        raise UserNotFoundError(f"User with id {{user_id}} not found")
 
 
 async def get_users(*, pool: Pool, offset: int = 0, limit: int = 100) -> list[UserInDb] | None:

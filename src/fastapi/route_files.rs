@@ -6,9 +6,7 @@ fn create_deps_file(project_info: &ProjectInfo) -> String {
     let module = &project_info.module_name();
 
     format!(
-        r#"from __future__ import annotations
-
-from collections.abc import AsyncGenerator
+        r#"from collections.abc import AsyncGenerator
 from typing import Annotated, Any, cast
 
 import asyncpg
