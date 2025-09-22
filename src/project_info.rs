@@ -116,6 +116,22 @@ impl fmt::Display for ProjectManager {
 
 #[cfg(feature = "fastapi")]
 #[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
+pub enum Database {
+    #[default]
+    Postgresql,
+}
+
+#[cfg(feature = "fastapi")]
+impl fmt::Display for Database {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Postgresql => write!(f, "PostgreSQL"),
+        }
+    }
+}
+
+#[cfg(feature = "fastapi")]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
 pub enum DatabaseManager {
     #[default]
     AsyncPg,
@@ -207,6 +223,9 @@ pub struct ProjectInfo {
     #[cfg(feature = "fastapi")]
     pub is_fastapi_project: bool,
 
+    // Note: For future use when other databases are supported
+    /* #[cfg(feature = "fastapi")]
+    pub database: Option<Database>, */
     #[cfg(feature = "fastapi")]
     pub database_manager: Option<DatabaseManager>,
 }
@@ -859,6 +878,9 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         #[cfg(feature = "fastapi")]
         is_fastapi_project,
 
+        // Note: For future use when other databases are supported
+        /* #[cfg(feature = "fastapi")]
+        database: Some(Database::Postgresql), */
         #[cfg(feature = "fastapi")]
         database_manager,
     })

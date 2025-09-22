@@ -431,6 +431,22 @@ fn main() {
             }
 
             #[cfg(feature = "fastapi")]
+            Param::Database { value } => {
+                if let Err(e) = Config::default().save_database(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+
+            #[cfg(feature = "fastapi")]
+            Param::ResetDatabase => {
+                if let Err(e) = Config::default().reset_database() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+
+            #[cfg(feature = "fastapi")]
             Param::DatabaseManager { value } => {
                 if let Err(e) = Config::default().save_database_manager(value) {
                     print_error(e);

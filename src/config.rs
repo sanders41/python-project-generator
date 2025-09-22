@@ -15,7 +15,7 @@ use crate::project_info::{
 };
 
 #[cfg(feature = "fastapi")]
-use crate::project_info::DatabaseManager;
+use crate::project_info::{Database, DatabaseManager};
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Config {
@@ -41,6 +41,9 @@ pub struct Config {
 
     #[cfg(feature = "fastapi")]
     pub is_fastapi_project: Option<bool>,
+
+    #[cfg(feature = "fastapi")]
+    pub database: Option<Database>,
 
     #[cfg(feature = "fastapi")]
     pub database_manager: Option<DatabaseManager>,
@@ -80,6 +83,9 @@ impl Default for Config {
             is_fastapi_project: None,
 
             #[cfg(feature = "fastapi")]
+            database: None,
+
+            #[cfg(feature = "fastapi")]
             database_manager: None,
         }
     }
@@ -117,6 +123,9 @@ impl Config {
 
                             #[cfg(feature = "fastapi")]
                             is_fastapi_project: config.is_fastapi_project,
+
+                            #[cfg(feature = "fastapi")]
+                            database: config.database,
 
                             #[cfg(feature = "fastapi")]
                             database_manager: config.database_manager,
@@ -398,6 +407,18 @@ impl Config {
     #[cfg(feature = "fastapi")]
     pub fn reset_is_fastapi_project(&self) -> Result<()> {
         self.handle_save_config(|config| &mut config.is_fastapi_project, None)?;
+        Ok(())
+    }
+
+    #[cfg(feature = "fastapi")]
+    pub fn save_database(&self, value: Database) -> Result<()> {
+        self.handle_save_config(|config| &mut config.database, Some(value))?;
+        Ok(())
+    }
+
+    #[cfg(feature = "fastapi")]
+    pub fn reset_database(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.database, None)?;
         Ok(())
     }
 
@@ -967,6 +988,28 @@ mod tests {
         let result = config.load_config();
 
         assert_eq!(result.is_fastapi_project, None);
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_database() {
+        let config = mock_config();
+        let expected = Database::Postgresql;
+        config.save_database(expected.clone()).unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.database, Some(expected));
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_reset_database() {
+        let config = mock_config();
+        config.save_database(Database::Postgresql).unwrap();
+        config.reset_database().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.database, None);
     }
 
     #[cfg(feature = "fastapi")]

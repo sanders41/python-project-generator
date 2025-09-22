@@ -5,7 +5,7 @@ use crate::project_info::{
 };
 
 #[cfg(feature = "fastapi")]
-use crate::project_info::DatabaseManager;
+use crate::project_info::{Database, DatabaseManager};
 
 #[derive(Clone, Debug, ValueEnum)]
 pub enum ApplicationOrLib {
@@ -177,6 +177,14 @@ pub enum Param {
     #[cfg(feature = "fastapi")]
     /// Remove the is FastAPI project value
     ResetIsFastapiProject,
+
+    #[cfg(feature = "fastapi")]
+    /// Save a default database value
+    Database { value: Database },
+
+    #[cfg(feature = "fastapi")]
+    /// Remove the database value
+    ResetDatabase,
 
     #[cfg(feature = "fastapi")]
     /// Save a default database manager
