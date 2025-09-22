@@ -233,11 +233,10 @@ fn save_main_file(project_info: &ProjectInfo) -> Result<()> {
 }
 
 fn create_types_file() -> String {
-    r#"from typing import Any, Literal
+    r#"from typing import Any, Literal, TypeAlias
 
-
-type ActiveFilter = Literal["all", "active", "inactive"]
-type Json = dict[str, Any]
+ActiveFilter: TypeAlias = Literal["all", "active", "inactive"]
+Json: TypeAlias = dict[str, Any]
 "#
     .to_string()
 }

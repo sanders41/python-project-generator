@@ -23,9 +23,7 @@ async def delete_all_users_public(*, cache_client: Valkey) -> None:
     await cache_client.unlink(*keys)
 
 
-async def get_users_public(
-    *, cache_client: Valkey, offset: int, limit: int
-) -> UsersPublic:
+async def get_users_public(*, cache_client: Valkey, offset: int, limit: int) -> UsersPublic:
     users = await cache_client.get(name=f"users:public:{{offset}}:{{limit}}")  # type: ignore[misc]
 
     return UsersPublic(**orjson.loads(users))
@@ -162,9 +160,7 @@ async def delete_user(*, pool: Pool, cache_client: Valkey, user_id: str) -> None
         async with asyncio.TaskGroup() as tg:
             db_task = tg.create_task(conn.execute(query, user_id))
             tg.create_task(
-                user_cache_services.delete_cached_user(
-                    cache_client=cache_client, user_id=user_id
-                )
+                user_cache_services.delete_cached_user(cache_client=cache_client, user_id=user_id)
             )
 
         result = await db_task
@@ -173,9 +169,7 @@ async def delete_user(*, pool: Pool, cache_client: Valkey, user_id: str) -> None
         raise UserNotFoundError(f"Study with id {{user_id}} not found")
 
 
-async def get_users(
-    *, pool: Pool, offset: int = 0, limit: int = 100
-) -> list[UserInDb] | None:
+async def get_users(*, pool: Pool, offset: int = 0, limit: int = 100) -> list[UserInDb] | None:
     query = """
     SELECT id,
         email,
@@ -351,9 +345,7 @@ async def update_user(
         async with pool.acquire() as conn:
             async with asyncio.TaskGroup() as tg:
                 db_task = tg.create_task(
-                    conn.fetchrow(
-                        query, get_password_hash(user_in.new_password), db_user.id
-                    )
+                    conn.fetchrow(query, get_password_hash(user_in.new_password), db_user.id)
                 )
                 tg.create_task(
                     user_cache_services.delete_cached_user(

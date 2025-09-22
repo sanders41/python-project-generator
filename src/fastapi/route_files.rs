@@ -318,12 +318,7 @@ fn create_router_file(project_info: &ProjectInfo) -> String {
     let module = &project_info.module_name();
 
     format!(
-        r#"from {module}.api.routes import (
-    health,
-    login,
-    users,
-    version,
-)
+        r#"from {module}.api.routes import health, login, users, version
 from {module}.core.utils import APIRouter
 
 api_router = APIRouter()
@@ -331,7 +326,6 @@ api_router.include_router(health.router)
 api_router.include_router(login.router)
 api_router.include_router(users.router)
 api_router.include_router(version.router)
-
 "#
     )
 }
@@ -351,8 +345,6 @@ fn create_users_route(project_info: &ProjectInfo) -> String {
 
     format!(
         r#"from __future__ import annotations
-
-import asyncio
 
 from fastapi import Depends, HTTPException
 from loguru import logger
@@ -851,7 +843,6 @@ async def read_version() -> dict[str, str]:
     """Get the current api software version."""
 
     return {{"version": __version__}}
-
 "#
     )
 }

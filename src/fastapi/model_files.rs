@@ -143,12 +143,15 @@ def _validate_password(password: str) -> str:
     Passwords must to contain at least 1 uppercase letter, 1 lowercase letter, a number, and a
     special character. They must be a minimum of 8 characters.
     """
-    if not (
-        re.search(r"[A-Z]", password)
-        and re.search(r"[a-z]", password)
-        and re.search(r"\d", password)
-        and re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", password)
-    ) or len(password) < 8:
+    if (
+        not (
+            re.search(r"[A-Z]", password)
+            and re.search(r"[a-z]", password)
+            and re.search(r"\d", password)
+            and re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", password)
+        )
+        or len(password) < 8
+    ):
         raise ValueError(
             "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character. They must be a minimum of 8 characters."
         )

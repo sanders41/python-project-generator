@@ -126,7 +126,6 @@ class Settings(BaseSettings):
             return f"http://{{self.DOMAIN}}"
         return f"https://{{self.DOMAIN}}"
 
-
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
             message = (
@@ -379,7 +378,6 @@ def verify_password_changed(password_changed: bool, request: Request) -> bool:
             return False
 
     return True
-
 "#
     )
 }
