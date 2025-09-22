@@ -118,9 +118,7 @@ fn create_dockercompose_file(project_info: &ProjectInfo) -> String {
       - {base_name}-valkey-data:/var/lib/valkey/data
 
   migrations:
-    image: {base_name}-migrations:latest
-    build:
-      context: ./migration_runner
+    image: ghcr.io/sanders41/sqlx-migration-runner:latest
     container_name: {base_name}-migrations
     env_file:
       - .env
@@ -513,37 +511,6 @@ pub fn save_dockerfileignore(project_info: &ProjectInfo) -> Result<()> {
     let base = &project_info.base_dir();
     let file_path = base.join(".dockerignore");
     let file_content = create_dockerignore(project_info);
-
-    save_file_with_content(&file_path, &file_content)?;
-
-    Ok(())
-}
-
-fn create_migration_runner_dockerfile() -> String {
-    r#"FROM rust:1.89-alpine3.22 AS builder
-
-RUN apk add --no-cache \
-    build-base \
-    openssl-dev \
-    openssl-libs-static \
-    pkgconfig
-
-RUN cargo install sqlx-cli --no-default-features -F native-tls -F postgres
-
-
-FROM alpine:3.22 AS runner
-
-COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/bin/sqlx
-
-CMD ["/bin/sh", "-c", "/usr/local/bin/sqlx database create && /usr/local/bin/sqlx migrate run"]
-"#
-    .to_string()
-}
-
-pub fn save_migratoin_runner_dockerfile(project_info: &ProjectInfo) -> Result<()> {
-    let base = &project_info.base_dir();
-    let file_path = base.join("migration_runner/Dockerfile");
-    let file_content = create_migration_runner_dockerfile();
 
     save_file_with_content(&file_path, &file_content)?;
 
