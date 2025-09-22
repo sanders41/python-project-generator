@@ -728,6 +728,7 @@ ignore=[
 ]
 "#,
     );
+
     Ok(render!(
         &pyproject,
         project_name => module.replace('_', "-"),
