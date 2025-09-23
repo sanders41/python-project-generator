@@ -73,7 +73,7 @@ jobs:
         if: runner.os == 'Windows'
         run: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "${{ env.MIN_PYTHON_VERSION }}"
       - name: Build package
@@ -115,7 +115,7 @@ jobs:
         if: runner.os == 'Windows'
         run: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: Build package
@@ -158,7 +158,7 @@ jobs:
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "${{ env.MIN_PYTHON_VERSION }}"
       - name: Build package
@@ -198,7 +198,7 @@ jobs:
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: Build package
@@ -240,7 +240,7 @@ jobs:
         if: runner.os == 'Windows'
         run: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "${{ env.MIN_PYTHON_VERSION }}"
       - name: Build package
@@ -289,7 +289,7 @@ jobs:
         if: runner.os == 'Windows'
         run: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: Build package
@@ -326,7 +326,7 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.7.5
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "${{ env.MIN_PYTHON_VERSION }}"
       - name: Build package
@@ -363,7 +363,7 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.7.5
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "${{ env.MIN_PYTHON_VERSION }}"
       - name: Build package
