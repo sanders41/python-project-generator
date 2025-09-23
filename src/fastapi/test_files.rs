@@ -6,24 +6,32 @@ fn create_conftest_file(project_info: &ProjectInfo) -> String {
     let module = &project_info.module_name();
 
     format!(
-        r#"import itertools
+        r#"from __future__ import annotations
+
+import itertools
 import os
 import subprocess
-from uuid import uuid4
 from pathlib import Path
 from unittest.mock import patch
+from uuid import uuid4
 
 import asyncpg
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 from {module}.api.deps import get_cache_client, get_db_pool
+from {module}.core.cache import cache
 from {module}.core.config import settings
 from {module}.core.db import Database
 from {module}.main import app
 from {module}.models.users import UserCreate
 from {module}.services.db import user_services
-from tests.utils import get_superuser_token_headers
+from tests.utils import (
+    get_superuser_token_headers,
+    random_email,
+    random_lower_string,
+    random_password,
+)
 
 ROOT_PATH = Path().absolute()
 ASSETS_DIR = ROOT_PATH / "tests" / "assets"
@@ -49,34 +57,7 @@ def valkey_db_index(worker_id):
 DBS_PER_WORKER = 5
 MAX_DB_INDEX = 99
 MAX_WORKERS = MAX_DB_INDEX // DBS_PER_WORKER
-_db_counters = {{}}
-
-
-@pytest.fixture
-def next_db(worker_id):
-    """Calculate db number per worker so data doesn't clash in parallel tests."""
-    if worker_id == "master":
-        return 1
-
-    worker_num = int(worker_id.lstrip("gw") or "0")
-
-    if worker_num >= MAX_WORKERS:
-        raise RuntimeError(
-            f"Worker {{worker_id}} exceeds DB allocation limit (max {{MAX_WORKERS}} workers). "
-            f"Either reduce number of workers or decrease DBS_PER_WORKER."
-        )
-
-    base = 1 + (worker_num * DBS_PER_WORKER)  # skip db=0
-    if base + DBS_PER_WORKER - 1 > MAX_DB_INDEX:
-        raise RuntimeError(f"Worker {{worker_id}} would exceed MAX_DB_INDEX with base {{base}}")
-
-    if worker_id not in _db_counters:
-        _db_counters[worker_id] = itertools.count(0)
-
-    offset = next(_db_counters[worker_id]) % DBS_PER_WORKER
-    db_index = base + offset
-
-    return db_index
+_db_counters: dict[int, itertools.count[int]] = {{}}
 
 
 @pytest.fixture
@@ -113,6 +94,14 @@ def db_name(worker_id):
     if worker_id == "master":
         return f"{{base_name}}_{{unique_suffix}}"
     return f"{{base_name}}_{{worker_id}}_{{unique_suffix}}"
+
+
+@pytest.fixture(autouse=True)
+async def test_cache(next_db):
+    await cache.create_client(db=next_db)
+    yield cache
+    await cache.client.flushdb()  # type: ignore
+    await cache.close_client()
 
 
 @pytest.fixture
@@ -173,15 +162,24 @@ async def superuser_token_headers(test_client):
 
 
 @pytest.fixture
+def normal_user_credentials():
+    return {{
+        "password": random_password(),
+        "full_name": random_lower_string(),
+        "email": random_email(),
+    }}
+
+
+@pytest.fixture
 async def normal_user_token_headers(
     test_db, test_client, test_cache, normal_user_credentials
 ):
     user = await user_services.get_user_by_email(
-        test_db.db_pool, email=normal_user_credentials["email"]
+        pool=test_db.db_pool, email=normal_user_credentials["email"]
     )
     if not user:
         user = await user_services.create_user(
-            test_db.db_pool,
+            pool=test_db.db_pool,
             cache_client=test_cache.client,
             user=UserCreate(
                 email=normal_user_credentials["email"],
@@ -250,6 +248,128 @@ pub fn save_test_utils_file(project_info: &ProjectInfo) -> Result<()> {
     let base = &project_info.base_dir();
     let file_path = base.join("tests/utils.py");
     let file_content = create_test_uitls_file(project_info);
+
+    save_file_with_content(&file_path, &file_content)?;
+
+    Ok(())
+}
+
+fn create_test_deps_file(project_info: &ProjectInfo) -> String {
+    let module = &project_info.module_name();
+
+    format!(
+        r#" from unittest.mock import Mock
+
+import pytest
+from fastapi import HTTPException, Request
+
+from {module}.api.deps import get_cache_client, get_current_user, get_db_pool
+from {module}.core.cache import cache
+from {module}.core.db import db
+
+
+async def test_auth_no_authorization_in_header(test_client, normal_user_token_headers):
+    del normal_user_token_headers["Authorization"]
+    test_client.cookies.clear()
+    response = await test_client.get(
+        "/users/me",
+        headers=normal_user_token_headers,
+    )
+
+    assert response.status_code == 401
+
+
+async def test_auth_no_bearer(test_client, normal_user_token_headers):
+    normal_user_token_headers["Authorization"] = normal_user_token_headers[
+        "Authorization"
+    ].removeprefix("Bearer ")
+    test_client.cookies.clear()
+    response = await test_client.get(
+        "/users/me",
+        headers=normal_user_token_headers,
+    )
+
+    assert response.status_code == 401
+
+
+async def test_get_current_user_invalid_token(test_db):
+    mock_request = Mock(spec=Request)
+    mock_request.url.path = "/api/v1/users/me"
+
+    with pytest.raises(HTTPException) as ex:
+        await get_current_user(
+            test_db.db_pool,
+            "e",
+            mock_request,
+        )
+
+    assert ex.value.status_code == 403
+
+
+async def test_get_current_user_inactive(
+    test_client, test_cache, normal_user_token_headers, superuser_token_headers, test_db
+):
+    mock_request = Mock(spec=Request)
+    mock_request.url.path = "/api/v1/users/me"
+
+    user = await get_current_user(
+        test_db.db_pool,
+        test_cache.client,
+        normal_user_token_headers["Authorization"].split(" ", 1)[1],
+    )
+
+    test_client.cookies.clear()
+    response = await test_client.patch(
+        f"/users/{{user.id}}",
+        headers=superuser_token_headers,
+        json={{"fullName": user.full_name, "isActive": False}},
+    )
+
+    assert response.status_code == 200
+
+    with pytest.raises(HTTPException) as ex:
+        await get_current_user(
+            test_db.db_pool,
+            normal_user_token_headers["Authorization"].split(" ", 1)[1],
+            mock_request,
+        )
+
+    assert ex.value.status_code == 403
+
+
+@pytest.fixture
+async def temp_db_pool():
+    await db.create_pool()
+    yield
+    await db.close_pool()
+
+
+@pytest.mark.usefixtures("temp_db_pool")
+async def test_get_db_pool_success():
+    async for pool in get_db_pool():
+        assert pool is not None
+
+
+@pytest.fixture
+async def temp_cache_client():
+    await cache.create_client()
+    yield
+    await cache.close_client()
+
+
+@pytest.mark.usefixtures("temp_cache_client")
+async def test_get_cache_client_success():
+    async for client in get_cache_client():
+        assert client is not None
+
+"#
+    )
+}
+
+pub fn save_test_deps_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = &project_info.base_dir();
+    let file_path = base.join("tests/api/test_deps.py");
+    let file_content = create_test_deps_file(project_info);
 
     save_file_with_content(&file_path, &file_content)?;
 

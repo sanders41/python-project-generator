@@ -19,7 +19,7 @@ const FASTAPI_BASE_DEPENDENCIES: &[&str] = &[
     "valkey",
 ];
 
-const FASTAPI_BASE_DEV_DEPENDENCIES: &[&str] = &["httpx"];
+const FASTAPI_BASE_DEV_DEPENDENCIES: &[&str] = &["httpx", "pytest-xdist"];
 
 pub fn install_fastapi_dependencies(project_info: &ProjectInfo) -> Result<()> {
     match project_info.project_manager {

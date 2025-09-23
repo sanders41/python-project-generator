@@ -20,6 +20,10 @@ if TYPE_CHECKING:
 
 async def delete_all_users_public(*, cache_client: Valkey) -> None:
     keys = [key async for key in cache_client.scan_iter("users:public:*")]
+
+    if not keys:
+        return None
+
     await cache_client.unlink(*keys)
 
 

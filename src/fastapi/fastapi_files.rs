@@ -24,7 +24,7 @@ use crate::{
             save_users_route, save_version_route,
         },
         service_files::{save_cache_user_services_file, save_db_user_services_file},
-        test_files::{save_conftest_file, save_test_utils_file},
+        test_files::{save_conftest_file, save_test_deps_file, save_test_utils_file},
     },
     file_manager::save_file_with_content,
     project_info::{DatabaseManager, ProjectInfo},
@@ -57,6 +57,7 @@ pub fn generate_fastapi(project_info: &ProjectInfo) -> Result<()> {
         save_login_route,
         save_router_file,
         save_security_file,
+        save_test_deps_file,
         save_test_utils_file,
         save_token_models_file,
         save_types_file,
@@ -261,6 +262,7 @@ fn create_directories(project_info: &ProjectInfo) -> Result<()> {
         create_models_dir,
         create_scripts_dir,
         create_services_dir,
+        create_test_dir,
     ]
     .into_par_iter()
     .map(|f| f(project_info))
@@ -324,6 +326,18 @@ fn create_services_dir(project_info: &ProjectInfo) -> Result<()> {
     save_init_file(&services_dir)?;
     save_init_file(&services_db_dir)?;
     save_init_file(&services_cache_dir)?;
+
+    Ok(())
+}
+
+fn create_test_dir(project_info: &ProjectInfo) -> Result<()> {
+    let src = &project_info.base_dir();
+    let test_dir = src.join("tests");
+    let api_dir = test_dir.join("api");
+    let routes_dir = api_dir.join("routes");
+    create_dir_all(&routes_dir)?;
+    save_init_file(&api_dir)?;
+    save_init_file(&routes_dir)?;
 
     Ok(())
 }
