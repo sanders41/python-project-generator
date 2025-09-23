@@ -24,6 +24,7 @@ use crate::{
             save_users_route, save_version_route,
         },
         service_files::{save_cache_user_services_file, save_db_user_services_file},
+        test_files::{save_conftest_file, save_test_utils_file},
     },
     file_manager::save_file_with_content,
     project_info::{DatabaseManager, ProjectInfo},
@@ -35,6 +36,7 @@ pub fn generate_fastapi(project_info: &ProjectInfo) -> Result<()> {
     [
         save_cache_file,
         save_cache_user_services_file,
+        save_conftest_file,
         save_db_file,
         save_db_user_services_file,
         save_dockercompose_file,
@@ -55,6 +57,7 @@ pub fn generate_fastapi(project_info: &ProjectInfo) -> Result<()> {
         save_login_route,
         save_router_file,
         save_security_file,
+        save_test_utils_file,
         save_token_models_file,
         save_types_file,
         save_user_models_file,

@@ -7,3 +7,4 @@ mod migration_files;
 mod model_files;
 mod route_files;
 mod service_files;
+mod test_files;
