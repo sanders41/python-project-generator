@@ -533,3 +533,79 @@ pub fn save_test_deps_file(project_info: &ProjectInfo) -> Result<()> {
 
     Ok(())
 }
+
+fn create_user_model_test_file(project_info: &ProjectInfo) -> String {
+    let module = &project_info.module_name();
+
+    format!(
+        r#"import pytest
+
+from {module}.core.utils import create_db_primary_key
+from {module}.models.users import UserCreate, UserUpdate
+from tests.utils import random_email, random_lower_string
+
+
+@pytest.mark.parametrize("password", ("loweronly1.", "UPPER1*ONLY", "no@Number", "nospEcial4"))
+def test_user_create_invalid_password(password):
+    with pytest.raises(ValueError) as e:
+        UserCreate(
+            email=random_email(),
+            full_name=random_lower_string(),
+            password=password,
+            organization_id=create_db_primary_key(),
+            organization_access_level="read-only",
+        )
+
+    assert (
+        "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+        in (str(e.value))
+    )
+
+
+def test_user_create_short_password():
+    with pytest.raises(ValueError) as e:
+        UserCreate(
+            email=random_email(),
+            full_name=random_lower_string(),
+            password="Short1_",
+            organization_id=create_db_primary_key(),
+            organization_access_level="read-only",
+        )
+
+    assert "at least 8 characters" in (str(e.value))
+
+
+@pytest.mark.parametrize("password", ("loweronly1.", "UPPER1*ONLY", "no@Number", "nospEcial4"))
+def test_user_update_invalid_password(password):
+    with pytest.raises(ValueError) as e:
+        UserUpdate(
+            password=password,
+        )
+
+    assert (
+        "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+        in (str(e.value))
+    )
+
+
+def test_user_update_short_password():
+    with pytest.raises(ValueError) as e:
+        UserCreate(
+            password="Short1_",
+        )
+
+    assert "at least 8 characters" in (str(e.value))
+
+"#
+    )
+}
+
+pub fn save_user_model_test_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = &project_info.base_dir();
+    let file_path = base.join("tests/models/test_users.py");
+    let file_content = create_user_model_test_file(project_info);
+
+    save_file_with_content(&file_path, &file_content)?;
+
+    Ok(())
+}

@@ -26,6 +26,7 @@ use crate::{
         service_files::{save_cache_user_services_file, save_db_user_services_file},
         test_files::{
             save_config_test_file, save_conftest_file, save_test_deps_file, save_test_utils_file,
+            save_user_model_test_file,
         },
     },
     file_manager::save_file_with_content,
@@ -65,6 +66,7 @@ pub fn generate_fastapi(project_info: &ProjectInfo) -> Result<()> {
         save_token_models_file,
         save_types_file,
         save_user_models_file,
+        save_user_model_test_file,
         save_users_route,
         save_version_route,
     ]
@@ -339,10 +341,13 @@ fn create_test_dir(project_info: &ProjectInfo) -> Result<()> {
     let api_dir = test_dir.join("api");
     let routes_dir = api_dir.join("routes");
     let core_dir = test_dir.join("core");
+    let models_dir = test_dir.join("models");
     create_dir_all(&routes_dir)?;
     create_dir_all(&core_dir)?;
+    create_dir_all(&models_dir)?;
     save_init_file(&api_dir)?;
     save_init_file(&core_dir)?;
+    save_init_file(&models_dir)?;
     save_init_file(&routes_dir)?;
 
     Ok(())
