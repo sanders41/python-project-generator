@@ -2,6 +2,164 @@ use anyhow::Result;
 
 use crate::{file_manager::save_file_with_content, project_info::ProjectInfo};
 
+fn create_config_test_file(project_info: &ProjectInfo) -> String {
+    let module = &project_info.module_name();
+
+    format!(
+        r#"import pytest
+from pydantic import AnyUrl, SecretStr
+
+from {module}.core.config import Settings
+
+
+def test_check_default_secret_production():
+    with pytest.raises(ValueError):
+        Settings(
+            FIRST_SUPERUSER_EMAIL="user@email.com",
+            FIRST_SUPERUSER_PASSWORD=SecretStr("Abc$123be"),
+            FIRST_SUPERUSER_NAME="Some Name",
+            POSTGRES_HOST="http://localhost",
+            POSTGRES_USER="postgres",
+            POSTGRES_PASSWORD=SecretStr("Somepassword!"),
+            VALKEY_HOST="http://localhost",
+            VALKEY_PASSWORD=SecretStr("Somepassword!"),
+            ENVIRONMENT="production",
+            SECRET_KEY=SecretStr("changethis"),
+        )
+
+
+def test_check_default_secret_testing():
+    with pytest.raises(ValueError):
+        Settings(
+            FIRST_SUPERUSER_EMAIL="user@email.com",
+            FIRST_SUPERUSER_PASSWORD=SecretStr("Abc$123be"),
+            FIRST_SUPERUSER_NAME="Some Name",
+            POSTGRES_HOST="http://localhost",
+            POSTGRES_USER="postgres",
+            POSTGRES_PASSWORD=SecretStr("Somepassword!"),
+            VALKEY_HOST="http://localhost",
+            VALKEY_PASSWORD=SecretStr("Somepassword!"),
+            ENVIRONMENT="testing",
+            SECRET_KEY=SecretStr("changethis"),
+        )
+
+
+def test_check_default_secret_local():
+    with pytest.warns(
+        UserWarning,
+        match='The value of SECRET_KEY is "changethis", for security, please change it, at least for deployments.',
+    ):
+        Settings(
+            FIRST_SUPERUSER_EMAIL="user@email.com",
+            FIRST_SUPERUSER_PASSWORD=SecretStr("Abc$123be"),
+            FIRST_SUPERUSER_NAME="Some Name",
+            POSTGRES_HOST="http://localhost",
+            POSTGRES_USER="postgres",
+            POSTGRES_PASSWORD=SecretStr("Somepassword!"),
+            VALKEY_HOST="http://localhost",
+            VALKEY_PASSWORD=SecretStr("Somepassword!"),
+            ENVIRONMENT="local",
+            SECRET_KEY=SecretStr("changethis"),
+        )
+
+
+def test_serer_host_production():
+    settings = Settings(
+        FIRST_SUPERUSER_EMAIL="user@email.com",
+        FIRST_SUPERUSER_PASSWORD=SecretStr("Abc$123be"),
+        FIRST_SUPERUSER_NAME="Some Name",
+        POSTGRES_HOST="http://localhost",
+        POSTGRES_USER="postgres",
+        POSTGRES_PASSWORD=SecretStr("Somepassword!"),
+        VALKEY_HOST="http://localhost",
+        VALKEY_PASSWORD=SecretStr("Somepassword!"),
+        SECRET_KEY=SecretStr("Somesecretkey"),
+        ENVIRONMENT="production",
+    )
+
+    assert settings.server_host == f"https://{{settings.DOMAIN}}"
+
+
+def test_serer_host_testing():
+    settings = Settings(
+        FIRST_SUPERUSER_EMAIL="user@email.com",
+        FIRST_SUPERUSER_PASSWORD=SecretStr("Abc$123be"),
+        FIRST_SUPERUSER_NAME="Some Name",
+        POSTGRES_HOST="http://localhost",
+        POSTGRES_USER="postgres",
+        POSTGRES_PASSWORD=SecretStr("Somepassword!"),
+        VALKEY_HOST="http://localhost",
+        VALKEY_PASSWORD=SecretStr("Somepassword!"),
+        SECRET_KEY=SecretStr("Somesecretkey"),
+        ENVIRONMENT="testing",
+    )
+
+    assert settings.server_host == f"https://{{settings.DOMAIN}}"
+
+
+def test_serer_host_local():
+    settings = Settings(
+        FIRST_SUPERUSER_EMAIL="user@email.com",
+        FIRST_SUPERUSER_PASSWORD=SecretStr("Abc$123be"),
+        FIRST_SUPERUSER_NAME="Some Name",
+        POSTGRES_HOST="http://localhost",
+        POSTGRES_USER="postgres",
+        POSTGRES_PASSWORD=SecretStr("Somepassword!"),
+        VALKEY_HOST="http://localhost",
+        VALKEY_PASSWORD=SecretStr("Somepassword!"),
+        SECRET_KEY=SecretStr("Somesecretkey"),
+        ENVIRONMENT="local",
+    )
+
+    assert settings.server_host == f"http://{{settings.DOMAIN}}"
+
+
+def test_parse_cors_error():
+    with pytest.raises(ValueError):
+        Settings(
+            FIRST_SUPERUSER_EMAIL="user@email.com",
+            FIRST_SUPERUSER_PASSWORD=SecretStr("Abc$123be"),
+            FIRST_SUPERUSER_NAME="Some Name",
+            POSTGRES_HOST="http://localhost",
+            POSTGRES_USER="postgres",
+            POSTGRES_PASSWORD=SecretStr("Somepassword!"),
+            VALKEY_HOST="http://localhost",
+            VALKEY_PASSWORD=SecretStr("Somepassword!"),
+            SECRET_KEY=SecretStr("Somesecretkey"),
+            BACKEND_CORS_ORIGINS=1,  # type: ignore
+        )
+
+
+def test_parse_cors_string():
+    settings = Settings(
+        FIRST_SUPERUSER_EMAIL="user@email.com",
+        FIRST_SUPERUSER_PASSWORD=SecretStr("Abc$123be"),
+        FIRST_SUPERUSER_NAME="Some Name",
+        POSTGRES_HOST="http://localhost",
+        POSTGRES_USER="postgres",
+        POSTGRES_PASSWORD=SecretStr("Somepassword!"),
+        VALKEY_HOST="http://localhost",
+        VALKEY_PASSWORD=SecretStr("Somepassword!"),
+        SECRET_KEY=SecretStr("Somesecretkey"),
+        BACKEND_CORS_ORIGINS="http://localhost, http://127.0.0.1",
+    )
+
+    assert settings.BACKEND_CORS_ORIGINS == [AnyUrl("http://localhost"), AnyUrl("http://127.0.0.1")]
+
+"#
+    )
+}
+
+pub fn save_config_test_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = &project_info.base_dir();
+    let file_path = base.join("tests/core/test_config.py");
+    let file_content = create_config_test_file(project_info);
+
+    save_file_with_content(&file_path, &file_content)?;
+
+    Ok(())
+}
+
 fn create_conftest_file(project_info: &ProjectInfo) -> String {
     let module = &project_info.module_name();
 
@@ -258,7 +416,7 @@ fn create_test_deps_file(project_info: &ProjectInfo) -> String {
     let module = &project_info.module_name();
 
     format!(
-        r#" from unittest.mock import Mock
+        r#"from unittest.mock import Mock
 
 import pytest
 from fastapi import HTTPException, Request
