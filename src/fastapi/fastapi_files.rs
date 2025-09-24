@@ -25,8 +25,9 @@ use crate::{
         },
         service_files::{save_cache_user_services_file, save_db_user_services_file},
         test_files::{
-            save_config_test_file, save_conftest_file, save_test_deps_file, save_test_utils_file,
-            save_user_model_test_file, save_user_routes_test_file,
+            save_config_test_file, save_conftest_file, save_health_route_test_file,
+            save_test_deps_file, save_test_utils_file, save_user_model_test_file,
+            save_user_routes_test_file,
         },
     },
     file_manager::save_file_with_content,
@@ -58,6 +59,7 @@ pub fn generate_fastapi(project_info: &ProjectInfo) -> Result<()> {
         save_core_utils_file,
         save_deps_file,
         save_health_route,
+        save_health_route_test_file,
         save_login_route,
         save_router_file,
         save_security_file,
@@ -236,14 +238,14 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
         original_exc_type = type(exc.__cause__).__name__ if exc.__cause__ else "HTTPException"
         original_exc_msg = str(exc.__cause__) if exc.__cause__ else str(exc.detail)
 
-        msg = f"""HTTP {exc.status_code} error in {request.method} {request.url.path}\n
-            Original exception: {original_exc_type}: {original_exc_msg}\n
-            HTTP detail: {exc.detail}\n
-            Stack trace:\n{stack_trace}"""
+        msg = f"""HTTP {{exc.status_code}} error in {{request.method}} {{request.url.path}}\n
+            Original exception: {{original_exc_type}}: {{original_exc_msg}}\n
+            HTTP detail: {{exc.detail}}\n
+            Stack trace:\n{{stack_trace}}"""
 
         logger.error(msg)
 
-    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    return JSONResponse(status_code=exc.status_code, content={{"detail": exc.detail}})
 
 
 if settings.all_cors_origins:

@@ -177,7 +177,7 @@ fn create_health_route(project_info: &ProjectInfo) -> String {
 
 from loguru import logger
 
-from {module}.api.deps import DbPool
+from {module}.api.deps import CacheClient, DbPool
 from {module}.core.config import settings
 from {module}.core.utils import APIRouter
 
@@ -199,6 +199,14 @@ async def health(*, pool: DbPool) -> dict[str, str]:
     except Exception as e:
         logger.error(f"Unable to ping the database: {{e}}")
         health["db"] = "unhealthy"
+
+    logger.debug("Checking cache health")
+    try:
+        await cache_client.ping()
+        health["cache"] = "healthy"
+    except Exception as e:
+        logger.error(f"Unable to ping the cache server: {{e}}")
+        health["cache"] = "unhealthy"
 
     return health
 "#

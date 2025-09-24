@@ -21,6 +21,7 @@ def test_check_default_secret_production():
             POSTGRES_HOST="http://localhost",
             POSTGRES_USER="postgres",
             POSTGRES_PASSWORD=SecretStr("Somepassword!"),
+            POSTGRES_DB="test_db",
             VALKEY_HOST="http://localhost",
             VALKEY_PASSWORD=SecretStr("Somepassword!"),
             ENVIRONMENT="production",
@@ -37,6 +38,7 @@ def test_check_default_secret_testing():
             POSTGRES_HOST="http://localhost",
             POSTGRES_USER="postgres",
             POSTGRES_PASSWORD=SecretStr("Somepassword!"),
+            POSTGRES_DB="test_db",
             VALKEY_HOST="http://localhost",
             VALKEY_PASSWORD=SecretStr("Somepassword!"),
             ENVIRONMENT="testing",
@@ -56,6 +58,7 @@ def test_check_default_secret_local():
             POSTGRES_HOST="http://localhost",
             POSTGRES_USER="postgres",
             POSTGRES_PASSWORD=SecretStr("Somepassword!"),
+            POSTGRES_DB="test_db",
             VALKEY_HOST="http://localhost",
             VALKEY_PASSWORD=SecretStr("Somepassword!"),
             ENVIRONMENT="local",
@@ -71,6 +74,7 @@ def test_serer_host_production():
         POSTGRES_HOST="http://localhost",
         POSTGRES_USER="postgres",
         POSTGRES_PASSWORD=SecretStr("Somepassword!"),
+        POSTGRES_DB="test_db",
         VALKEY_HOST="http://localhost",
         VALKEY_PASSWORD=SecretStr("Somepassword!"),
         SECRET_KEY=SecretStr("Somesecretkey"),
@@ -88,6 +92,7 @@ def test_serer_host_testing():
         POSTGRES_HOST="http://localhost",
         POSTGRES_USER="postgres",
         POSTGRES_PASSWORD=SecretStr("Somepassword!"),
+        POSTGRES_DB="test_db",
         VALKEY_HOST="http://localhost",
         VALKEY_PASSWORD=SecretStr("Somepassword!"),
         SECRET_KEY=SecretStr("Somesecretkey"),
@@ -105,6 +110,7 @@ def test_serer_host_local():
         POSTGRES_HOST="http://localhost",
         POSTGRES_USER="postgres",
         POSTGRES_PASSWORD=SecretStr("Somepassword!"),
+        POSTGRES_DB="test_db",
         VALKEY_HOST="http://localhost",
         VALKEY_PASSWORD=SecretStr("Somepassword!"),
         SECRET_KEY=SecretStr("Somesecretkey"),
@@ -123,6 +129,7 @@ def test_parse_cors_error():
             POSTGRES_HOST="http://localhost",
             POSTGRES_USER="postgres",
             POSTGRES_PASSWORD=SecretStr("Somepassword!"),
+            POSTGRES_DB="test_db",
             VALKEY_HOST="http://localhost",
             VALKEY_PASSWORD=SecretStr("Somepassword!"),
             SECRET_KEY=SecretStr("Somesecretkey"),
@@ -138,6 +145,7 @@ def test_parse_cors_string():
         POSTGRES_HOST="http://localhost",
         POSTGRES_USER="postgres",
         POSTGRES_PASSWORD=SecretStr("Somepassword!"),
+        POSTGRES_DB="test_db",
         VALKEY_HOST="http://localhost",
         VALKEY_PASSWORD=SecretStr("Somepassword!"),
         SECRET_KEY=SecretStr("Somesecretkey"),
@@ -383,6 +391,101 @@ pub fn save_conftest_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
+fn create_health_route_test_file(project_info: &ProjectInfo) -> String {
+    let module = &project_info.module_name();
+
+    format!(
+        r#"from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+from httpx import ASGITransport, AsyncClient
+
+from {module}.api.deps import get_cache_client, get_db_pool
+from {module}.core.config import settings
+from {module}.main import app
+
+
+@pytest.fixture
+def failing_db_pool():
+    mock_pool = MagicMock()
+    mock_acquire = AsyncMock()
+    mock_acquire.__aenter__.side_effect = Exception("DB down")
+    mock_pool.acquire.return_value = mock_acquire
+
+    return mock_pool
+
+
+@pytest.fixture
+async def test_client_bad_db(failing_db_pool, test_cache):
+    app.dependency_overrides[get_cache_client] = lambda: test_cache.client
+    app.dependency_overrides[get_db_pool] = lambda: failing_db_pool
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url=f"http://127.0.0.1{{settings.API_V1_PREFIX}}"
+    ) as client:
+        yield client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def failing_cache_client():
+    mock_client = MagicMock()
+    mock_acquire = AsyncMock()
+    mock_acquire.__aenter__.side_effect = Exception("Cache down")
+    mock_client.acquire.return_value = mock_acquire
+    return mock_client
+
+
+@pytest.fixture
+async def test_client_bad_cache(failing_cache_client, test_db):
+    app.dependency_overrides[get_cache_client] = lambda: failing_cache_client
+    app.dependency_overrides[get_db_pool] = lambda: test_db.db_pool
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url=f"http://127.0.0.1{{settings.API_V1_PREFIX}}"
+    ) as client:
+        yield client
+    app.dependency_overrides.clear()
+
+
+async def test_health(test_client):
+    result = await test_client.get("health")
+
+    assert result.status_code == 200
+    assert result.json()["server"] == "healthy"
+    assert result.json()["db"] == "healthy"
+    assert result.json()["cache"] == "healthy"
+
+
+async def test_health_no_db(test_client_bad_db):
+    result = await test_client_bad_db.get("health")
+
+    assert result.status_code == 200
+    assert result.json()["server"] == "healthy"
+    assert result.json()["db"] == "unhealthy"
+    assert result.json()["cache"] == "healthy"
+
+
+async def test_health_no_cache(test_client_bad_cache):
+    result = await test_client_bad_cache.get("health")
+
+    assert result.status_code == 200
+    assert result.json()["server"] == "healthy"
+    assert result.json()["db"] == "healthy"
+    assert result.json()["cache"] == "unhealthy"
+
+"#
+    )
+}
+
+pub fn save_health_route_test_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = &project_info.base_dir();
+    let file_path = base.join("tests/conftest.py");
+    let file_content = create_health_route_test_file(project_info);
+
+    save_file_with_content(&file_path, &file_content)?;
+
+    Ok(())
+}
+
 fn create_test_uitls_file(project_info: &ProjectInfo) -> String {
     let module = &project_info.module_name();
 
@@ -468,15 +571,15 @@ async def test_auth_no_bearer(test_client, normal_user_token_headers):
     assert response.status_code == 401
 
 
-async def test_get_current_user_invalid_token(test_db):
+async def test_get_current_user_invalid_token(test_db, test_cache):
     mock_request = Mock(spec=Request)
     mock_request.url.path = "/api/v1/users/me"
 
     with pytest.raises(HTTPException) as ex:
         await get_current_user(
             test_db.db_pool,
+            test_cache.client,
             "e",
-            mock_request,
         )
 
     assert ex.value.status_code == 403
@@ -558,7 +661,6 @@ fn create_user_model_test_file(project_info: &ProjectInfo) -> String {
     format!(
         r#"import pytest
 
-from {module}.core.utils import create_db_primary_key
 from {module}.models.users import UserCreate, UserUpdate
 from tests.utils import random_email, random_lower_string
 
@@ -580,7 +682,7 @@ def test_user_create_invalid_password(password):
 
 def test_user_create_short_password():
     with pytest.raises(ValueError) as e:
-        UserCreate(
+        UserUpdate(
             email=random_email(),
             full_name=random_lower_string(),
             password="Short1_",
