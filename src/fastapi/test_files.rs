@@ -486,6 +486,98 @@ pub fn save_health_route_test_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
+fn create_login_route_test_file(project_info: &ProjectInfo) -> String {
+    let module = &project_info.module_name();
+
+    format!(
+        r#"from unittest.mock import Mock
+
+from fastapi import Request
+
+from {module}.api.deps import get_current_user
+from {module}.core.config import settings
+from tests.utils import random_password
+
+
+async def test_get_access_token(test_client):
+    login_data = {{
+        "username": settings.FIRST_SUPERUSER_EMAIL,
+        "password": settings.FIRST_SUPERUSER_PASSWORD.get_secret_value(),
+    }}
+    response = await test_client.post("/login/access-token", data=login_data)
+    tokens = response.json()
+    assert response.status_code == 200
+    assert "access_token" in tokens
+    assert tokens["access_token"]
+
+
+async def test_get_access_token_incorrect_password(test_client):
+    login_data = {{
+        "username": settings.FIRST_SUPERUSER_EMAIL,
+        "password": random_password(),
+    }}
+    response = await test_client.post("/login/access-token", data=login_data)
+    assert response.status_code == 400
+
+
+async def test_use_access_token(test_client, superuser_token_headers):
+    response = await test_client.post(
+        "/login/test-token",
+        headers=superuser_token_headers,
+    )
+    result = response.json()
+    assert response.status_code == 200
+    assert "email" in result
+
+
+async def test_access_token_inactive_user(
+    test_client,
+    superuser_token_headers,
+    normal_user_token_headers,
+    normal_user_credentials,
+    test_db,
+    test_cache,
+):
+    mock_request = Mock(spec=Request)
+    mock_request.url.path = "/api/v1/users/me"
+
+    user = await get_current_user(
+        test_db.db_pool,
+        test_cache.client,
+        normal_user_token_headers["Authorization"].split(" ", 1)[1],
+    )
+
+    test_client.cookies.clear()
+    response = await test_client.patch(
+        f"/users/{{user.id}}",
+        headers=superuser_token_headers,
+        json={{"fullName": user.full_name, "isActive": False}},
+    )
+
+    assert response.status_code == 200
+
+    login_data = {{
+        "username": user.email,
+        "password": normal_user_credentials["password"],
+    }}
+    test_client.cookies.clear()
+    response = await test_client.post("/login/access-token", data=login_data)
+
+    assert response.status_code == 401
+"#
+    )
+}
+
+pub fn save_login_route_test_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = &project_info.base_dir();
+    let file_path = base.join("tests/api/routes/test_login_routes.py");
+    let file_content = create_login_route_test_file(project_info);
+
+    save_file_with_content(&file_path, &file_content)?;
+
+    Ok(())
+}
+
 fn create_test_uitls_file(project_info: &ProjectInfo) -> String {
     let module = &project_info.module_name();
 
