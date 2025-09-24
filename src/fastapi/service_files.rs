@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 import orjson
 
-from {module}.models.users import UserInDb, UsersPublic
+from {module}.models.users import UserInDb, UserPublic, UsersPublic
 
 if TYPE_CHECKING:
     from valkey.asyncio import Valkey
@@ -27,10 +27,18 @@ async def delete_all_users_public(*, cache_client: Valkey) -> None:
     await cache_client.unlink(*keys)
 
 
-async def get_users_public(*, cache_client: Valkey, offset: int, limit: int) -> UsersPublic:
+async def get_users_public(*, cache_client: Valkey, offset: int, limit: int) -> UsersPublic | None:
     users = await cache_client.get(name=f"users:public:{{offset}}:{{limit}}")  # type: ignore[misc]
+    if not users:
+        return None
 
-    return UsersPublic(**orjson.loads(users))
+    json_data = orjson.loads(users)
+
+    return UsersPublic(
+        data=[UserPublic(**user) for user in json_data["data"]],
+        count=json_data["count"],
+        total_users=json_data["total_users"],
+    )
 
 
 async def cache_users_public(
@@ -41,7 +49,7 @@ async def cache_users_public(
     await cache_client.setex(
         name=f"users:public:{{offset}}:{{limit}}",
         time=60,
-        value=orjson.dumps(users_public),
+        value=orjson.dumps(users_public.model_dump()),
     )
 
 

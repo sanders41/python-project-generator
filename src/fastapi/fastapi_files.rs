@@ -26,7 +26,7 @@ use crate::{
         service_files::{save_cache_user_services_file, save_db_user_services_file},
         test_files::{
             save_config_test_file, save_conftest_file, save_test_deps_file, save_test_utils_file,
-            save_user_model_test_file,
+            save_user_model_test_file, save_user_routes_test_file,
         },
     },
     file_manager::save_file_with_content,
@@ -68,6 +68,7 @@ pub fn generate_fastapi(project_info: &ProjectInfo) -> Result<()> {
         save_user_models_file,
         save_user_model_test_file,
         save_users_route,
+        save_user_routes_test_file,
         save_version_route,
     ]
     .into_par_iter()
@@ -149,13 +150,16 @@ fn create_main_file(project_info: &ProjectInfo) -> String {
         r#"from __future__ import annotations
 
 import sys
+import traceback
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.responses import ORJSONResponse
 from loguru import logger
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
 
 from {module}.api.router import api_router
 from {module}.core.cache import cache
@@ -214,6 +218,32 @@ app = FastAPI(
     openapi_url=openapi_url,
     default_response_class=ORJSONResponse,
 )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> Response:
+    if exc.status_code >= 500:
+        stack_trace = (
+            "".join(
+                traceback.format_exception(
+                    type(exc.__cause__), exc.__cause__, exc.__cause__.__traceback__
+                )
+            )
+            if exc.__cause__
+            else traceback.format_exc()
+        )
+
+        original_exc_type = type(exc.__cause__).__name__ if exc.__cause__ else "HTTPException"
+        original_exc_msg = str(exc.__cause__) if exc.__cause__ else str(exc.detail)
+
+        msg = f"""HTTP {exc.status_code} error in {request.method} {request.url.path}\n
+            Original exception: {original_exc_type}: {original_exc_msg}\n
+            HTTP detail: {exc.detail}\n
+            Stack trace:\n{stack_trace}"""
+
+        logger.error(msg)
+
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 
 if settings.all_cors_origins:
