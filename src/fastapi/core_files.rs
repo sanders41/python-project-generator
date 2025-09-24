@@ -370,14 +370,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def get_password_hash(password: str) -> str:
     return password_hash.hash(password)
-
-
-def verify_password_changed(password_changed: bool, request: Request) -> bool:
-    if not password_changed:
-        if request.url.path not in _ALLOWED_PATHS:
-            return False
-
-    return True
 "#
     )
 }

@@ -1190,3 +1190,29 @@ pub fn save_user_routes_test_file(project_info: &ProjectInfo) -> Result<()> {
 
     Ok(())
 }
+
+fn create_version_route_test_file(project_info: &ProjectInfo) -> String {
+    let module = &project_info.module_name();
+
+    format!(
+        r#"from {module} import __version__
+
+
+async def test_read_version(test_client):
+    response = await test_client.get("version")
+    assert response.status_code == 200
+    assert response.json()["version"] == __version__
+
+"#
+    )
+}
+
+pub fn save_version_route_test_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = &project_info.base_dir();
+    let file_path = base.join("tests/api/routes/test_version.py");
+    let file_content = create_version_route_test_file(project_info);
+
+    save_file_with_content(&file_path, &file_content)?;
+
+    Ok(())
+}

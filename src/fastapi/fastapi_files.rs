@@ -27,7 +27,7 @@ use crate::{
         test_files::{
             save_config_test_file, save_conftest_file, save_health_route_test_file,
             save_test_deps_file, save_test_utils_file, save_user_model_test_file,
-            save_user_routes_test_file,
+            save_user_routes_test_file, save_version_route_test_file,
         },
     },
     file_manager::save_file_with_content,
@@ -72,6 +72,7 @@ pub fn generate_fastapi(project_info: &ProjectInfo) -> Result<()> {
         save_users_route,
         save_user_routes_test_file,
         save_version_route,
+        save_version_route_test_file,
     ]
     .into_par_iter()
     .map(|f| f(project_info))
