@@ -27,7 +27,7 @@ jobs:
       - name: Run cargo clippy
         run: cargo clippy --all-targets -- --deny warnings
   clippy-fastapi:
-    name: Clippy FastAPI Features
+    name: clippy-fastapi
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -68,7 +68,7 @@ jobs:
       - name: Run cargo test
         run: cargo test --locked
   test-fastapi:
-    name: Tests FastAPI Features
+    name: test-fastapi
     strategy:
       fail-fast: false
       matrix:
