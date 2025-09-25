@@ -15,7 +15,7 @@ const FASTAPI_BASE_DEPENDENCIES: &[&str] = &[
     "pydantic-settings",
     "pyjwt",
     "python-multipart",
-    "uvloop",
+    "uvloop; sys_platform != 'win32'",
     "valkey",
 ];
 
