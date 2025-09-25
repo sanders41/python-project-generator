@@ -701,8 +701,8 @@ async def test_get_current_user_inactive(
     with pytest.raises(HTTPException) as ex:
         await get_current_user(
             test_db.db_pool,
+            test_cache.client,
             normal_user_token_headers["Authorization"].split(" ", 1)[1],
-            mock_request,
         )
 
     assert ex.value.status_code == 403
