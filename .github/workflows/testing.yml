@@ -256,9 +256,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          components:
-            - clippy
-            - rustfmt
+          components: clippy, rustfmt
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.8.1
       - name: Install uv on Linux and Mac
