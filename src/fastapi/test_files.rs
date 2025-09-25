@@ -1393,3 +1393,65 @@ pub fn save_user_services_db_test_file(project_info: &ProjectInfo) -> Result<()>
 
     Ok(())
 }
+
+fn create_main_test_file(project_info: &ProjectInfo) -> String {
+    let module = &project_info.module_name();
+
+    format!(
+        r#"import importlib
+from unittest.mock import patch
+
+from fastapi.testclient import TestClient
+from loguru import logger
+
+from {module} import main
+from {module}.core.config import settings
+
+
+async def test_http_exception_handler(test_client, normal_user_token_headers, caplog):
+    logger.add(caplog.handler, level="ERROR", format="{{message}}")
+
+    with patch(
+        "{module}.services.db.user_services.get_user_by_id",
+        side_effect=Exception("Server crashed"),
+    ):
+        response = await test_client.get("users/me", headers=normal_user_token_headers)
+
+    assert response.status_code == 500
+    assert "Server crashed" in caplog.text
+
+
+def test_cors_middleware_added(test_client):
+    with patch.object(
+        type(settings),
+        "all_cors_origins",
+        new=property(lambda _: ["https://example.com"]),
+    ):
+        importlib.reload(main)
+        app = main.app
+        client = TestClient(app)
+
+        resp = client.options(
+            "/",
+            headers={{
+                "Origin": "https://example.com",
+                "Access-Control-Request-Method": "GET",
+                "Access-Control-Request-Headers": "Authorization, Content-Type",
+            }},
+        )
+
+        assert resp.status_code == 200
+        assert resp.headers.get("access-control-allow-origin") == "https://example.com"
+"#
+    )
+}
+
+pub fn save_main_test_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = &project_info.base_dir();
+    let file_path = base.join("tests/test_main.py");
+    let file_content = create_main_test_file(project_info);
+
+    save_file_with_content(&file_path, &file_content)?;
+
+    Ok(())
+}

@@ -26,8 +26,8 @@ use crate::{
         service_files::{save_cache_user_services_file, save_db_user_services_file},
         test_files::{
             save_config_test_file, save_conftest_file, save_health_route_test_file,
-            save_login_route_test_file, save_test_deps_file, save_test_utils_file,
-            save_user_model_test_file, save_user_routes_test_file,
+            save_login_route_test_file, save_main_test_file, save_test_deps_file,
+            save_test_utils_file, save_user_model_test_file, save_user_routes_test_file,
             save_user_services_cache_test_file, save_user_services_db_test_file,
             save_version_route_test_file,
         },
@@ -56,6 +56,7 @@ pub fn generate_fastapi(project_info: &ProjectInfo) -> Result<()> {
         save_exceptions_file,
         save_initial_migrations,
         save_main_file,
+        save_main_test_file,
         save_message_model_file,
         save_config_file,
         save_core_utils_file,
