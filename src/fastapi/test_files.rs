@@ -1315,7 +1315,42 @@ pub fn save_version_route_test_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_user_services_test_file(project_info: &ProjectInfo) -> String {
+fn create_user_services_cache_test_file(project_info: &ProjectInfo) -> String {
+    let module = &project_info.module_name();
+
+    format!(
+        r#"import pytest
+
+from {module}.services.cache.user_cache_services import delete_all_users_public
+from {module}.services.db import user_services
+
+
+@pytest.mark.usefixtures("test_user")
+async def test_delete_all_users_public(test_db, test_cache):
+    await user_services.get_users_public(pool=test_db.db_pool, cache_client=test_cache.client)
+
+    keys_before = [key async for key in test_cache.client.scan_iter("users:public:*")]
+    assert len(keys_before) > 0
+
+    await delete_all_users_public(cache_client=test_cache.client)
+
+    keys_after = [key async for key in test_cache.client.scan_iter("users:public:*")]
+    assert len(keys_after) == 0
+"#
+    )
+}
+
+pub fn save_user_services_cache_test_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = &project_info.base_dir();
+    let file_path = base.join("tests/services/cache/test_user_services.py");
+    let file_content = create_user_services_cache_test_file(project_info);
+
+    save_file_with_content(&file_path, &file_content)?;
+
+    Ok(())
+}
+
+fn create_user_services_db_test_file(project_info: &ProjectInfo) -> String {
     let module = &project_info.module_name();
 
     format!(
@@ -1349,10 +1384,10 @@ async def test_get_user_public_by_email_not_found(test_db):
     )
 }
 
-pub fn save_user_services_test_file(project_info: &ProjectInfo) -> Result<()> {
+pub fn save_user_services_db_test_file(project_info: &ProjectInfo) -> Result<()> {
     let base = &project_info.base_dir();
-    let file_path = base.join("tests/services/test_user_services.py");
-    let file_content = create_user_services_test_file(project_info);
+    let file_path = base.join("tests/services/db/test_user_services.py");
+    let file_content = create_user_services_db_test_file(project_info);
 
     save_file_with_content(&file_path, &file_content)?;
 
