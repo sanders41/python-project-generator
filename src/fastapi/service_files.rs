@@ -14,7 +14,7 @@ import orjson
 
 from {module}.models.users import UserInDb, UserPublic, UsersPublic
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from valkey.asyncio import Valkey
 
 

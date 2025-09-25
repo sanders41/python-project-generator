@@ -787,6 +787,8 @@ def test_user_create_short_password():
 def test_user_update_invalid_password(password):
     with pytest.raises(ValueError) as e:
         UserUpdate(
+            email=random_email(),
+            full_name=random_lower_string(),
             password=password,
         )
 
@@ -799,6 +801,8 @@ def test_user_update_invalid_password(password):
 def test_user_update_short_password():
     with pytest.raises(ValueError) as e:
         UserCreate(
+            email=random_email(),
+            full_name=random_lower_string(),
             password="Short1_",
         )
 
@@ -1333,6 +1337,7 @@ async def test_get_users_public_cache(test_db, test_cache):
 async def test_get_user_public_by_email(test_db, test_user):
     result = await get_user_public_by_email(pool=test_db.db_pool, email=test_user.email)
 
+    assert result is not None
     assert result.email == test_user.email
 
 
