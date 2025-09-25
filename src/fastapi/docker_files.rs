@@ -157,7 +157,6 @@ pub fn save_dockercompose_file(project_info: &ProjectInfo) -> Result<()> {
 
 fn create_dockercompose_override_file(project_info: &ProjectInfo) -> String {
     let base_name = &project_info.project_slug;
-    let db_name = &project_info.module_name();
 
     format!(
         r#"services:
