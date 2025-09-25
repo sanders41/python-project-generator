@@ -15,11 +15,12 @@ const FASTAPI_BASE_DEPENDENCIES: &[&str] = &[
     "pydantic-settings",
     "pyjwt",
     "python-multipart",
-    "uvloop",
     "valkey",
 ];
 
-const FASTAPI_BASE_DEV_DEPENDENCIES: &[&str] = &["httpx", "pytest-xdist"];
+const FASTAPI_BASE_UNIX_DEPENDENCIES: &[&str] = &["uvloop"];
+
+const FASTAPI_BASE_DEV_DEPENDENCIES: &[&str] = &["httpx"];
 
 pub fn install_fastapi_dependencies(project_info: &ProjectInfo) -> Result<()> {
     match project_info.project_manager {
@@ -33,8 +34,16 @@ pub fn install_fastapi_dependencies(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
+fn get_fastapi_base_dependencies() -> Vec<&'static str> {
+    let mut base_dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
+    if cfg!(unix) {
+        base_dependencies.extend_from_slice(FASTAPI_BASE_UNIX_DEPENDENCIES);
+    }
+    base_dependencies
+}
+
 fn uv_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result<()> {
-    let mut dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
+    let mut dependencies = get_fastapi_base_dependencies();
     if project_info.database_manager == Some(DatabaseManager::SqlAlchemy) {
         dependencies.push("sqlalchemy");
         dependencies.push("alembic");
@@ -68,7 +77,7 @@ fn uv_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result<()> {
 }
 
 fn poetry_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result<()> {
-    let mut dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
+    let mut dependencies = get_fastapi_base_dependencies();
     if project_info.database_manager == Some(DatabaseManager::SqlAlchemy) {
         dependencies.push("sqlalchemy");
         dependencies.push("alembic");
@@ -112,7 +121,7 @@ fn setuptools_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result
         bail!("Failed to create virtual environment: {stderr}");
     }
 
-    let mut dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
+    let mut dependencies = get_fastapi_base_dependencies();
     let dev_dependencies = FASTAPI_BASE_DEV_DEPENDENCIES.to_vec();
     if project_info.database_manager == Some(DatabaseManager::SqlAlchemy) {
         dependencies.push("sqlalchemy");
