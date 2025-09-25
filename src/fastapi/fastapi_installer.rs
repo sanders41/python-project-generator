@@ -20,7 +20,7 @@ const FASTAPI_BASE_DEPENDENCIES: &[&str] = &[
 
 const FASTAPI_BASE_UNIX_DEPENDENCIES: &[&str] = &["uvloop"];
 
-const FASTAPI_BASE_DEV_DEPENDENCIES: &[&str] = &["httpx"];
+const FASTAPI_BASE_DEV_DEPENDENCIES: &[&str] = &["httpx", "pytest-xdist"];
 
 pub fn install_fastapi_dependencies(project_info: &ProjectInfo) -> Result<()> {
     match project_info.project_manager {
