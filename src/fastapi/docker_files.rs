@@ -227,7 +227,6 @@ fn create_dockercompose_override_file(project_info: &ProjectInfo) -> String {
       - POSTGRES_HOST=db
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=test_password
-      - POSTGRES_DB={db_name}
       - VALKEY_HOST=valkey
       - VALKEY_PASSWORD=test_password
       - ENVIRONMENT=local
