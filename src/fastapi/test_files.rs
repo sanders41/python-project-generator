@@ -478,7 +478,7 @@ async def test_health_no_cache(test_client_bad_cache):
 
 pub fn save_health_route_test_file(project_info: &ProjectInfo) -> Result<()> {
     let base = &project_info.base_dir();
-    let file_path = base.join("tests/conftest.py");
+    let file_path = base.join("tests/api/routes/test_health_route.py");
     let file_content = create_health_route_test_file(project_info);
 
     save_file_with_content(&file_path, &file_content)?;
@@ -1205,7 +1205,9 @@ async def test_delete_user_me(test_client, test_db, test_cache):
         headers=headers,
     )
     assert response.status_code == 204
-    result = await user_services.get_user_by_id(pool=test_db.db_pool, user_id=user_id)
+    result = await user_services.get_user_by_id(
+        pool=test_db.db_pool, cache_client=test_cache.client, user_id=user_id
+    )
     assert result is None
 
 
@@ -1303,6 +1305,49 @@ pub fn save_version_route_test_file(project_info: &ProjectInfo) -> Result<()> {
     let base = &project_info.base_dir();
     let file_path = base.join("tests/api/routes/test_version.py");
     let file_content = create_version_route_test_file(project_info);
+
+    save_file_with_content(&file_path, &file_content)?;
+
+    Ok(())
+}
+
+fn create_user_services_test_file(project_info: &ProjectInfo) -> String {
+    let module = &project_info.module_name();
+
+    format!(
+        r#"import pytest
+
+from {module}.services.db.user_services import get_user_public_by_email, get_users_public
+from tests.utils import random_email
+
+
+@pytest.mark.usefixtures("test_user")
+async def test_get_users_public_cache(test_db, test_cache):
+    result = await get_users_public(pool=test_db.db_pool, cache_client=test_cache.client)
+    # retrieve again to hit cache
+    result_cache = await get_users_public(pool=test_db.db_pool, cache_client=test_cache.client)
+
+    assert result == result_cache
+
+
+async def test_get_user_public_by_email(test_db, test_user):
+    result = await get_user_public_by_email(pool=test_db.db_pool, email=test_user.email)
+
+    assert result.email == test_user.email
+
+
+async def test_get_user_public_by_email_not_found(test_db):
+    result = await get_user_public_by_email(pool=test_db.db_pool, email=random_email())
+
+    assert result is None
+"#
+    )
+}
+
+pub fn save_user_services_test_file(project_info: &ProjectInfo) -> Result<()> {
+    let base = &project_info.base_dir();
+    let file_path = base.join("tests/services/test_user_services.py");
+    let file_content = create_user_services_test_file(project_info);
 
     save_file_with_content(&file_path, &file_content)?;
 

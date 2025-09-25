@@ -177,7 +177,7 @@ async def delete_user(*, pool: Pool, cache_client: Valkey, user_id: str) -> None
 
         result = await db_task
 
-    if result == "DELETE 0":
+    if result == "DELETE 0":  # pragma: no cover
         raise UserNotFoundError(f"User with id {{user_id}} not found")
 
 
@@ -260,9 +260,7 @@ async def get_user_by_email(*, pool: Pool, email: str) -> UserInDb | None:
     return UserInDb(**dict(db_user))
 
 
-async def get_user_public_by_email(
-    *, pool: Pool, email: str, active_filter: ActiveFilter = "all"
-) -> UserPublic | None:
+async def get_user_public_by_email(*, pool: Pool, email: str) -> UserPublic | None:
     user = await get_user_by_email(pool=pool, email=email)
     if not user:
         return None

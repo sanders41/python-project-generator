@@ -185,7 +185,7 @@ router = APIRouter(tags=["Health"], prefix=f"{{settings.API_V1_PREFIX}}/health")
 
 
 @router.get("/")
-async def health(*, pool: DbPool) -> dict[str, str]:
+async def health(*, cache_client: CacheClient, pool: DbPool) -> dict[str, str]:
     """Check the health of the server."""
 
     logger.debug("Checking health")
