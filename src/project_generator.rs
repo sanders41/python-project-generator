@@ -2,7 +2,6 @@ use std::fs::create_dir_all;
 
 use anyhow::{bail, Result};
 use colored::*;
-use minijinja::render;
 use rayon::prelude::*;
 
 use crate::{
@@ -15,7 +14,7 @@ use crate::{
     package_version::{
         LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackage, PythonPackageVersion,
     },
-    project_info::{ProjectInfo, ProjectManager, Pyo3PythonManager},
+    project_info::{LicenseType, ProjectInfo, ProjectManager, Pyo3PythonManager},
     python_files::generate_python_files,
     rust_files::{save_cargo_toml_file, save_lib_file},
     utils::is_python_312_or_greater,
@@ -468,159 +467,239 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
 
 fn create_pyproject_toml(project_info: &ProjectInfo) -> Result<String> {
     let module = project_info.module_name();
+    let min_python_version = &project_info.min_python_version;
     let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
+    let project_name = &module.replace('_', "-");
+    let project_description = &project_info.project_description;
+    let creator = &project_info.creator;
+    let creator_email = &project_info.creator_email;
+    let version = &project_info.version;
+    let license = &project_info.license;
     let license_text = license_str(&project_info.license);
+    let dev_dependencies = build_latest_dev_dependencies(project_info)?;
+    let max_line_length = &project_info.max_line_length;
+    let include_docs = project_info.include_docs;
+
     let mut pyproject = match &project_info.project_manager {
         ProjectManager::Maturin => {
             if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
                 match pyo3_python_manager {
-                    Pyo3PythonManager::Uv => r#"[build-system]
+                    Pyo3PythonManager::Uv => {
+                        let mut pyproject = format!(
+                            r#"[build-system]
 requires = ["maturin>=1.5,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "{{ project_name }}"
-description = "{{ project_description }}"
+name = "{project_name}"
+description = "{project_description}"
 authors = [
-  { name = "{{ creator }}", email = "{{ creator_email }}" },
-]
-{% if license != "NoLicense" -%}
-license = { file = "LICENSE" }
-{% endif -%}
+  {{ name = "{creator}", email = "{creator_email}" }},
+]"#,
+                        );
+
+                        if license != &LicenseType::NoLicense {
+                            pyproject.push_str(
+                                r#"
+license = { file = "LICENSE" }"#,
+                            );
+                        }
+
+                        pyproject.push_str(&format!(
+                            r#"
 readme = "README.md"
 dynamic = ["version"]
-requires-python = ">={{ min_python_version }}"
+requires-python = ">={min_python_version}"
 dependencies = []
 
 [dependency-groups]
-dev = {{ dev_dependencies }}
+dev = {dev_dependencies}
 
 [tool.maturin]
-module-name = "{{ module }}._{{ module }}"
+module-name = "{module}._{module}"
 binding = "pyo3"
 features = ["pyo3/extension-module"]
 
-"#
-                    .to_string(),
-                    Pyo3PythonManager::Setuptools => r#"[build-system]
+"#,
+                        ));
+                        pyproject
+                    }
+                    Pyo3PythonManager::Setuptools => {
+                        let mut pyproject = format!(
+                            r#"[build-system]
 requires = ["maturin>=1.5,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "{{ project_name }}"
-description = "{{ project_description }}"
-authors = [{name = "{{ creator }}", email =  "{{ creator_email }}"}]
-{% if license != "NoLicense" -%}
-license = "{{ license }}"
-{% endif -%}
+name = "{project_name}"
+description = "{project_description}"
+authors = [{{name = "{creator}", email = "{creator_email}"}}]"#,
+                        );
+                        if license != &LicenseType::NoLicense {
+                            pyproject.push_str(&format!(
+                                r#"
+license = "{license_text}""#,
+                            ));
+                        }
+
+                        pyproject.push_str(&format!(
+                            r#"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = []
 
 [tool.maturin]
-module-name = "{{ module }}._{{ module }}"
+module-name = "{module}._{module}"
 binding = "pyo3"
 features = ["pyo3/extension-module"]
 
-"#
-                    .to_string(),
+"#,
+                        ));
+                        pyproject
+                    }
                 }
             } else {
                 bail!("A PyO3 Python manager is required for maturin projects");
             }
         }
-        ProjectManager::Poetry => r#"[tool.poetry]
-name = "{{ project_name }}"
-version = "{{ version }}"
-description = "{{ project_description }}"
-authors = ["{{ creator }} <{{ creator_email }}>"]
-{% if license != "NoLicense" -%}
-license = "{{ license }}"
-{% endif -%}
-readme = "README.md"
+        ProjectManager::Poetry => {
+            let mut pyproject = format!(
+                r#"[tool.poetry]
+name = "{project_name}"
+version = "{version}"
+description = "{project_description}"
+authors = ["{creator} <{creator_email}>"]
+"#
+            );
+
+            if license != &LicenseType::NoLicense {
+                pyproject.push_str(&format!(
+                    "license = \"{license_text}\"
+"
+                ));
+            }
+
+            pyproject.push_str(&format!(
+                r#"readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^{{ min_python_version }}"
+python = "^{min_python_version}"
 
 [tool.poetry.group.dev.dependencies]
-{{ dev_dependencies }}
+{dev_dependencies}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 "#
-        .to_string(),
-        ProjectManager::Setuptools => r#"[build-system]
+            ));
+            pyproject
+        }
+        ProjectManager::Setuptools => {
+            let mut pyproject = format!(
+                r#"[build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "{{ project_name }}"
-description = "{{ project_description }}"
+name = "{project_name}"
+description = "{project_description}"
 authors = [
-  { name = "{{ creator }}", email = "{{ creator_email }}" }
+  {{ name = "{creator}", email = "{creator_email}" }}
 ]
-{% if license != "NoLicense" -%}
-license = { text = "{{ license }}" }
-{% endif -%}
-requires-python = ">={{ min_python_version }}"
+"#
+            );
+
+            if license != &LicenseType::NoLicense {
+                pyproject.push_str(&format!(
+                    "license = {{ text = \"{license_text}\" }}
+"
+                ));
+            }
+
+            pyproject.push_str(&format!(
+                r#"requires-python = ">={min_python_version}"
 dynamic = ["version", "readme"]
 dependencies = []
 
 [tool.setuptools.dynamic]
-version = {attr = "{{ module }}.__version__"}
-readme = {file = ["README.md"]}
+version = {{attr = "{module}.__version__"}}
+readme = {{file = ["README.md"]}}
 
 [tool.setuptools.packages.find]
-include = ["{{ module }}*"]
+include = ["{module}*"]
 
 [tool.setuptools.package-data]
-{{ module }} = ["py.typed"]
+{module} = ["py.typed"]
 
-"#
-        .to_string(),
-        ProjectManager::Uv => r#"[build-system]
+"#,
+            ));
+            pyproject
+        }
+        ProjectManager::Uv => {
+            let mut pyproject = format!(
+                r#"[build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "{{ project_name }}"
-description = "{{ project_description }}"
+name = "{project_name}"
+description = "{project_description}"
 authors = [
-  { name = "{{ creator }}", email = "{{ creator_email }}" }
+  {{ name = "{creator}", email = "{creator_email}" }}
 ]
-{% if license != "NoLicense" -%}
-license = { file = "LICENSE" }
-{% endif -%}
-readme = "README.md"
-requires-python = ">={{ min_python_version }}"
+"#
+            );
+
+            if license != &LicenseType::NoLicense {
+                pyproject.push_str(
+                    "license = { file = \"LICENSE\" }
+",
+                );
+            }
+
+            pyproject.push_str(&format!(
+                r#"readme = "README.md"
+requires-python = ">={min_python_version}"
 dynamic = ["version"]
 dependencies = []
 
 [dependency-groups]
-dev = {{ dev_dependencies }}
+dev = {dev_dependencies}
 
 [tool.hatch.version]
-path = "{{ module }}/_version.py"
+path = "{module}/_version.py"
 
-"#
-        .to_string(),
-        ProjectManager::Pixi => r#"[build-system]
+"#,
+            ));
+            pyproject
+        }
+        ProjectManager::Pixi => {
+            let mut pyproject = format!(
+                r#"[build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "{{ project_name }}"
-description = "{{ project_description }}"
+name = "{project_name}"
+description = "{project_description}"
 authors = [
-  { name = "{{ creator }}", email = "{{ creator_email }}" }
+  {{ name = "{creator}", email = "{creator_email}" }}
 ]
-{% if license != "NoLicense" -%}
-license = { file = "LICENSE" }
-{% endif -%}
-readme = "README.md"
-requires-python = ">={{ min_python_version }}"
+"#
+            );
+
+            if license != &LicenseType::NoLicense {
+                pyproject.push_str(
+                    "license = { file = \"LICENSE\" }
+",
+                );
+            }
+
+            pyproject.push_str(&format!(
+                r#"readme = "README.md"
+requires-python = ">={min_python_version}"
 dynamic = ["version"]
 dependencies = []
 
@@ -629,26 +708,36 @@ channels = ["conda-forge", "bioconda"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
 [tool.pixi.feature.dev.tasks]
-run-mypy = "mypy {{ module }} tests"
-run-ruff-check = "ruff check {{ module }} tests"
-run-ruff-format = "ruff format {{ module }} tests"
+run-mypy = "mypy {module} tests"
+run-ruff-check = "ruff check {module} tests"
+run-ruff-format = "ruff format {module} tests"
 run-pytest = "pytest -x"
-{% if include_docs -%}
-run-deploy-docs = "mkdocs gh-deploy --force"
-{%- endif %}
+"#,
+            ));
 
+            if include_docs {
+                pyproject.push_str(
+                    "run-deploy-docs = \"mkdocs gh-deploy --force\"
+",
+                );
+            }
+
+            pyproject.push_str(&format!(
+                r#"
 [project.optional-dependencies]
-dev = {{ dev_dependencies }}
+dev = {dev_dependencies}
 
 [tool.pixi.environments]
-default = {features = [], solve-group = "default"}
-dev = {features = ["dev"], solve-group = "default"}
+default = {{features = [], solve-group = "default"}}
+dev = {{features = ["dev"], solve-group = "default"}}
 
 [tool.hatch.version]
-path = "{{ module }}/_version.py"
+path = "{module}/_version.py"
 
-"#
-        .to_string(),
+"#,
+            ));
+            pyproject
+        }
     };
 
     pyproject.push_str(
@@ -673,23 +762,31 @@ ignore_missing_imports = true
         );
     }
 
-    pyproject.push_str(
+    pyproject.push_str(&format!(
         r#"
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--cov={{ module }} --cov-report term-missing --no-cov-on-fail"
-{%- if is_async_project %}
-asyncio_mode = "auto"
+addopts = "--cov={module} --cov-report term-missing --no-cov-on-fail"
+"#,
+    ));
+
+    if project_info.is_async_project {
+        pyproject.push_str(
+            r#"asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 asyncio_default_test_loop_scope = "function"
-{%- endif %}
+"#,
+        );
+    }
 
+    pyproject.push_str(&format!(
+        r#"
 [tool.coverage.report]
 exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
-line-length = {{ max_line_length }}
-target-version = "py{{ pyupgrade_version }}"
+line-length = {max_line_length}
+target-version = "py{pyupgrade_version}"
 fix = true
 
 [tool.ruff.lint]
@@ -704,10 +801,17 @@ select = [
   "T203",  # pprint found
   "RUF022",  # Unsorted __all__
   "RUF023",  # Unforted __slots__
-  {%- if is_async_project %}
-  "ASYNC",  # flake8-async
-  {% endif %}
-]
+"#,
+    ));
+
+    if project_info.is_async_project {
+        pyproject.push_str(
+            r#"  "ASYNC",  # flake8-async
+"#,
+        );
+    }
+    pyproject.push_str(
+        r#"]
 ignore=[
   # Recommended ignores by ruff when using formatter
   "E501",
@@ -729,28 +833,7 @@ ignore=[
 "#,
     );
 
-    // I have no idea why this is needed, but if fastapi is enabled things work as expected,
-    // if not there is no new line at the end and pre-commit fails.
-    #[cfg(not(feature = "fastapi"))]
-    pyproject.push_str("\n");
-
-    Ok(render!(
-        &pyproject,
-        project_name => module.replace('_', "-"),
-        version => project_info.version,
-        project_description => project_info.project_description,
-        creator => project_info.creator,
-        creator_email => project_info.creator_email,
-        license => license_text,
-        min_python_version => project_info.min_python_version,
-        dev_dependencies => build_latest_dev_dependencies(project_info)?,
-        max_line_length => project_info.max_line_length,
-        module => module,
-        is_application => project_info.is_application,
-        is_async_project => project_info.is_async_project,
-        include_docs => project_info.include_docs,
-        pyupgrade_version => pyupgrade_version,
-    ))
+    Ok(pyproject)
 }
 
 fn save_pyproject_toml_file(project_info: &ProjectInfo) -> Result<()> {
