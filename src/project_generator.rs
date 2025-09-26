@@ -20,6 +20,9 @@ use crate::{
     utils::is_python_312_or_greater,
 };
 
+#[cfg(feature = "fastapi")]
+use crate::github_actions::save_deploy_files;
+
 fn create_directories(project_info: &ProjectInfo) -> Result<()> {
     let base = project_info.base_dir();
     let src = project_info.source_dir_path();
@@ -1538,6 +1541,16 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
         _ => (),
     }
 
+    #[cfg(feature = "fastapi")]
+    if project_info.use_continuous_deployment {
+        if project_info.is_fastapi_project && save_deploy_files(project_info).is_err() {
+            bail!("Error creating deploy files");
+        } else if save_pypi_publish_file(project_info).is_err() {
+            bail!("Error creating PyPI publish file");
+        }
+    }
+
+    #[cfg(not(feature = "fastapi"))]
     if project_info.use_continuous_deployment && save_pypi_publish_file(project_info).is_err() {
         bail!("Error creating PyPI publish file");
     }

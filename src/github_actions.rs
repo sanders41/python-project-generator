@@ -1897,6 +1897,99 @@ jobs:
     )
 }
 
+#[cfg(feature = "fastapi")]
+fn create_testing_deploy_file() -> String {
+    r#"name: Deploy to Testing
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on:
+      - self-hosted
+      - testing
+    env:
+      ENVIRONMENT: testing
+      DOMAIN: ${{ secrets.DOMAIN_TESTING }}
+      STACK_NAME: ${{ secrets.STACK_NAME_TESTING }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      FIRST_SUPERUSER_EMAIL: ${{ secrets.FIRST_SUPERUSER_EMAIL }}
+      FIRST_SUPERUSER_PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
+      FIRST_SUPERUSER_NAME: ${{ secrets.FIRST_SUPERUSER_NAME }}
+      POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      VALKEY_HOST: ${{ secrets.VALKEY_HOST }}
+      VALKEY_PASSWORD: ${{ secrets.VALKEY_PASSWORD }}
+      HANDWRITING_OCR_TOKEN: ${{ secrets.HANDWRITING_OCR_TOKEN }}
+      USERNAME: ${{ secrets.FIRST_SUPERUSER_EMAIL }}
+      PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
+      EMAIL: ${{ secrets.FIRST_SUPERUSER_EMAIL }}
+      ERROR_NOTIFICATION_URL: ${{ secrets.ERROR_NOTIFICATION_URL_TESTING }}
+      LOG_LEVEL: "DEBUG"
+    steps:
+      - name: Fix permissions
+        run: |
+          if [ -d "./data" ]; then
+            sudo chown -R $USER:$USER ./data
+          fi
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Create .env file
+        run: |
+          HASHED_PASSWORD=$(openssl passwd -apr1 "${PASSWORD}" | sed 's/\$/\$\$/g')
+          cat > .env << EOF
+          ENVIRONMENT=${ENVIRONMENT}
+          DOMAIN=${DOMAIN}
+          STACK_NAME=${STACK_NAME}
+          SECRET_KEY=${SECRET_KEY}
+          FIRST_SUPERUSER_EMAIL=${FIRST_SUPERUSER_EMAIL}
+          FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD}
+          FIRST_SUPERUSER_NAME=${FIRST_SUPERUSER_NAME}
+          POSTGRES_HOST=${POSTGRES_HOST}
+          POSTGRES_USER=${POSTGRES_USER}
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+          POSTGRES_DB=${POSTGRES_DB}
+          VALKEY_HOST=${VALKEY_HOST}
+          VALKEY_PASSWORD=${VALKEY_PASSWORD}
+          HANDWRITING_OCR_TOKEN=${HANDWRITING_OCR_TOKEN}
+          USERNAME=${FIRST_SUPERUSER_EMAIL}
+          PASSWORD=${FIRST_SUPERUSER_PASSWORD}
+          HASHED_PASSWORD=${HASHED_PASSWORD}
+          EMAIL=${FIRST_SUPERUSER_EMAIL}
+          ERROR_NOTIFICATION_URL=${ERROR_NOTIFICATION_URL}
+          LOG_LEVEL=${LOG_LEVEL}
+          EOF
+      - name: Build and restart containers
+        timeout-minutes: 15
+        run: |
+          docker compose -f docker-compose.yml --project-name ${{ secrets.STACK_NAME_TESTING }} build
+          docker compose -f docker-compose.yml --project-name ${{ secrets.STACK_NAME_TESTING }} up -d
+"#.to_string()
+}
+
+#[cfg(feature = "fastapi")]
+pub fn save_deploy_files(project_info: &ProjectInfo) -> Result<()> {
+    let testing_file_path = project_info
+        .base_dir()
+        .join(".github/workflows/deploy_testing.yml");
+    let testing_content = create_testing_deploy_file();
+
+    save_file_with_content(&testing_file_path, &testing_content)?;
+
+    let production_file_path = project_info
+        .base_dir()
+        .join(".github/workflows/deploy_production.yml");
+    let production_content = create_testing_deploy_file();
+
+    save_file_with_content(&production_file_path, &production_content)?;
+
+    Ok(())
+}
+
 pub fn save_pypi_publish_file(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info
         .base_dir()
@@ -2131,6 +2224,9 @@ mod tests {
     use std::fs::create_dir_all;
     use tmp_path::tmp_path;
 
+    #[cfg(feature = "fastapi")]
+    use crate::project_info::DatabaseManager;
+
     #[tmp_path]
     fn project_info_dummy() -> ProjectInfo {
         ProjectInfo {
@@ -2216,10 +2312,48 @@ mod tests {
         assert_yaml_snapshot!(content);
     }
 
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_poetry_ci_testing_fastapi_file() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        save_ci_testing_linux_only_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
     #[test]
     fn test_save_ci_testing_linux_only_file_pyo3() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        save_ci_testing_linux_only_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_ci_testing_fastapi_file_pyo3() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
         let expected_file = base.join(".github/workflows/testing.yml");
@@ -2249,11 +2383,49 @@ mod tests {
         assert_yaml_snapshot!(content);
     }
 
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_setuptools_ci_fastapi_file() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Setuptools;
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        save_ci_testing_linux_only_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
     #[test]
     fn test_save_uv_ci_testing_linux_only_file() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Uv;
         project_info.use_multi_os_ci = false;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        save_ci_testing_linux_only_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_uv_ci_testing_fastapi_file() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
         let expected_file = base.join(".github/workflows/testing.yml");
@@ -2713,6 +2885,28 @@ mod tests {
         let content = std::fs::read_to_string(expected_file).unwrap();
 
         assert_yaml_snapshot!(content);
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_deploy_files() {
+        let mut project_info = project_info_dummy();
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_test_file = base.join(".github/workflows/deploy_testing.yml");
+        let expected_production_file = base.join(".github/workflows/deploy_production.yml");
+        save_deploy_files(&project_info).unwrap();
+
+        assert!(expected_test_file.is_file());
+        assert!(expected_production_file.is_file());
+
+        let test_content = std::fs::read_to_string(expected_test_file).unwrap();
+        let production_content = std::fs::read_to_string(expected_production_file).unwrap();
+
+        assert_yaml_snapshot!(test_content);
+        assert_yaml_snapshot!(production_content);
     }
 
     #[test]
