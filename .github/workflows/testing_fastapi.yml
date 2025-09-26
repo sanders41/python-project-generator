@@ -26,8 +26,8 @@ env:
   PRODUCTION_MODE: false
   DATABASE_URL: postgresql://postgres:test_password@127.0.0.1:5432/test_db
 jobs:
-  test:
-    name: test-fastapi-setup
+  test-uv:
+    name: test-fastapi-uv-setup
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest
