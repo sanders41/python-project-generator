@@ -30,6 +30,7 @@ jobs:
     name: Tests
     strategy:
       fail-fast: false
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - name: install Rust
