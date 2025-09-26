@@ -27,7 +27,7 @@ env:
   DATABASE_URL: postgresql://postgres:test_password@127.0.0.1:5432/test_db
 jobs:
   test:
-    name: Tests
+    name: test-fastapi-setup
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest
