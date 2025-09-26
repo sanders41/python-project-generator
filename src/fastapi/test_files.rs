@@ -153,7 +153,6 @@ def test_parse_cors_string():
     )
 
     assert settings.BACKEND_CORS_ORIGINS == [AnyUrl("http://localhost"), AnyUrl("http://127.0.0.1")]
-
 "#
     )
 }
@@ -337,9 +336,7 @@ def normal_user_credentials():
 
 
 @pytest.fixture
-async def normal_user_token_headers(
-    test_db, test_client, test_cache, normal_user_credentials
-):
+async def normal_user_token_headers(test_db, test_client, test_cache, normal_user_credentials):
     user = await user_services.get_user_by_email(
         pool=test_db.db_pool, email=normal_user_credentials["email"]
     )
@@ -471,7 +468,6 @@ async def test_health_no_cache(test_client_bad_cache):
     assert result.json()["server"] == "healthy"
     assert result.json()["db"] == "healthy"
     assert result.json()["cache"] == "unhealthy"
-
 "#
     )
 }
@@ -732,7 +728,6 @@ async def temp_cache_client():
 async def test_get_cache_client_success():
     async for client in get_cache_client():
         assert client is not None
-
 "#
     )
 }
@@ -807,7 +802,6 @@ def test_user_update_short_password():
         )
 
     assert "at least 8 characters" in (str(e.value))
-
 "#
     )
 }
@@ -939,9 +933,7 @@ async def test_create_user(test_client):
     assert response.status_code == 200
 
 
-async def test_create_user_existing_username(
-    test_client, test_db, test_cache
-):
+async def test_create_user_existing_username(test_client, test_db, test_cache):
     username = random_email()
     password = random_password()
     full_name = random_lower_string()
@@ -968,9 +960,7 @@ async def test_create_user_existing_username(
     assert "A user with this email address already exists" in created_user["detail"]
 
 
-async def test_read_users(
-    test_client, superuser_token_headers, test_db, test_cache
-):
+async def test_read_users(test_client, superuser_token_headers, test_db, test_cache):
     username = random_email()
     password = random_password()
     full_name = random_lower_string()
@@ -1141,9 +1131,7 @@ async def test_update_user_not_exists(test_client, superuser_token_headers):
     assert response.json()["detail"] == "The user with this id does not exist in the system"
 
 
-async def test_update_user_email_exists(
-    test_client, superuser_token_headers, test_db, test_cache
-):
+async def test_update_user_email_exists(test_client, superuser_token_headers, test_db, test_cache):
     username = random_email()
     password = random_password()
     full_name = random_lower_string()
@@ -1273,8 +1261,6 @@ async def test_delete_user_without_privileges(test_client, normal_user_token_hea
     )
     assert response.status_code == 403
     assert response.json()["detail"] == "The user doesn't have enough privileges"
-
-
 "#
     )
 }
@@ -1300,7 +1286,6 @@ async def test_read_version(test_client):
     response = await test_client.get("version")
     assert response.status_code == 200
     assert response.json()["version"] == __version__
-
 "#
     )
 }

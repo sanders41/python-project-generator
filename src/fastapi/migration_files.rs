@@ -18,7 +18,9 @@ fn create_initial_up_migration() -> String {
 }
 
 fn create_initial_down_migration() -> String {
-    "DROP TABLE IF EXISTS users;".to_string()
+    r#"DROP TABLE IF EXISTS users;
+"#
+    .to_string()
 }
 
 pub fn save_initial_migrations(project_info: &ProjectInfo) -> Result<()> {

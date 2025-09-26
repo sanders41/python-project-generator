@@ -337,7 +337,6 @@ fn create_security_file(project_info: &ProjectInfo) -> String {
 from datetime import UTC, datetime, timedelta
 
 import jwt
-from fastapi import Request
 from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
 
@@ -347,12 +346,6 @@ password_hash = PasswordHash((Argon2Hasher(),))
 
 
 ALGORITHM = "HS256"
-_ALLOWED_PATHS = {{
-    f"{{settings.API_V1_PREFIX}}/login/access-token",
-    f"{{settings.API_V1_PREFIX}}/login/test-token",
-    f"{{settings.API_V1_PREFIX}}/users/me/password",
-    f"{{settings.API_V1_PREFIX}}/users/me",
-}}
 
 
 def create_access_token(subject: str, is_superuser: bool, expires_delta: timedelta) -> str:
