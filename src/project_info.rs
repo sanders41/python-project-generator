@@ -723,6 +723,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         None
     };
 
+    #[cfg(not(feature = "fastapi"))]
     let is_application = default_or_prompt_bool(
         "Application or Library\n  1 - Application\n  2 - Library\n  Choose from [1, 2]"
             .to_string(),
@@ -730,6 +731,19 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         true,
         use_defaults,
     )?;
+
+    #[cfg(feature = "fastapi")]
+    let is_application = if is_fastapi_project {
+        true
+    } else {
+        default_or_prompt_bool(
+            "Application or Library\n  1 - Application\n  2 - Library\n  Choose from [1, 2]"
+                .to_string(),
+            config.is_application,
+            true,
+            use_defaults,
+        )?
+    };
 
     #[cfg(feature = "fastapi")]
     let database_manager = if is_fastapi_project {
