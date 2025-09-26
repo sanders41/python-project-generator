@@ -81,6 +81,101 @@ jobs:
     )
 }
 
+#[cfg(feature = "fastapi")]
+fn create_poetry_ci_testing_fastapi_file(
+    source_dir: &str,
+    min_python_version: &str,
+    github_action_python_test_versions: &[String],
+) -> String {
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+
+    format!(
+        r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  PYTHON_VERSION: "{min_python_version}"
+  SECRET_KEY: "someKey"
+  PRODUCTION_MODE: false
+  FIRST_SUPERUSER_EMAIL: "some@email.com"
+  FIRST_SUPERUSER_PASSWORD: "somePassword1!"
+  FIRST_SUPERUSER_NAME: "Super User"
+  POSTGRES_HOST: "127.0.0.1"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "test_password"
+  POSTGRES_DB: "test_db"
+  VALKEY_HOST: "127.0.0.1"
+  VALKEY_PASSWORD: "test_password"
+  MEILISEARCH_HOST: http://127.0.0.1
+  STACK_NAME: "test-stack"
+  DOMAIN: "127.0.0.1"
+  LOG_LEVEL: "DEBUG"
+  CI: true
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Install sqlx-cli
+      run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
+    - name: Install Poetry
+      run: pipx install poetry
+    - name: Configure poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
+        cache: "poetry"
+    - name: Install Dependencies
+      run: poetry install
+    - name: Ruff format check
+      run: poetry run ruff format {source_dir} tests --check
+    - name: Lint with ruff
+      run: poetry run ruff check .
+    - name: mypy check
+      run: poetry run mypy .
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Poetry
+      run: pipx install poetry
+    - name: Configure poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+        cache: "poetry"
+    - name: Install Dependencies
+      run: poetry install
+    - name: make .env
+      run: touch .env
+    - name: Start docker containers
+      run: docker compose up db valkey migrations -d
+    - name: Test with pytest
+      run: poetry run pytest -n auto
+"#
+    )
+}
+
 fn create_setuptools_ci_testing_linux_only_file(
     source_dir: &str,
     min_python_version: &str,
@@ -137,6 +232,93 @@ jobs:
         python -m pip install -r requirements-dev.txt
     - name: Test with pytest
       run: pytest
+"#
+    )
+}
+
+#[cfg(feature = "fastapi")]
+fn create_setuptools_ci_testing_fastapi_file(
+    source_dir: &str,
+    min_python_version: &str,
+    github_action_python_test_versions: &[String],
+) -> String {
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+
+    format!(
+        r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  PYTHON_VERSION: "{min_python_version}"
+  SECRET_KEY: "someKey"
+  PRODUCTION_MODE: false
+  FIRST_SUPERUSER_EMAIL: "some@email.com"
+  FIRST_SUPERUSER_PASSWORD: "somePassword1!"
+  FIRST_SUPERUSER_NAME: "Super User"
+  POSTGRES_HOST: "127.0.0.1"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "test_password"
+  POSTGRES_DB: "test_db"
+  VALKEY_HOST: "127.0.0.1"
+  VALKEY_PASSWORD: "test_password"
+  MEILISEARCH_HOST: http://127.0.0.1
+  STACK_NAME: "test-stack"
+  DOMAIN: "127.0.0.1"
+  LOG_LEVEL: "DEBUG"
+  CI: true
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
+        cache: "pip"
+    - name: Install Dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+    - name: Ruff format check
+      run: ruff format {source_dir} tests --check
+    - name: Lint with ruff
+      run: ruff check .
+    - name: mypy check
+      run: mypy .
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Install sqlx-cli
+      run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+        cache: "pip"
+    - name: Install Dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+    - name: make .env
+      run: touch .env
+    - name: Start docker containers
+      run: docker compose up db valkey migrations -d
+    - name: Test with pytest
+      run: python -m pytest -n auto
 "#
     )
 }
@@ -199,6 +381,95 @@ jobs:
       run: uv sync --frozen
     - name: Test with pytest
       run: uv run pytest
+"#
+    )
+}
+
+#[cfg(feature = "fastapi")]
+fn create_uv_ci_testing_fastapi_file(
+    source_dir: &str,
+    min_python_version: &str,
+    github_action_python_test_versions: &[String],
+) -> String {
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+
+    format!(
+        r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  PYTHON_VERSION: "{min_python_version}"
+  SECRET_KEY: "someKey"
+  PRODUCTION_MODE: false
+  FIRST_SUPERUSER_EMAIL: "some@email.com"
+  FIRST_SUPERUSER_PASSWORD: "somePassword1!"
+  FIRST_SUPERUSER_NAME: "Super User"
+  POSTGRES_HOST: "127.0.0.1"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "test_password"
+  POSTGRES_DB: "test_db"
+  VALKEY_HOST: "127.0.0.1"
+  VALKEY_PASSWORD: "test_password"
+  MEILISEARCH_HOST: http://127.0.0.1
+  STACK_NAME: "test-stack"
+  DOMAIN: "127.0.0.1"
+  LOG_LEVEL: "DEBUG"
+  CI: true
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
+    - name: Install Dependencies
+      run: uv sync --frozen
+    - name: Ruff format check
+      run: uv run ruff format {source_dir} tests --check
+    - name: Lint with ruff
+      run: uv run ruff check .
+    - name: mypy check
+      run: uv run mypy .
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Install sqlx-cli
+      run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+    - name: Install Dependencies
+      run: uv sync --frozen
+    - name: make .env
+      run: touch .env
+    - name: Start docker containers
+      run: docker compose up db valkey migrations -d
+    - name: Test with pytest
+      run: uv run pytest -n auto
 "#
     )
 }
@@ -429,6 +700,232 @@ jobs:
     }
 }
 
+#[cfg(feature = "fastapi")]
+fn create_ci_testing_fastapi_file_pyo3(
+    source_dir: &str,
+    min_python_version: &str,
+    github_action_python_test_versions: &[String],
+    pyo3_python_manager: &Pyo3PythonManager,
+) -> String {
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+    match pyo3_python_manager {
+        Pyo3PythonManager::Uv => format!(
+            r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: "-D warnings"
+  PYTHON_VERSION: "{min_python_version}"
+  SECRET_KEY: "someKey"
+  PRODUCTION_MODE: false
+  FIRST_SUPERUSER_EMAIL: "some@email.com"
+  FIRST_SUPERUSER_PASSWORD: "somePassword1!"
+  FIRST_SUPERUSER_NAME: "Super User"
+  POSTGRES_HOST: "127.0.0.1"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "test_password"
+  POSTGRES_DB: "test_db"
+  VALKEY_HOST: "127.0.0.1"
+  VALKEY_PASSWORD: "test_password"
+  MEILISEARCH_HOST: http://127.0.0.1
+  STACK_NAME: "test-stack"
+  DOMAIN: "127.0.0.1"
+  LOG_LEVEL: "DEBUG"
+  CI: true
+jobs:
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Run cargo clippy
+      run: cargo clippy --all-targets -- --deny warnings
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Run cargo fmt
+     run: cargo fmt --all -- --check
+  python-linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
+    - name: Install Dependencies
+      run: |
+        uv sync --frozen
+        uv run maturin build
+    - name: Ruff format check
+      run: uv run ruff format {source_dir} tests --check
+    - name: Lint with ruff
+      run: uv run ruff check .
+    - name: mypy check
+      run: uv run mypy {source_dir} tests
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Install sqlx-cli
+      run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+    - name: Install Dependencies
+      run: |
+        uv sync --frozen
+        uv run maturin build
+    - name: make .env
+      run: touch .env
+    - name: Start docker containers
+      run: docker compose up db valkey migrations -d
+    - name: Test with pytest
+      run: uv run pytest -n auto
+"#
+        ),
+        Pyo3PythonManager::Setuptools => format!(
+            r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: "-D warnings"
+  PYTHON_VERSION: "{min_python_version}"
+  SECRET_KEY: "someKey"
+  PRODUCTION_MODE: false
+  FIRST_SUPERUSER_EMAIL: "some@email.com"
+  FIRST_SUPERUSER_PASSWORD: "somePassword1!"
+  FIRST_SUPERUSER_NAME: "Super User"
+  POSTGRES_HOST: "127.0.0.1"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "test_password"
+  POSTGRES_DB: "test_db"
+  VALKEY_HOST: "127.0.0.1"
+  VALKEY_PASSWORD: "test_password"
+  MEILISEARCH_HOST: http://127.0.0.1
+  STACK_NAME: "test-stack"
+  DOMAIN: "127.0.0.1"
+  LOG_LEVEL: "DEBUG"
+  CI: true
+jobs:
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Run cargo clippy
+      run: cargo clippy --all-targets -- --deny warnings
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Run cargo fmt
+      run: cargo fmt --all -- --check
+  python-linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
+        cache: "pip"
+    - name: Install Dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+        python -m pip install -e .
+        maturin build --out dist
+    - name: Ruff format check
+      run: ruff format {source_dir} tests --check
+    - name: Lint with ruff
+      run: ruff check .
+    - name: mypy check
+      run: mypy .
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+        cache: "pip"
+    - name: Install sqlx-cli
+      run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
+    - name: Install Dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+        python -m pip install -e .
+        maturin build --out dist
+    - name: make .env
+      run: touch .env
+    - name: Start docker containers
+      run: docker compose up db valkey migrations -d
+    - name: Test with pytest
+      run: python -m pytest -n auto
+"#
+        ),
+    }
+}
+
 pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info
         .base_dir()
@@ -436,6 +933,24 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
     let content = match &project_info.project_manager {
         ProjectManager::Maturin => {
             if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
+                #[cfg(feature = "fastapi")]
+                if project_info.is_fastapi_project {
+                    create_ci_testing_fastapi_file_pyo3(
+                        &project_info.source_dir,
+                        &project_info.min_python_version,
+                        &project_info.github_actions_python_test_versions,
+                        pyo3_python_manager,
+                    )
+                } else {
+                    create_ci_testing_linux_only_file_pyo3(
+                        &project_info.source_dir,
+                        &project_info.min_python_version,
+                        &project_info.github_actions_python_test_versions,
+                        pyo3_python_manager,
+                    )
+                }
+
+                #[cfg(not(feature = "fastapi"))]
                 create_ci_testing_linux_only_file_pyo3(
                     &project_info.source_dir,
                     &project_info.min_python_version,
@@ -446,21 +961,75 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
                 bail!("A PyO3 Python manager is required for maturin");
             }
         }
-        ProjectManager::Poetry => create_poetry_ci_testing_linux_only_file(
-            &project_info.source_dir,
-            &project_info.min_python_version,
-            &project_info.github_actions_python_test_versions,
-        ),
-        ProjectManager::Setuptools => create_setuptools_ci_testing_linux_only_file(
-            &project_info.source_dir,
-            &project_info.min_python_version,
-            &project_info.github_actions_python_test_versions,
-        ),
-        ProjectManager::Uv => create_uv_ci_testing_linux_only_file(
-            &project_info.source_dir,
-            &project_info.min_python_version,
-            &project_info.github_actions_python_test_versions,
-        ),
+        ProjectManager::Poetry => {
+            #[cfg(feature = "fastapi")]
+            if project_info.is_fastapi_project {
+                create_poetry_ci_testing_fastapi_file(
+                    &project_info.source_dir,
+                    &project_info.min_python_version,
+                    &project_info.github_actions_python_test_versions,
+                )
+            } else {
+                create_poetry_ci_testing_linux_only_file(
+                    &project_info.source_dir,
+                    &project_info.min_python_version,
+                    &project_info.github_actions_python_test_versions,
+                )
+            }
+
+            #[cfg(not(feature = "fastapi"))]
+            create_poetry_ci_testing_linux_only_file(
+                &project_info.source_dir,
+                &project_info.min_python_version,
+                &project_info.github_actions_python_test_versions,
+            )
+        }
+        ProjectManager::Setuptools => {
+            #[cfg(feature = "fastapi")]
+            if project_info.is_fastapi_project {
+                create_setuptools_ci_testing_fastapi_file(
+                    &project_info.source_dir,
+                    &project_info.min_python_version,
+                    &project_info.github_actions_python_test_versions,
+                )
+            } else {
+                create_setuptools_ci_testing_linux_only_file(
+                    &project_info.source_dir,
+                    &project_info.min_python_version,
+                    &project_info.github_actions_python_test_versions,
+                )
+            }
+
+            #[cfg(not(feature = "fastapi"))]
+            create_setuptools_ci_testing_linux_only_file(
+                &project_info.source_dir,
+                &project_info.min_python_version,
+                &project_info.github_actions_python_test_versions,
+            )
+        }
+        ProjectManager::Uv => {
+            #[cfg(feature = "fastapi")]
+            if project_info.is_fastapi_project {
+                create_uv_ci_testing_fastapi_file(
+                    &project_info.source_dir,
+                    &project_info.min_python_version,
+                    &project_info.github_actions_python_test_versions,
+                )
+            } else {
+                create_uv_ci_testing_linux_only_file(
+                    &project_info.source_dir,
+                    &project_info.min_python_version,
+                    &project_info.github_actions_python_test_versions,
+                )
+            }
+
+            #[cfg(not(feature = "fastapi"))]
+            create_uv_ci_testing_linux_only_file(
+                &project_info.source_dir,
+                &project_info.min_python_version,
+                &project_info.github_actions_python_test_versions,
+            )
+        }
         ProjectManager::Pixi => create_pixi_ci_testing_linux_only_file(
             &project_info.min_python_version,
             &project_info.github_actions_python_test_versions,
