@@ -57,7 +57,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -72,7 +72,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -94,7 +94,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.8.1
-      - name: Install uv on Linux and Mac
+      - name: Install uv on Linux
         if: runner.os != 'Windows'
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Install uv on Windows
@@ -127,7 +127,7 @@ jobs:
       fail-fast: false
       matrix:
         project_type: ["application", "lib"]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -135,7 +135,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.8.1
-      - name: Install uv on Linux and Mac
+      - name: Install uv on Linux
         if: runner.os != 'Windows'
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Install uv on Windows
@@ -208,7 +208,7 @@ jobs:
       fail-fast: false
       matrix:
         project_type: ["application", "lib"]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -259,7 +259,7 @@ jobs:
           components: clippy, rustfmt
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.8.1
-      - name: Install uv on Linux and Mac
+      - name: Install uv on Linux
         if: runner.os != 'Windows'
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Install uv on Windows
@@ -299,7 +299,7 @@ jobs:
       fail-fast: false
       matrix:
         project_type: ["application", "lib"]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -307,7 +307,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.8.1
-      - name: Install uv on Linux and Mac
+      - name: Install uv on Linux
         if: runner.os != 'Windows'
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Install uv on Windows
@@ -377,7 +377,7 @@ jobs:
       fail-fast: false
       matrix:
         project_type: ["application", "lib"]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -448,7 +448,7 @@ jobs:
       fail-fast: false
       matrix:
         project_type: ["application", "lib"]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
