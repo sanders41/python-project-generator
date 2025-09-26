@@ -272,7 +272,7 @@ async def test_cache(next_db):
 @pytest.fixture
 def apply_migrations(db_name):
     test_db_url = f"postgresql://{{settings.POSTGRES_USER}}:{{settings.POSTGRES_PASSWORD.get_secret_value()}}@{{settings.POSTGRES_HOST}}:5432/{{db_name}}"
-    migration_dir = ROOT_PATH.parent
+    migration_dir = ROOT_PATH
 
     with patch.dict(os.environ, {{"DATABASE_URL": test_db_url}}):
         subprocess.run(["sqlx", "database", "create"], cwd=migration_dir)
