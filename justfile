@@ -32,5 +32,11 @@
 @test:
   cargo insta test
 
+@test-fastapi:
+  cargo insta test -F fastapi
+
 @test-review:
   cargo insta test --review
+
+@test-review-fastapi:
+  cargo insta test --review -F fastapi

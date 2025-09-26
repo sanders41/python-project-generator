@@ -967,8 +967,11 @@ fn save_docs_css(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_poetry_justfile(module: &str) -> String {
-    format!(
+fn create_poetry_justfile(project_info: &ProjectInfo) -> String {
+    let module = project_info.module_name();
+
+    #[cfg_attr(not(feature = "fastapi"), allow(unused_mut))]
+    let mut justfile = format!(
         r#"@_default:
   just --list
 
@@ -989,21 +992,87 @@ fn create_poetry_justfile(module: &str) -> String {
 @ruff-format:
   poetry run ruff format {module} tests
 
-@test *args="":
-  -poetry run pytest {{{{args}}}}
-
 @install:
   poetry install
+
+@test *args="":
+  poetry run pytest {{{{args}}}}
 "#
-    )
+    );
+
+    #[cfg(feature = "fastapi")]
+    if project_info.is_fastapi_project {
+        justfile.push_str(
+            r#"
+granian_cmd := if os() != "windows" {
+  "poetry run granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --loop uvloop --reload"
+} else {
+  "poetry run granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --reload"
 }
 
-fn create_pyo3_justfile(module: &str, pyo3_python_manager: &Pyo3PythonManager) -> String {
-    match pyo3_python_manager {
+@backend-server:
+  {{granian_cmd}}
+
+@test-parallel *args="":
+  poetry run pytest -n auto {{args}}
+
+@docker-up:
+  docker compose up --build
+
+@docker-up-detached:
+  docker compose up --build -d
+
+@docker-up-services:
+  docker compose up db valkey migrations
+
+@docker-up-services-detached:
+  docker compose up db valkey migrations -d
+
+@docker-down:
+  docker compose down
+
+@docker-down-volumes:
+  docker compose down --volumes
+
+@docker-pull:
+  docker compose pull db valkey migrations
+
+@docker-build:
+  docker compose build
+"#,
+        )
+    }
+
+    justfile
+}
+
+fn create_pyo3_justfile(project_info: &ProjectInfo) -> Result<String> {
+    let module = project_info.module_name();
+    let pyo3_python_manager = if let Some(manager) = &project_info.pyo3_python_manager {
+        manager
+    } else {
+        bail!("A PyO3 Python manager is required for maturin");
+    };
+    #[cfg_attr(not(feature = "fastapi"), allow(unused_mut))]
+    let mut justfile = match pyo3_python_manager {
         Pyo3PythonManager::Uv => {
-            format!(
+            let mut file = format!(
                 r#"@_default:
   just --list
+
+@lint:
+  echo cargo check
+  just --justfile {{{{justfile()}}}} check
+  echo cargo clippy
+  just --justfile {{{{justfile()}}}} clippy
+  echo cargo fmt
+  just --justfile {{{{justfile()}}}} fmt
+  echo mypy
+  just --justfile {{{{justfile()}}}} mypy
+  echo ruff check
+  just --justfile {{{{justfile()}}}} ruff-check
+  echo ruff formatting
+  just --justfile {{{{justfile()}}}} ruff-format
 
 @lock:
   uv lock
@@ -1022,20 +1091,6 @@ fn create_pyo3_justfile(module: &str, pyo3_python_manager: &Pyo3PythonManager) -
 
 @install-release: && develop-release
   uv sync --frozen --all-extras
-
-@lint:
-  echo cargo check
-  just --justfile {{{{justfile()}}}} check
-  echo cargo clippy
-  just --justfile {{{{justfile()}}}} clippy
-  echo cargo fmt
-  just --justfile {{{{justfile()}}}} fmt
-  echo mypy
-  just --justfile {{{{justfile()}}}} mypy
-  echo ruff check
-  just --justfile {{{{justfile()}}}} ruff-check
-  echo ruff formatting
-  just --justfile {{{{justfile()}}}} ruff-format
 
 @check:
   cargo check
@@ -1058,24 +1113,33 @@ fn create_pyo3_justfile(module: &str, pyo3_python_manager: &Pyo3PythonManager) -
 @test *args="":
   uv run pytest {{{{args}}}}
 "#
-            )
+            );
+
+            #[cfg(feature = "fastapi")]
+            if project_info.is_fastapi_project {
+                file.push_str(
+                    r#"
+@test-parallel *args="":
+  uv run pytest -n auto {{args}}
+
+granian_cmd := if os() != "windows" {
+  "uv run granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --loop uvloop --reload"
+} else {
+  "uv run granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --reload"
+}
+
+@backend-server:
+  {{granian_cmd}}
+"#,
+                );
+            }
+
+            file
         }
         Pyo3PythonManager::Setuptools => {
-            format!(
+            let mut file = format!(
                 r#"@_default:
   just --list
-
-@develop:
-  maturin develop
-
-@develop-release:
-  maturin develop -r
-
-@install: && develop
-  python -m pip install -r requirements-dev.txt
-
-@install-release: && develop-release
-  python -m pip install -r requirements-dev.txt
 
 @lint:
   echo cargo check
@@ -1091,6 +1155,18 @@ fn create_pyo3_justfile(module: &str, pyo3_python_manager: &Pyo3PythonManager) -
   echo ruff formatting
   just --justfile {{{{justfile()}}}} ruff-format
 
+@develop:
+  python -m maturin develop
+
+@develop-release:
+  python -m maturin develop -r
+
+@install: && develop
+  python -m pip install -r requirements-dev.txt
+
+@install-release: && develop-release
+  python -m pip install -r requirements-dev.txt
+
 @check:
   cargo check
 
@@ -1101,24 +1177,82 @@ fn create_pyo3_justfile(module: &str, pyo3_python_manager: &Pyo3PythonManager) -
   cargo fmt --all -- --check
 
 @mypy:
-  mypy {module} tests
+  python -m mypy {module} tests
 
 @ruff-check:
-  ruff check {module} tests --fix
+  python -m ruff check {module} tests --fix
 
 @ruff-format:
-  ruff format {module} tests
+  python -m ruff format {module} tests
 
 @test *arg="":
-  pytest {{{{args}}}}
+  python -m pytest {{{{args}}}}
 "#
-            )
-        }
-    }
+            );
+
+            #[cfg(feature = "fastapi")]
+            if project_info.is_fastapi_project {
+                file.push_str(
+                    r#"
+@test-parallel *args="":
+  python -m pytest -n auto {{{{args}}}}
+
+granian_cmd := if os() != "windows" {
+  "python -m granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --loop uvloop --reload"
+} else {
+  "python -m granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --reload"
 }
 
-fn create_setuptools_justfile(module: &str) -> String {
-    format!(
+@backend-server:
+  {{granian_cmd}}
+"#,
+                );
+            }
+
+            file
+        }
+    };
+
+    #[cfg(feature = "fastapi")]
+    if project_info.is_fastapi_project {
+        justfile.push_str(
+            r#"
+@docker-up:
+  docker compose up --build
+
+@docker-up-detached:
+  docker compose up --build -d
+
+@docker-up-services:
+  docker compose up db valkey migrations
+
+@docker-up-services-detached:
+  docker compose up db valkey migrations -d
+
+@docker-down:
+  docker compose down
+
+@docker-down-volumes:
+  docker compose down --volumes
+
+@docker-pull:
+  docker compose pull db valkey migrations
+
+@docker-build:
+  docker compose build
+}}}}
+"#,
+        )
+    }
+
+    Ok(justfile)
+}
+
+fn create_setuptools_justfile(project_info: &ProjectInfo) -> String {
+    let module = project_info.module_name();
+
+    #[cfg_attr(not(feature = "fastapi"), allow(unused_mut))]
+    let mut justfile = format!(
         r#"@_default:
   just --list
 
@@ -1139,17 +1273,65 @@ fn create_setuptools_justfile(module: &str) -> String {
 @ruff-format:
   python -m ruff format {module} tests
 
-@test *args="":
-  -python -m pytest {{{{args}}}}
-
 @install:
   python -m pip install -r requirements-dev.txt
+
+@test *args="":
+  python -m pytest {{{{args}}}}
 "#
-    )
+    );
+
+    #[cfg(feature = "fastapi")]
+    if project_info.is_fastapi_project {
+        justfile.push_str(
+            r#"
+@test-parallel *args="":
+  python -m pytest -n auto {{args}}
+
+granian_cmd := if os() != "windows" {
+  "python -m granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --loop uvloop --reload"
+} else {
+  "python -m granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --reload"
 }
 
-fn create_uv_justfile(module: &str) -> String {
-    format!(
+@backend-server:
+  {{granian_cmd}}
+
+@docker-up:
+  docker compose up --build
+
+@docker-up-detached:
+  docker compose up --build -d
+
+@docker-up-services:
+  docker compose up db valkey migrations
+
+@docker-up-services-detached:
+  docker compose up db valkey migrations -d
+
+@docker-down:
+  docker compose down
+
+@docker-down-volumes:
+  docker compose down --volumes
+
+@docker-pull:
+  docker compose pull db valkey migrations
+
+@docker-build:
+  docker compose build
+"#,
+        )
+    }
+
+    justfile
+}
+
+fn create_uv_justfile(project_info: &ProjectInfo) -> String {
+    let module = project_info.module_name();
+
+    #[cfg_attr(not(feature = "fastapi"), allow(unused_mut))]
+    let mut justfile = format!(
         r#"@_default:
   just --list
 
@@ -1170,9 +1352,6 @@ fn create_uv_justfile(module: &str) -> String {
 @ruff-format:
   uv run ruff format {module} tests
 
-@test *args="":
-  -uv run pytest {{{{args}}}}
-
 @lock:
   uv lock
 
@@ -1181,8 +1360,56 @@ fn create_uv_justfile(module: &str) -> String {
 
 @install:
   uv sync --frozen --all-extras
+
+@test *args="":
+  uv run pytest {{{{args}}}}
 "#
-    )
+    );
+
+    #[cfg(feature = "fastapi")]
+    if project_info.is_fastapi_project {
+        justfile.push_str(
+            r#"
+@test-parallel *args="":
+  uv run pytest -n auto {{args}}
+
+granian_cmd := if os() != "windows" {
+  "uv run granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --loop uvloop --reload"
+} else {
+  "uv run granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --reload"
+}
+
+@backend-server:
+  {{granian_cmd}}
+
+@docker-up:
+  docker compose up --build
+
+@docker-up-detached:
+  docker compose up --build -d
+
+@docker-up-services:
+  docker compose up db valkey migrations
+
+@docker-up-services-detached:
+  docker compose up db valkey migrations -d
+
+@docker-down:
+  docker compose down
+
+@docker-down-volumes:
+  docker compose down --volumes
+
+@docker-pull:
+  docker compose pull db valkey migrations
+
+@docker-build:
+  docker compose build
+"#,
+        )
+    }
+
+    justfile
 }
 
 fn create_pixi_justfile() -> String {
@@ -1207,7 +1434,7 @@ fn create_pixi_justfile() -> String {
   pixi run run-ruff-format
 
 @test:
-  -pixi run run-pytest
+  pixi run run-pytest
 
 @install:
   pixi install
@@ -1216,19 +1443,12 @@ fn create_pixi_justfile() -> String {
 }
 
 fn save_justfile(project_info: &ProjectInfo) -> Result<()> {
-    let module = project_info.module_name();
     let file_path = project_info.base_dir().join("justfile");
     let content = match &project_info.project_manager {
-        ProjectManager::Poetry => create_poetry_justfile(&module),
-        ProjectManager::Maturin => {
-            if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
-                create_pyo3_justfile(&module, pyo3_python_manager)
-            } else {
-                bail!("A PyO3 Python manager is required for maturin");
-            }
-        }
-        ProjectManager::Setuptools => create_setuptools_justfile(&module),
-        ProjectManager::Uv => create_uv_justfile(&module),
+        ProjectManager::Poetry => create_poetry_justfile(project_info),
+        ProjectManager::Maturin => create_pyo3_justfile(project_info)?,
+        ProjectManager::Setuptools => create_setuptools_justfile(project_info),
+        ProjectManager::Uv => create_uv_justfile(project_info),
         ProjectManager::Pixi => create_pixi_justfile(),
     };
 
@@ -1369,6 +1589,9 @@ mod tests {
     use crate::project_info::{DocsInfo, LicenseType, ProjectInfo, Pyo3PythonManager};
     use insta::assert_yaml_snapshot;
     use tmp_path::tmp_path;
+
+    #[cfg(feature = "fastapi")]
+    use crate::project_info::DatabaseManager;
 
     #[tmp_path]
     fn project_info_dummy() -> ProjectInfo {
@@ -2052,10 +2275,83 @@ mod tests {
         assert_yaml_snapshot!(content);
     }
 
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_justfile_poetry_fastapi_project() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("justfile");
+        save_justfile(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_justfile_uv() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("justfile");
+        save_justfile(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_justfile_uv_fastapi_project() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("justfile");
+        save_justfile(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
     #[test]
     fn test_save_justfile_setuptools() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Setuptools;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("justfile");
+        save_justfile(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_justfile_setuptools_fastapi_project() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Setuptools;
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("justfile");
@@ -2073,6 +2369,25 @@ mod tests {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
         project_info.is_application = false;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("justfile");
+        save_justfile(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_justfile_maturin_fastapi_project() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("justfile");

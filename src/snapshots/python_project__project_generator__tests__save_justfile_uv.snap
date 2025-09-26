@@ -1,0 +1,5 @@
+---
+source: src/project_generator.rs
+expression: content
+---
+"@_default:\n  just --list\n\n@lint:\n  echo mypy\n  just --justfile {{justfile()}} mypy\n  echo ruff-check\n  just --justfile {{justfile()}} ruff-check\n  echo ruff-format\n  just --justfile {{justfile()}} ruff-format\n\n@mypy:\n  uv run mypy my_project tests\n\n@ruff-check:\n  uv run ruff check my_project tests\n\n@ruff-format:\n  uv run ruff format my_project tests\n\n@lock:\n  uv lock\n\n@lock-upgrade:\n  uv lock --upgrade\n\n@install:\n  uv sync --frozen --all-extras\n\n@test *args=\"\":\n  uv run pytest {{args}}\n"
