@@ -107,4 +107,5 @@ jobs:
           uv run pre-commit run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
+        if: matrix.project_type == 'application'
         run: uv run pytest
