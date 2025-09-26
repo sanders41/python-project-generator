@@ -813,6 +813,20 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         true,
         use_defaults,
     )?;
+
+    #[cfg(feature = "fastapi")]
+    let use_multi_os_ci = if is_fastapi_project {
+        false
+    } else {
+        default_or_prompt_bool(
+            "Use Multi OS CI\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+            config.use_multi_os_ci,
+            true,
+            use_defaults,
+        )?
+    };
+
+    #[cfg(not(feature = "fastapi"))]
     let use_multi_os_ci = default_or_prompt_bool(
         "Use Multi OS CI\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
         config.use_multi_os_ci,
