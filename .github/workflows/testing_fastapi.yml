@@ -26,8 +26,8 @@ env:
   PRODUCTION_MODE: false
   DATABASE_URL: postgresql://postgres:test_password@127.0.0.1:5432/test_db
 jobs:
-  test-uv:
-    name: test-fastapi-uv-setup
+  test-uv-fastapi-project:
+    name: test-fastapi-uv-setup-fastapi
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest
@@ -48,7 +48,7 @@ jobs:
       - name: Build package
         run: cargo build --release -F fastapi
       - name: Run creation
-        run: ./scripts/ci_run_fastapi.sh
+        run: ./scripts/ci_run_fastapi.sh "fastapi" 1
         shell: bash
       - name: Install Dependencies
         working-directory: ${{ env.WORKING_DIR }}
@@ -70,3 +70,41 @@ jobs:
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         run: uv run pytest -n auto
+  test-uv-non-fastapi-project:
+    name: test-fastapi-uv-setup-non-fastapi
+    strategy:
+      fail-fast: false
+      matrix:
+        project_type: ["application", "lib"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2.8.1
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.MIN_PYTHON_VERSION }}
+      - name: Build package
+        run: cargo build --release -F fastapi
+      - name: Run creation
+        run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 1
+        shell: bash
+      - name: Install Dependencies
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          uv lock
+          uv sync --frozen
+      - name: Pre-commit check
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          uv run pre-commit install
+          git add .
+          uv run pre-commit run --all-files
+      - name: Test with pytest
+        working-directory: ${{ env.WORKING_DIR }}
+        run: uv run pytest

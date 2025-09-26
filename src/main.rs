@@ -41,10 +41,8 @@ fn create(project_info: &ProjectInfo) -> Result<()> {
         .expect("Failed to initialize git");
 
     #[cfg(feature = "fastapi")]
-    install_fastapi_dependencies(project_info)?;
-
-    #[cfg(feature = "fastapi")]
     if project_info.is_fastapi_project {
+        install_fastapi_dependencies(project_info)?;
         generate_fastapi(project_info)?;
     }
 

@@ -28,9 +28,14 @@ fi
 
 # Check for user provided application input
 if [ $# -gt 0 ]; then
-  if [ $1 = "application" ]; then
+  if [ $1 = "fastapi" ] ; then
+    fastapi_project="1"
+    application="1"
+  elif [ $1 = "application" ]; then
+    fastapi_project="2"
     application="1"
   elif [ $1 = "lib" ]; then
+    fastapi_project="2"
     application="2"
   else
     echo "Invalid application value"
