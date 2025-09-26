@@ -42,7 +42,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: ${ env.MIN_PYTHON_VERSION }
+          python-version: ${{ env.MIN_PYTHON_VERSION }}
       - name: Build package
         run: cargo build --release -F fastapi
       - name: Run creation
