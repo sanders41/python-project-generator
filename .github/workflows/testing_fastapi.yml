@@ -59,6 +59,9 @@ jobs:
           uv run pre-commit install
           git add .
           uv run pre-commit run --all-files
+      - name: make .env
+        working-directory: ${{ env.WORKING_DIR }}
+        run: touch .env
       - name: Build and start Docker containers
         working-directory: ${{ env.WORKING_DIR }}
         run: docker compose up -d
