@@ -37,6 +37,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2.8.1
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
       - name: Install uv
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Set up Python
