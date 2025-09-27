@@ -43,7 +43,7 @@ if [ $# -gt 0 ]; then
   fi
 fi
 
-database_manager=""
+# database_manager=""
 max_line_length=""
 use_dependabot=""
 use_continuous_deployment=""
@@ -89,7 +89,6 @@ $min_python_version
 $gha_versions
 $project_manager
 $application
-$database_manager
 $max_line_length
 $use_dependabot
 $use_continuous_deployment
