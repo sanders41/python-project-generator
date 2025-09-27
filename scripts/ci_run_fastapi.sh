@@ -73,7 +73,29 @@ $use_continuous_deployment
 $use_release_drafter
 EOF
 else
-  ./target/release/python-project create -s << EOF
+  if [ "$fastapi_project" = "1" ]; then
+    ./target/release/python-project create -s << EOF
+$project_name
+$project_slug
+$source_dir
+$project_description
+$creator
+$creator_email
+$license
+$copyright_year
+$version
+$fastapi_project
+$python_version
+$min_python_version
+$gha_versions
+$project_manager
+$max_line_length
+$use_dependabot
+$use_continuous_deployment
+$use_release_drafter
+EOF
+  else
+    ./target/release/python-project create -s << EOF
 $project_name
 $project_slug
 $source_dir
@@ -94,6 +116,7 @@ $use_dependabot
 $use_continuous_deployment
 $use_release_drafter
 EOF
+  fi
 fi
 
 if [ ! -d $project_slug ]; then
