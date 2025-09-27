@@ -1,8 +1,8 @@
 use anyhow::{bail, Result};
 
-use crate::file_manager::save_file_with_content;
-use crate::project_info::{
-    Day, DependabotSchedule, ProjectInfo, ProjectManager, Pyo3PythonManager,
+use crate::{
+    file_manager::save_file_with_content,
+    project_info::{Day, DependabotSchedule, ProjectInfo, ProjectManager, Pyo3PythonManager},
 };
 
 fn build_actions_python_test_versions(github_action_python_test_versions: &[String]) -> String {
@@ -81,6 +81,101 @@ jobs:
     )
 }
 
+#[cfg(feature = "fastapi")]
+fn create_poetry_ci_testing_fastapi_file(
+    source_dir: &str,
+    min_python_version: &str,
+    github_action_python_test_versions: &[String],
+) -> String {
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+
+    format!(
+        r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  PYTHON_VERSION: "{min_python_version}"
+  SECRET_KEY: "someKey"
+  PRODUCTION_MODE: false
+  FIRST_SUPERUSER_EMAIL: "some@email.com"
+  FIRST_SUPERUSER_PASSWORD: "somePassword1!"
+  FIRST_SUPERUSER_NAME: "Super User"
+  POSTGRES_HOST: "127.0.0.1"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "test_password"
+  POSTGRES_DB: "test_db"
+  VALKEY_HOST: "127.0.0.1"
+  VALKEY_PASSWORD: "test_password"
+  MEILISEARCH_HOST: http://127.0.0.1
+  STACK_NAME: "test-stack"
+  DOMAIN: "127.0.0.1"
+  LOG_LEVEL: "DEBUG"
+  CI: true
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Install sqlx-cli
+      run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
+    - name: Install Poetry
+      run: pipx install poetry
+    - name: Configure poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
+        cache: "poetry"
+    - name: Install Dependencies
+      run: poetry install
+    - name: Ruff format check
+      run: poetry run ruff format {source_dir} tests --check
+    - name: Lint with ruff
+      run: poetry run ruff check .
+    - name: mypy check
+      run: poetry run mypy .
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Poetry
+      run: pipx install poetry
+    - name: Configure poetry
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+        cache: "poetry"
+    - name: Install Dependencies
+      run: poetry install
+    - name: make .env
+      run: touch .env
+    - name: Start docker containers
+      run: docker compose up db valkey migrations -d
+    - name: Test with pytest
+      run: poetry run pytest -n auto
+"#
+    )
+}
+
 fn create_setuptools_ci_testing_linux_only_file(
     source_dir: &str,
     min_python_version: &str,
@@ -137,6 +232,93 @@ jobs:
         python -m pip install -r requirements-dev.txt
     - name: Test with pytest
       run: pytest
+"#
+    )
+}
+
+#[cfg(feature = "fastapi")]
+fn create_setuptools_ci_testing_fastapi_file(
+    source_dir: &str,
+    min_python_version: &str,
+    github_action_python_test_versions: &[String],
+) -> String {
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+
+    format!(
+        r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  PYTHON_VERSION: "{min_python_version}"
+  SECRET_KEY: "someKey"
+  PRODUCTION_MODE: false
+  FIRST_SUPERUSER_EMAIL: "some@email.com"
+  FIRST_SUPERUSER_PASSWORD: "somePassword1!"
+  FIRST_SUPERUSER_NAME: "Super User"
+  POSTGRES_HOST: "127.0.0.1"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "test_password"
+  POSTGRES_DB: "test_db"
+  VALKEY_HOST: "127.0.0.1"
+  VALKEY_PASSWORD: "test_password"
+  MEILISEARCH_HOST: http://127.0.0.1
+  STACK_NAME: "test-stack"
+  DOMAIN: "127.0.0.1"
+  LOG_LEVEL: "DEBUG"
+  CI: true
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
+        cache: "pip"
+    - name: Install Dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+    - name: Ruff format check
+      run: ruff format {source_dir} tests --check
+    - name: Lint with ruff
+      run: ruff check .
+    - name: mypy check
+      run: mypy .
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Install sqlx-cli
+      run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+        cache: "pip"
+    - name: Install Dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+    - name: make .env
+      run: touch .env
+    - name: Start docker containers
+      run: docker compose up db valkey migrations -d
+    - name: Test with pytest
+      run: python -m pytest -n auto
 "#
     )
 }
@@ -199,6 +381,95 @@ jobs:
       run: uv sync --frozen
     - name: Test with pytest
       run: uv run pytest
+"#
+    )
+}
+
+#[cfg(feature = "fastapi")]
+fn create_uv_ci_testing_fastapi_file(
+    source_dir: &str,
+    min_python_version: &str,
+    github_action_python_test_versions: &[String],
+) -> String {
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+
+    format!(
+        r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  PYTHON_VERSION: "{min_python_version}"
+  SECRET_KEY: "someKey"
+  PRODUCTION_MODE: false
+  FIRST_SUPERUSER_EMAIL: "some@email.com"
+  FIRST_SUPERUSER_PASSWORD: "somePassword1!"
+  FIRST_SUPERUSER_NAME: "Super User"
+  POSTGRES_HOST: "127.0.0.1"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "test_password"
+  POSTGRES_DB: "test_db"
+  VALKEY_HOST: "127.0.0.1"
+  VALKEY_PASSWORD: "test_password"
+  MEILISEARCH_HOST: http://127.0.0.1
+  STACK_NAME: "test-stack"
+  DOMAIN: "127.0.0.1"
+  LOG_LEVEL: "DEBUG"
+  CI: true
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
+    - name: Install Dependencies
+      run: uv sync --frozen
+    - name: Ruff format check
+      run: uv run ruff format {source_dir} tests --check
+    - name: Lint with ruff
+      run: uv run ruff check .
+    - name: mypy check
+      run: uv run mypy .
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Install sqlx-cli
+      run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+    - name: Install Dependencies
+      run: uv sync --frozen
+    - name: make .env
+      run: touch .env
+    - name: Start docker containers
+      run: docker compose up db valkey migrations -d
+    - name: Test with pytest
+      run: uv run pytest -n auto
 "#
     )
 }
@@ -429,6 +700,232 @@ jobs:
     }
 }
 
+#[cfg(feature = "fastapi")]
+fn create_ci_testing_fastapi_file_pyo3(
+    source_dir: &str,
+    min_python_version: &str,
+    github_action_python_test_versions: &[String],
+    pyo3_python_manager: &Pyo3PythonManager,
+) -> String {
+    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+    match pyo3_python_manager {
+        Pyo3PythonManager::Uv => format!(
+            r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: "-D warnings"
+  PYTHON_VERSION: "{min_python_version}"
+  SECRET_KEY: "someKey"
+  PRODUCTION_MODE: false
+  FIRST_SUPERUSER_EMAIL: "some@email.com"
+  FIRST_SUPERUSER_PASSWORD: "somePassword1!"
+  FIRST_SUPERUSER_NAME: "Super User"
+  POSTGRES_HOST: "127.0.0.1"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "test_password"
+  POSTGRES_DB: "test_db"
+  VALKEY_HOST: "127.0.0.1"
+  VALKEY_PASSWORD: "test_password"
+  MEILISEARCH_HOST: http://127.0.0.1
+  STACK_NAME: "test-stack"
+  DOMAIN: "127.0.0.1"
+  LOG_LEVEL: "DEBUG"
+  CI: true
+jobs:
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Run cargo clippy
+      run: cargo clippy --all-targets -- --deny warnings
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Run cargo fmt
+     run: cargo fmt --all -- --check
+  python-linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
+    - name: Install Dependencies
+      run: |
+        uv sync --frozen
+        uv run maturin build
+    - name: Ruff format check
+      run: uv run ruff format {source_dir} tests --check
+    - name: Lint with ruff
+      run: uv run ruff check .
+    - name: mypy check
+      run: uv run mypy {source_dir} tests
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Install sqlx-cli
+      run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+    - name: Install Dependencies
+      run: |
+        uv sync --frozen
+        uv run maturin build
+    - name: make .env
+      run: touch .env
+    - name: Start docker containers
+      run: docker compose up db valkey migrations -d
+    - name: Test with pytest
+      run: uv run pytest -n auto
+"#
+        ),
+        Pyo3PythonManager::Setuptools => format!(
+            r#"name: Testing
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: "-D warnings"
+  PYTHON_VERSION: "{min_python_version}"
+  SECRET_KEY: "someKey"
+  PRODUCTION_MODE: false
+  FIRST_SUPERUSER_EMAIL: "some@email.com"
+  FIRST_SUPERUSER_PASSWORD: "somePassword1!"
+  FIRST_SUPERUSER_NAME: "Super User"
+  POSTGRES_HOST: "127.0.0.1"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "test_password"
+  POSTGRES_DB: "test_db"
+  VALKEY_HOST: "127.0.0.1"
+  VALKEY_PASSWORD: "test_password"
+  MEILISEARCH_HOST: http://127.0.0.1
+  STACK_NAME: "test-stack"
+  DOMAIN: "127.0.0.1"
+  LOG_LEVEL: "DEBUG"
+  CI: true
+jobs:
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Run cargo clippy
+      run: cargo clippy --all-targets -- --deny warnings
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Run cargo fmt
+      run: cargo fmt --all -- --check
+  python-linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ env.PYTHON_VERSION }}}}
+        cache: "pip"
+    - name: Install Dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+        python -m pip install -e .
+        maturin build --out dist
+    - name: Ruff format check
+      run: ruff format {source_dir} tests --check
+    - name: Lint with ruff
+      run: ruff check .
+    - name: mypy check
+      run: mypy .
+  testing:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [{python_versions}]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Set up Python ${{{{ matrix.python-version }}}}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{{{ matrix.python-version }}}}
+        cache: "pip"
+    - name: Install sqlx-cli
+      run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
+    - name: Install Dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip install -r requirements-dev.txt
+        python -m pip install -e .
+        maturin build --out dist
+    - name: make .env
+      run: touch .env
+    - name: Start docker containers
+      run: docker compose up db valkey migrations -d
+    - name: Test with pytest
+      run: python -m pytest -n auto
+"#
+        ),
+    }
+}
+
 pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info
         .base_dir()
@@ -436,6 +933,24 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
     let content = match &project_info.project_manager {
         ProjectManager::Maturin => {
             if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
+                #[cfg(feature = "fastapi")]
+                if project_info.is_fastapi_project {
+                    create_ci_testing_fastapi_file_pyo3(
+                        &project_info.source_dir,
+                        &project_info.min_python_version,
+                        &project_info.github_actions_python_test_versions,
+                        pyo3_python_manager,
+                    )
+                } else {
+                    create_ci_testing_linux_only_file_pyo3(
+                        &project_info.source_dir,
+                        &project_info.min_python_version,
+                        &project_info.github_actions_python_test_versions,
+                        pyo3_python_manager,
+                    )
+                }
+
+                #[cfg(not(feature = "fastapi"))]
                 create_ci_testing_linux_only_file_pyo3(
                     &project_info.source_dir,
                     &project_info.min_python_version,
@@ -446,21 +961,75 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
                 bail!("A PyO3 Python manager is required for maturin");
             }
         }
-        ProjectManager::Poetry => create_poetry_ci_testing_linux_only_file(
-            &project_info.source_dir,
-            &project_info.min_python_version,
-            &project_info.github_actions_python_test_versions,
-        ),
-        ProjectManager::Setuptools => create_setuptools_ci_testing_linux_only_file(
-            &project_info.source_dir,
-            &project_info.min_python_version,
-            &project_info.github_actions_python_test_versions,
-        ),
-        ProjectManager::Uv => create_uv_ci_testing_linux_only_file(
-            &project_info.source_dir,
-            &project_info.min_python_version,
-            &project_info.github_actions_python_test_versions,
-        ),
+        ProjectManager::Poetry => {
+            #[cfg(feature = "fastapi")]
+            if project_info.is_fastapi_project {
+                create_poetry_ci_testing_fastapi_file(
+                    &project_info.source_dir,
+                    &project_info.min_python_version,
+                    &project_info.github_actions_python_test_versions,
+                )
+            } else {
+                create_poetry_ci_testing_linux_only_file(
+                    &project_info.source_dir,
+                    &project_info.min_python_version,
+                    &project_info.github_actions_python_test_versions,
+                )
+            }
+
+            #[cfg(not(feature = "fastapi"))]
+            create_poetry_ci_testing_linux_only_file(
+                &project_info.source_dir,
+                &project_info.min_python_version,
+                &project_info.github_actions_python_test_versions,
+            )
+        }
+        ProjectManager::Setuptools => {
+            #[cfg(feature = "fastapi")]
+            if project_info.is_fastapi_project {
+                create_setuptools_ci_testing_fastapi_file(
+                    &project_info.source_dir,
+                    &project_info.min_python_version,
+                    &project_info.github_actions_python_test_versions,
+                )
+            } else {
+                create_setuptools_ci_testing_linux_only_file(
+                    &project_info.source_dir,
+                    &project_info.min_python_version,
+                    &project_info.github_actions_python_test_versions,
+                )
+            }
+
+            #[cfg(not(feature = "fastapi"))]
+            create_setuptools_ci_testing_linux_only_file(
+                &project_info.source_dir,
+                &project_info.min_python_version,
+                &project_info.github_actions_python_test_versions,
+            )
+        }
+        ProjectManager::Uv => {
+            #[cfg(feature = "fastapi")]
+            if project_info.is_fastapi_project {
+                create_uv_ci_testing_fastapi_file(
+                    &project_info.source_dir,
+                    &project_info.min_python_version,
+                    &project_info.github_actions_python_test_versions,
+                )
+            } else {
+                create_uv_ci_testing_linux_only_file(
+                    &project_info.source_dir,
+                    &project_info.min_python_version,
+                    &project_info.github_actions_python_test_versions,
+                )
+            }
+
+            #[cfg(not(feature = "fastapi"))]
+            create_uv_ci_testing_linux_only_file(
+                &project_info.source_dir,
+                &project_info.min_python_version,
+                &project_info.github_actions_python_test_versions,
+            )
+        }
         ProjectManager::Pixi => create_pixi_ci_testing_linux_only_file(
             &project_info.min_python_version,
             &project_info.github_actions_python_test_versions,
@@ -1328,6 +1897,99 @@ jobs:
     )
 }
 
+#[cfg(feature = "fastapi")]
+fn create_testing_deploy_file() -> String {
+    r#"name: Deploy to Testing
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on:
+      - self-hosted
+      - testing
+    env:
+      ENVIRONMENT: testing
+      DOMAIN: ${{ secrets.DOMAIN_TESTING }}
+      STACK_NAME: ${{ secrets.STACK_NAME_TESTING }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      FIRST_SUPERUSER_EMAIL: ${{ secrets.FIRST_SUPERUSER_EMAIL }}
+      FIRST_SUPERUSER_PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
+      FIRST_SUPERUSER_NAME: ${{ secrets.FIRST_SUPERUSER_NAME }}
+      POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      VALKEY_HOST: ${{ secrets.VALKEY_HOST }}
+      VALKEY_PASSWORD: ${{ secrets.VALKEY_PASSWORD }}
+      HANDWRITING_OCR_TOKEN: ${{ secrets.HANDWRITING_OCR_TOKEN }}
+      USERNAME: ${{ secrets.FIRST_SUPERUSER_EMAIL }}
+      PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
+      EMAIL: ${{ secrets.FIRST_SUPERUSER_EMAIL }}
+      ERROR_NOTIFICATION_URL: ${{ secrets.ERROR_NOTIFICATION_URL_TESTING }}
+      LOG_LEVEL: "DEBUG"
+    steps:
+      - name: Fix permissions
+        run: |
+          if [ -d "./data" ]; then
+            sudo chown -R $USER:$USER ./data
+          fi
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Create .env file
+        run: |
+          HASHED_PASSWORD=$(openssl passwd -apr1 "${PASSWORD}" | sed 's/\$/\$\$/g')
+          cat > .env << EOF
+          ENVIRONMENT=${ENVIRONMENT}
+          DOMAIN=${DOMAIN}
+          STACK_NAME=${STACK_NAME}
+          SECRET_KEY=${SECRET_KEY}
+          FIRST_SUPERUSER_EMAIL=${FIRST_SUPERUSER_EMAIL}
+          FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD}
+          FIRST_SUPERUSER_NAME=${FIRST_SUPERUSER_NAME}
+          POSTGRES_HOST=${POSTGRES_HOST}
+          POSTGRES_USER=${POSTGRES_USER}
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+          POSTGRES_DB=${POSTGRES_DB}
+          VALKEY_HOST=${VALKEY_HOST}
+          VALKEY_PASSWORD=${VALKEY_PASSWORD}
+          HANDWRITING_OCR_TOKEN=${HANDWRITING_OCR_TOKEN}
+          USERNAME=${FIRST_SUPERUSER_EMAIL}
+          PASSWORD=${FIRST_SUPERUSER_PASSWORD}
+          HASHED_PASSWORD=${HASHED_PASSWORD}
+          EMAIL=${FIRST_SUPERUSER_EMAIL}
+          ERROR_NOTIFICATION_URL=${ERROR_NOTIFICATION_URL}
+          LOG_LEVEL=${LOG_LEVEL}
+          EOF
+      - name: Build and restart containers
+        timeout-minutes: 15
+        run: |
+          docker compose -f docker-compose.yml --project-name ${{ secrets.STACK_NAME_TESTING }} build
+          docker compose -f docker-compose.yml --project-name ${{ secrets.STACK_NAME_TESTING }} up -d
+"#.to_string()
+}
+
+#[cfg(feature = "fastapi")]
+pub fn save_deploy_files(project_info: &ProjectInfo) -> Result<()> {
+    let testing_file_path = project_info
+        .base_dir()
+        .join(".github/workflows/deploy_testing.yml");
+    let testing_content = create_testing_deploy_file();
+
+    save_file_with_content(&testing_file_path, &testing_content)?;
+
+    let production_file_path = project_info
+        .base_dir()
+        .join(".github/workflows/deploy_production.yml");
+    let production_content = create_testing_deploy_file();
+
+    save_file_with_content(&production_file_path, &production_content)?;
+
+    Ok(())
+}
+
 pub fn save_pypi_publish_file(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info
         .base_dir()
@@ -1562,6 +2224,9 @@ mod tests {
     use std::fs::create_dir_all;
     use tmp_path::tmp_path;
 
+    #[cfg(feature = "fastapi")]
+    use crate::project_info::DatabaseManager;
+
     #[tmp_path]
     fn project_info_dummy() -> ProjectInfo {
         ProjectInfo {
@@ -1597,6 +2262,12 @@ mod tests {
             docs_info: None,
             download_latest_packages: false,
             project_root_dir: Some(tmp_path),
+
+            #[cfg(feature = "fastapi")]
+            is_fastapi_project: false,
+
+            #[cfg(feature = "fastapi")]
+            database_manager: None,
         }
     }
 
@@ -1641,10 +2312,48 @@ mod tests {
         assert_yaml_snapshot!(content);
     }
 
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_poetry_ci_testing_fastapi_file() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        save_ci_testing_linux_only_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
     #[test]
     fn test_save_ci_testing_linux_only_file_pyo3() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        save_ci_testing_linux_only_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_ci_testing_fastapi_file_pyo3() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
         let expected_file = base.join(".github/workflows/testing.yml");
@@ -1674,11 +2383,49 @@ mod tests {
         assert_yaml_snapshot!(content);
     }
 
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_setuptools_ci_fastapi_file() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Setuptools;
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        save_ci_testing_linux_only_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
     #[test]
     fn test_save_uv_ci_testing_linux_only_file() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Uv;
         project_info.use_multi_os_ci = false;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        save_ci_testing_linux_only_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_uv_ci_testing_fastapi_file() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
         let expected_file = base.join(".github/workflows/testing.yml");
@@ -2138,6 +2885,28 @@ mod tests {
         let content = std::fs::read_to_string(expected_file).unwrap();
 
         assert_yaml_snapshot!(content);
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_deploy_files() {
+        let mut project_info = project_info_dummy();
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_test_file = base.join(".github/workflows/deploy_testing.yml");
+        let expected_production_file = base.join(".github/workflows/deploy_production.yml");
+        save_deploy_files(&project_info).unwrap();
+
+        assert!(expected_test_file.is_file());
+        assert!(expected_production_file.is_file());
+
+        let test_content = std::fs::read_to_string(expected_test_file).unwrap();
+        let production_content = std::fs::read_to_string(expected_production_file).unwrap();
+
+        assert_yaml_snapshot!(test_content);
+        assert_yaml_snapshot!(production_content);
     }
 
     #[test]

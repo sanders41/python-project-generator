@@ -1,0 +1,111 @@
+name: Testing FastAPI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: "-D warnings"
+  WORKING_DIR: "my-project"
+  MIN_PYTHON_VERSION: "3.11"
+  SECRET_KEY: someKey
+  FIRST_SUPERUSER_EMAIL: some@email.com
+  FIRST_SUPERUSER_PASSWORD: My_password1
+  FIRST_SUPERUSER_NAME: "Wade Watts"
+  POSTGRES_HOST: 127.0.0.1
+  POSTGRES_PORT: 5432
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: test_password
+  POSTGRES_DB: test_db
+  VALKEY_HOST: 127.0.0.1
+  VALKEY_PASSWORD: test_password
+  STACK_NAME: test-stack
+  DOMAIN: 127.0.0.1
+  PRODUCTION_MODE: false
+  DATABASE_URL: postgresql://postgres:test_password@127.0.0.1:5432/test_db
+jobs:
+  test-uv-fastapi-project:
+    name: test-fastapi-uv-setup-fastapi
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2.8.1
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.MIN_PYTHON_VERSION }}
+      - name: Build package
+        run: cargo build --release -F fastapi
+      - name: Run creation
+        run: ./scripts/ci_run_fastapi.sh "fastapi" 1
+        shell: bash
+      - name: Install Dependencies
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          uv lock
+          uv sync --frozen
+      - name: Pre-commit check
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          uv run pre-commit install
+          git add .
+          uv run pre-commit run --all-files
+      - name: make .env
+        working-directory: ${{ env.WORKING_DIR }}
+        run: touch .env
+      - name: Build and start Docker containers
+        working-directory: ${{ env.WORKING_DIR }}
+        run: docker compose up -d
+      - name: Test with pytest
+        working-directory: ${{ env.WORKING_DIR }}
+        run: uv run pytest -n auto
+  test-uv-non-fastapi-project:
+    name: test-fastapi-uv-setup-non-fastapi
+    strategy:
+      fail-fast: false
+      matrix:
+        project_type: ["application", "lib"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2.8.1
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.MIN_PYTHON_VERSION }}
+      - name: Build package
+        run: cargo build --release -F fastapi
+      - name: Run creation
+        run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 1
+        shell: bash
+      - name: Install Dependencies
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          uv lock
+          uv sync --frozen
+      - name: Pre-commit check
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          uv run pre-commit install
+          git add .
+          uv run pre-commit run --all-files
+      - name: Test with pytest
+        working-directory: ${{ env.WORKING_DIR }}
+        if: matrix.project_type == 'application'
+        run: uv run pytest

@@ -11,6 +11,9 @@ use time::OffsetDateTime;
 
 use crate::config::Config;
 
+#[cfg(feature = "fastapi")]
+use crate::utils::is_allowed_fastapi_python_version;
+
 #[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
 pub enum DependabotSchedule {
     #[default]
@@ -111,6 +114,40 @@ impl fmt::Display for ProjectManager {
     }
 }
 
+#[cfg(feature = "fastapi")]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
+pub enum Database {
+    #[default]
+    Postgresql,
+}
+
+#[cfg(feature = "fastapi")]
+impl fmt::Display for Database {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Postgresql => write!(f, "PostgreSQL"),
+        }
+    }
+}
+
+#[cfg(feature = "fastapi")]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
+pub enum DatabaseManager {
+    #[default]
+    AsyncPg,
+    SqlAlchemy,
+}
+
+#[cfg(feature = "fastapi")]
+impl fmt::Display for DatabaseManager {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::AsyncPg => write!(f, "asyncpg"),
+            Self::SqlAlchemy => write!(f, "SQLAlchemy"),
+        }
+    }
+}
+
 struct Prompt {
     prompt_text: String,
     default: Option<String>,
@@ -182,6 +219,15 @@ pub struct ProjectInfo {
     pub docs_info: Option<DocsInfo>,
     pub download_latest_packages: bool,
     pub project_root_dir: Option<PathBuf>,
+
+    #[cfg(feature = "fastapi")]
+    pub is_fastapi_project: bool,
+
+    // Note: For future use when other databases are supported
+    /* #[cfg(feature = "fastapi")]
+    pub database: Option<Database>, */
+    #[cfg(feature = "fastapi")]
+    pub database_manager: Option<DatabaseManager>,
 }
 
 impl ProjectInfo {
@@ -190,6 +236,15 @@ impl ProjectInfo {
             Some(root) => PathBuf::from(&format!("{}/{}", root.display(), self.project_slug)),
             None => PathBuf::from(&self.project_slug),
         }
+    }
+
+    pub fn module_name(&self) -> String {
+        self.source_dir.replace([' ', '-'], "_")
+    }
+
+    pub fn source_dir_path(&self) -> PathBuf {
+        let base = self.base_dir();
+        base.join(&self.source_dir)
     }
 }
 
@@ -284,7 +339,7 @@ fn dependabot_day_prompt(default: Option<Day>) -> Result<Option<Day>> {
         None => "1".to_string(),
     };
     let prompt_text =
-        "Dependabot Day\n  1 - Monday\n  2 - Tuesday\n  3 - Wednesday\n  4 - Thursday\n  5 - Friday\n  6 - Saturday\n  7 - Sunday\n  Choose from[1, 2, 3, 4, 5, 6, 7]"
+        "Dependabot Day\n  1 - Monday\n  2 - Tuesday\n  3 - Wednesday\n  4 - Thursday\n  5 - Friday\n  6 - Saturday\n  7 - Sunday\n  Choose from [1, 2, 3, 4, 5, 6, 7]"
             .to_string();
     let prompt = Prompt {
         prompt_text,
@@ -323,7 +378,7 @@ fn dependabot_schedule_prompt(
         None => "1".to_string(),
     };
     let prompt_text =
-        "Dependabot Schedule\n  1 - Daily\n  2 - Weekly\n  3 - Monthly\n  Choose from[1, 2, 3]"
+        "Dependabot Schedule\n  1 - Daily\n  2 - Weekly\n  3 - Monthly\n  Choose from [1, 2, 3]"
             .to_string();
     let prompt = Prompt {
         prompt_text,
@@ -354,7 +409,7 @@ fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectMana
         None => "poetry".to_string(),
     };
     let prompt_text =
-        "Project Manager\n  1 - uv\n  2 - Poetry\n  3 - Maturin\n  4 - setuptools\n  5 - Pixi\n  Choose from[1, 2, 3, 4, 5]"
+        "Project Manager\n  1 - uv\n  2 - Poetry\n  3 - Maturin\n  4 - setuptools\n  5 - Pixi\n  Choose from [1, 2, 3, 4, 5]"
             .to_string();
     let prompt = Prompt {
         prompt_text,
@@ -386,7 +441,7 @@ fn pyo3_python_manager_prompt(default: Option<Pyo3PythonManager>) -> Result<Pyo3
         None => "Uv".to_string(),
     };
     let prompt_text =
-        "PyO3 Python Manager\n  1 - uv\n  2 - setuptools\n  Choose from[1, 2]".to_string();
+        "PyO3 Python Manager\n  1 - uv\n  2 - setuptools\n  Choose from [1, 2]".to_string();
     let prompt = Prompt {
         prompt_text,
         default: Some(default_str),
@@ -453,6 +508,32 @@ fn copyright_year_prompt(license: &LicenseType, default: Option<String>) -> Resu
     Ok(input)
 }
 
+/* #[cfg(feature = "fastapi")]
+fn database_manager_prompt(default: Option<DatabaseManager>) -> Result<DatabaseManager> {
+    let default_str = match default {
+        Some(d) => match d {
+            DatabaseManager::AsyncPg => "1".to_string(),
+            DatabaseManager::SqlAlchemy => "2".to_string(),
+        },
+        None => "AsyncPg".to_string(),
+    };
+    let prompt_text =
+        "Database Manager\n  1 - asyncpg\n  2 - SQLAlchemy Choose from [1, 2]".to_string();
+    let prompt = Prompt {
+        prompt_text,
+        default: Some(default_str),
+    };
+    let input = prompt.show_prompt()?;
+
+    if input == "1" {
+        Ok(DatabaseManager::AsyncPg)
+    } else if input == "2" || input.is_empty() {
+        Ok(DatabaseManager::SqlAlchemy)
+    } else {
+        bail!("Invalid selection");
+    }
+} */
+
 pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     let config = Config::default().load_config();
     let project_name = string_prompt("Project Name".to_string(), None)?;
@@ -503,6 +584,15 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     let default_version = "0.1.0".to_string();
     let version =
         default_or_prompt_string("Version".to_string(), Some(default_version), use_defaults)?;
+
+    #[cfg(feature = "fastapi")]
+    let is_fastapi_project = default_or_prompt_bool(
+        "FastAPI Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+        config.is_fastapi_project,
+        false,
+        use_defaults,
+    )?;
+
     let python_version_default = match config.python_version {
         Some(python) => python,
         None => "3.13".to_string(),
@@ -513,15 +603,45 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         python_version_prompt(python_version_default)?
     };
 
-    let min_python_version_default = match config.min_python_version {
-        Some(python) => python,
-        None => "3.9".to_string(),
+    #[cfg(feature = "fastapi")]
+    if is_fastapi_project && !is_allowed_fastapi_python_version(&python_version)? {
+        bail!("The minimum supported Python version for FastAPI projects is 3.11");
+    }
+
+    let min_python_version_default = {
+        #[cfg(feature = "fastapi")]
+        {
+            if is_fastapi_project {
+                match config.min_python_version {
+                    Some(python) => python,
+                    None => "3.11".to_string(),
+                }
+            } else {
+                match config.min_python_version {
+                    Some(python) => python,
+                    None => "3.9".to_string(),
+                }
+            }
+        }
+        #[cfg(not(feature = "fastapi"))]
+        {
+            match config.min_python_version {
+                Some(python) => python,
+                None => "3.9".to_string(),
+            }
+        }
     };
+
     let min_python_version = if use_defaults {
         min_python_version_default
     } else {
         python_min_version_prompt(min_python_version_default)?
     };
+
+    #[cfg(feature = "fastapi")]
+    if is_fastapi_project && !is_allowed_fastapi_python_version(&min_python_version)? {
+        bail!("The minimum supported Python version for FastAPI projects is 3.11");
+    }
 
     let github_actions_python_test_version_default =
         match config.github_actions_python_test_versions {
@@ -543,13 +663,29 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
                         versions
                     }
                 } else {
-                    vec![
-                        "3.9".to_string(),
-                        "3.10".to_string(),
-                        "3.11".to_string(),
-                        "3.12".to_string(),
-                        "3.13".to_string(),
-                    ]
+                    #[cfg(feature = "fastapi")]
+                    if is_fastapi_project {
+                        vec!["3.11".to_string(), "3.12".to_string(), "3.13".to_string()]
+                    } else {
+                        vec![
+                            "3.9".to_string(),
+                            "3.10".to_string(),
+                            "3.11".to_string(),
+                            "3.12".to_string(),
+                            "3.13".to_string(),
+                        ]
+                    }
+
+                    #[cfg(not(feature = "fastapi"))]
+                    {
+                        vec![
+                            "3.9".to_string(),
+                            "3.10".to_string(),
+                            "3.11".to_string(),
+                            "3.12".to_string(),
+                            "3.13".to_string(),
+                        ]
+                    }
                 }
             }
         };
@@ -565,6 +701,11 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         let default = config.project_manager.unwrap_or_default();
         project_manager_prompt(Some(default))?
     };
+
+    #[cfg(feature = "fastapi")]
+    if is_fastapi_project && project_manager == ProjectManager::Pixi {
+        bail!("Pixi is not currently supported for FastAPI projects");
+    }
 
     let pyo3_python_manager = if project_manager == ProjectManager::Maturin {
         if use_defaults {
@@ -582,6 +723,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         None
     };
 
+    #[cfg(not(feature = "fastapi"))]
     let is_application = default_or_prompt_bool(
         "Application or Library\n  1 - Application\n  2 - Library\n  Choose from [1, 2]"
             .to_string(),
@@ -589,12 +731,57 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         true,
         use_defaults,
     )?;
-    let is_async_project = default_or_prompt_bool(
-        "Async Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
-        config.is_async_project,
-        false,
-        use_defaults,
-    )?;
+
+    #[cfg(feature = "fastapi")]
+    let is_application = if is_fastapi_project {
+        true
+    } else {
+        default_or_prompt_bool(
+            "Application or Library\n  1 - Application\n  2 - Library\n  Choose from [1, 2]"
+                .to_string(),
+            config.is_application,
+            true,
+            use_defaults,
+        )?
+    };
+
+    #[cfg(feature = "fastapi")]
+    let database_manager = Some(DatabaseManager::AsyncPg);
+    /* let database_manager = if is_fastapi_project {
+        if use_defaults {
+            Some(config.database_manager.unwrap_or_default())
+        } else {
+            let default = config.database_manager.unwrap_or_default();
+            Some(database_manager_prompt(Some(default))?)
+        }
+    } else {
+        None
+    }; */
+
+    let is_async_project = {
+        #[cfg(feature = "fastapi")]
+        {
+            if is_fastapi_project {
+                true
+            } else {
+                default_or_prompt_bool(
+                    "Async Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+                    config.is_async_project,
+                    false,
+                    use_defaults,
+                )?
+            }
+        }
+        #[cfg(not(feature = "fastapi"))]
+        {
+            default_or_prompt_bool(
+                "Async Project\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+                config.is_async_project,
+                false,
+                use_defaults,
+            )?
+        }
+    };
 
     let max_line_length = if use_defaults {
         config.max_line_length.unwrap_or(100)
@@ -641,6 +828,20 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         true,
         use_defaults,
     )?;
+
+    #[cfg(feature = "fastapi")]
+    let use_multi_os_ci = if is_fastapi_project {
+        false
+    } else {
+        default_or_prompt_bool(
+            "Use Multi OS CI\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
+            config.use_multi_os_ci,
+            true,
+            use_defaults,
+        )?
+    };
+
+    #[cfg(not(feature = "fastapi"))]
     let use_multi_os_ci = default_or_prompt_bool(
         "Use Multi OS CI\n  1 - Yes\n  2 - No\n  Choose from [1, 2]".to_string(),
         config.use_multi_os_ci,
@@ -702,6 +903,15 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         docs_info,
         download_latest_packages: false,
         project_root_dir: None,
+
+        #[cfg(feature = "fastapi")]
+        is_fastapi_project,
+
+        // Note: For future use when other databases are supported
+        /* #[cfg(feature = "fastapi")]
+        database: Some(Database::Postgresql), */
+        #[cfg(feature = "fastapi")]
+        database_manager,
     })
 }
 

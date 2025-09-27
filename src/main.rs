@@ -10,9 +10,10 @@ mod python_files;
 mod rust_files;
 mod utils;
 
-use std::fs::remove_dir_all;
-use std::process::exit;
-use std::time::Duration;
+#[cfg(feature = "fastapi")]
+mod fastapi;
+
+use std::{fs::remove_dir_all, process::exit, time::Duration};
 
 use anyhow::{Error, Result};
 use clap::Parser;
@@ -20,10 +21,17 @@ use cli::ApplicationOrLib;
 use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
 
-use crate::cli::{Args, BooleanChoice, Command, Param};
-use crate::config::Config;
-use crate::project_generator::generate_project;
-use crate::project_info::{get_project_info, ProjectInfo};
+use crate::{
+    cli::{Args, BooleanChoice, Command, Param},
+    config::Config,
+    project_generator::generate_project,
+    project_info::{get_project_info, ProjectInfo},
+};
+
+#[cfg(feature = "fastapi")]
+use crate::fastapi::{
+    fastapi_files::generate_fastapi, fastapi_installer::install_fastapi_dependencies,
+};
 
 fn create(project_info: &ProjectInfo) -> Result<()> {
     generate_project(project_info)?;
@@ -31,6 +39,12 @@ fn create(project_info: &ProjectInfo) -> Result<()> {
         .args(["init", &project_info.project_slug])
         .output()
         .expect("Failed to initialize git");
+
+    #[cfg(feature = "fastapi")]
+    if project_info.is_fastapi_project {
+        install_fastapi_dependencies(project_info)?;
+        generate_fastapi(project_info)?;
+    }
 
     Ok(())
 }
@@ -389,6 +403,63 @@ fn main() {
                     exit(1);
                 }
             }
+
+            #[cfg(feature = "fastapi")]
+            Param::IsFastapiProject { value } => match value {
+                BooleanChoice::True => {
+                    if let Err(e) = Config::default().save_is_fastapi_project(true) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
+                BooleanChoice::False => {
+                    if let Err(e) = Config::default().save_is_fastapi_project(false) {
+                        print_error(e);
+                        exit(1);
+                    }
+                }
+            },
+
+            #[cfg(feature = "fastapi")]
+            Param::ResetIsFastapiProject => {
+                if let Err(e) = Config::default().reset_is_fastapi_project() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+
+            #[cfg(feature = "fastapi")]
+            Param::Database { value } => {
+                if let Err(e) = Config::default().save_database(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+
+            #[cfg(feature = "fastapi")]
+            Param::ResetDatabase => {
+                if let Err(e) = Config::default().reset_database() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+
+            #[cfg(feature = "fastapi")]
+            Param::DatabaseManager { value } => {
+                if let Err(e) = Config::default().save_database_manager(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+
+            #[cfg(feature = "fastapi")]
+            Param::ResetDatabaseManager => {
+                if let Err(e) = Config::default().reset_database_manager() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+
             Param::Reset => {
                 if Config::reset().is_err() {
                     let message = "Error resetting config.";
@@ -446,6 +517,12 @@ mod tests {
             docs_info: None,
             download_latest_packages: false,
             project_root_dir: Some(tmp_path),
+
+            #[cfg(feature = "fastapi")]
+            is_fastapi_project: false,
+
+            #[cfg(feature = "fastapi")]
+            database_manager: None,
         };
         create_dir_all(&slug_dir).unwrap();
         assert!(slug_dir.exists());

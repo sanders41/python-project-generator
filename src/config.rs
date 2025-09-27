@@ -14,6 +14,9 @@ use crate::project_info::{
     Pyo3PythonManager,
 };
 
+#[cfg(feature = "fastapi")]
+use crate::project_info::{Database, DatabaseManager};
+
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Config {
     pub creator: Option<String>,
@@ -35,6 +38,15 @@ pub struct Config {
     pub use_multi_os_ci: Option<bool>,
     pub include_docs: Option<bool>,
     pub download_latest_packages: Option<bool>,
+
+    #[cfg(feature = "fastapi")]
+    pub is_fastapi_project: Option<bool>,
+
+    #[cfg(feature = "fastapi")]
+    pub database: Option<Database>,
+
+    #[cfg(feature = "fastapi")]
+    pub database_manager: Option<DatabaseManager>,
 
     #[serde(skip)]
     config_dir: Rc<Option<PathBuf>>,
@@ -66,6 +78,15 @@ impl Default for Config {
             download_latest_packages: None,
             config_dir: config_dir(),
             config_file_path: config_file_path(),
+
+            #[cfg(feature = "fastapi")]
+            is_fastapi_project: None,
+
+            #[cfg(feature = "fastapi")]
+            database: None,
+
+            #[cfg(feature = "fastapi")]
+            database_manager: None,
         }
     }
 }
@@ -99,6 +120,15 @@ impl Config {
                             download_latest_packages: config.download_latest_packages,
                             config_dir: self.config_dir.clone(),
                             config_file_path: self.config_file_path.clone(),
+
+                            #[cfg(feature = "fastapi")]
+                            is_fastapi_project: config.is_fastapi_project,
+
+                            #[cfg(feature = "fastapi")]
+                            database: config.database,
+
+                            #[cfg(feature = "fastapi")]
+                            database_manager: config.database_manager,
                         };
                     }
                 }
@@ -368,6 +398,42 @@ impl Config {
         Ok(())
     }
 
+    #[cfg(feature = "fastapi")]
+    pub fn save_is_fastapi_project(&self, value: bool) -> Result<()> {
+        self.handle_save_config(|config| &mut config.is_fastapi_project, Some(value))?;
+        Ok(())
+    }
+
+    #[cfg(feature = "fastapi")]
+    pub fn reset_is_fastapi_project(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.is_fastapi_project, None)?;
+        Ok(())
+    }
+
+    #[cfg(feature = "fastapi")]
+    pub fn save_database(&self, value: Database) -> Result<()> {
+        self.handle_save_config(|config| &mut config.database, Some(value))?;
+        Ok(())
+    }
+
+    #[cfg(feature = "fastapi")]
+    pub fn reset_database(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.database, None)?;
+        Ok(())
+    }
+
+    #[cfg(feature = "fastapi")]
+    pub fn save_database_manager(&self, value: DatabaseManager) -> Result<()> {
+        self.handle_save_config(|config| &mut config.database_manager, Some(value))?;
+        Ok(())
+    }
+
+    #[cfg(feature = "fastapi")]
+    pub fn reset_database_manager(&self) -> Result<()> {
+        self.handle_save_config(|config| &mut config.database_manager, None)?;
+        Ok(())
+    }
+
     pub fn show(&self) {
         let config = self.load_config();
         print_config_value("Creator", &config.creator);
@@ -410,6 +476,12 @@ impl Config {
         print_config_value("Use Multi OS CI", &config.use_multi_os_ci);
         print_config_value("Include Docs", &config.include_docs);
         print_config_value("Download Latest Packages", &config.download_latest_packages);
+
+        #[cfg(feature = "fastapi")]
+        print_config_value("FastAPI Project", &config.is_fastapi_project);
+
+        #[cfg(feature = "fastapi")]
+        print_config_value("Database Manager", &config.is_fastapi_project);
     }
 }
 
@@ -894,5 +966,73 @@ mod tests {
         let result = config.load_config();
 
         assert_eq!(result.download_latest_packages, None);
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_is_fastapi_project() {
+        let config = mock_config();
+        let expected = true;
+        config.save_is_fastapi_project(expected).unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.is_fastapi_project, Some(expected));
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_reset_is_fastapi_project() {
+        let config = mock_config();
+        config.save_is_fastapi_project(true).unwrap();
+        config.reset_is_fastapi_project().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.is_fastapi_project, None);
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_database() {
+        let config = mock_config();
+        let expected = Database::Postgresql;
+        config.save_database(expected.clone()).unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.database, Some(expected));
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_reset_database() {
+        let config = mock_config();
+        config.save_database(Database::Postgresql).unwrap();
+        config.reset_database().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.database, None);
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_database_manager() {
+        let config = mock_config();
+        let expected = DatabaseManager::AsyncPg;
+        config.save_database_manager(expected.clone()).unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.database_manager, Some(expected));
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_reset_database_manager() {
+        let config = mock_config();
+        config
+            .save_database_manager(DatabaseManager::SqlAlchemy)
+            .unwrap();
+        config.reset_database_manager().unwrap();
+        let result = config.load_config();
+
+        assert_eq!(result.database_manager, None);
     }
 }

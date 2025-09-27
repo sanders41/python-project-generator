@@ -1,7 +1,9 @@
 use anyhow::{bail, Result};
 
-use crate::file_manager::save_file_with_content;
-use crate::project_info::{LicenseType, ProjectInfo};
+use crate::{
+    file_manager::save_file_with_content,
+    project_info::{LicenseType, ProjectInfo},
+};
 
 fn create_apache_license() -> String {
     r#"                               Apache License
@@ -292,6 +294,12 @@ mod tests {
             docs_info: None,
             download_latest_packages: false,
             project_root_dir: Some(tmp_path),
+
+            #[cfg(feature = "fastapi")]
+            is_fastapi_project: false,
+
+            #[cfg(feature = "fastapi")]
+            database_manager: None,
         }
     }
 

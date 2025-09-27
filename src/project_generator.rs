@@ -2,27 +2,30 @@ use std::fs::create_dir_all;
 
 use anyhow::{bail, Result};
 use colored::*;
-use minijinja::render;
 use rayon::prelude::*;
 
-use crate::file_manager::{save_empty_src_file, save_file_with_content};
-use crate::github_actions::{
-    save_ci_testing_linux_only_file, save_ci_testing_multi_os_file, save_dependabot_file,
-    save_docs_publish_file, save_pypi_publish_file, save_release_drafter_file,
+use crate::{
+    file_manager::{save_empty_src_file, save_file_with_content},
+    github_actions::{
+        save_ci_testing_linux_only_file, save_ci_testing_multi_os_file, save_dependabot_file,
+        save_docs_publish_file, save_pypi_publish_file, save_release_drafter_file,
+    },
+    licenses::{generate_license, license_str},
+    package_version::{
+        LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackage, PythonPackageVersion,
+    },
+    project_info::{LicenseType, ProjectInfo, ProjectManager, Pyo3PythonManager},
+    python_files::generate_python_files,
+    rust_files::{save_cargo_toml_file, save_lib_file},
+    utils::is_python_312_or_greater,
 };
-use crate::licenses::{generate_license, license_str};
-use crate::package_version::{
-    LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackage, PythonPackageVersion,
-};
-use crate::project_info::{ProjectInfo, ProjectManager, Pyo3PythonManager};
-use crate::python_files::generate_python_files;
-use crate::rust_files::{save_cargo_toml_file, save_lib_file};
-use crate::utils::is_python_312_or_greater;
+
+#[cfg(feature = "fastapi")]
+use crate::github_actions::save_deploy_files;
 
 fn create_directories(project_info: &ProjectInfo) -> Result<()> {
-    let module = project_info.source_dir.replace([' ', '-'], "_");
     let base = project_info.base_dir();
-    let src = base.join(module);
+    let src = project_info.source_dir_path();
     create_dir_all(src)?;
 
     let github_dir = base.join(".github/workflows");
@@ -254,7 +257,7 @@ fn create_pre_commit_file(download_latest_packages: bool) -> String {
             }
             PreCommitHook::Ruff => {
                 let info = format!(
-                    "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: ruff\n      args: [--fix, --exit-non-zero-on-fix]\n    - id: ruff-format",
+                    "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: ruff-check\n      args: [--fix, --exit-non-zero-on-fix]\n    - id: ruff-format",
                     hook.repo, hook.rev
                 );
                 pre_commit_str.push_str(&info);
@@ -466,160 +469,240 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
 }
 
 fn create_pyproject_toml(project_info: &ProjectInfo) -> Result<String> {
-    let module = project_info.source_dir.replace([' ', '-'], "_");
+    let module = project_info.module_name();
+    let min_python_version = &project_info.min_python_version;
     let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
+    let project_name = &module.replace('_', "-");
+    let project_description = &project_info.project_description;
+    let creator = &project_info.creator;
+    let creator_email = &project_info.creator_email;
+    let version = &project_info.version;
+    let license = &project_info.license;
     let license_text = license_str(&project_info.license);
+    let dev_dependencies = build_latest_dev_dependencies(project_info)?;
+    let max_line_length = &project_info.max_line_length;
+    let include_docs = project_info.include_docs;
+
     let mut pyproject = match &project_info.project_manager {
         ProjectManager::Maturin => {
             if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
                 match pyo3_python_manager {
-                    Pyo3PythonManager::Uv => r#"[build-system]
+                    Pyo3PythonManager::Uv => {
+                        let mut pyproject = format!(
+                            r#"[build-system]
 requires = ["maturin>=1.5,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "{{ project_name }}"
-description = "{{ project_description }}"
+name = "{project_name}"
+description = "{project_description}"
 authors = [
-  { name = "{{ creator }}", email = "{{ creator_email }}" },
-]
-{% if license != "NoLicense" -%}
-license = { file = "LICENSE" }
-{% endif -%}
+  {{ name = "{creator}", email = "{creator_email}" }},
+]"#,
+                        );
+
+                        if license != &LicenseType::NoLicense {
+                            pyproject.push_str(
+                                r#"
+license = { file = "LICENSE" }"#,
+                            );
+                        }
+
+                        pyproject.push_str(&format!(
+                            r#"
 readme = "README.md"
 dynamic = ["version"]
-requires-python = ">={{ min_python_version }}"
+requires-python = ">={min_python_version}"
 dependencies = []
 
 [dependency-groups]
-dev = {{ dev_dependencies }}
+dev = {dev_dependencies}
 
 [tool.maturin]
-module-name = "{{ module }}._{{ module }}"
+module-name = "{module}._{module}"
 binding = "pyo3"
 features = ["pyo3/extension-module"]
 
-"#
-                    .to_string(),
-                    Pyo3PythonManager::Setuptools => r#"[build-system]
+"#,
+                        ));
+                        pyproject
+                    }
+                    Pyo3PythonManager::Setuptools => {
+                        let mut pyproject = format!(
+                            r#"[build-system]
 requires = ["maturin>=1.5,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "{{ project_name }}"
-description = "{{ project_description }}"
-authors = [{name = "{{ creator }}", email =  "{{ creator_email }}"}]
-{% if license != "NoLicense" -%}
-license = "{{ license }}"
-{% endif -%}
+name = "{project_name}"
+description = "{project_description}"
+authors = [{{name = "{creator}", email = "{creator_email}"}}]"#,
+                        );
+                        if license != &LicenseType::NoLicense {
+                            pyproject.push_str(&format!(
+                                r#"
+license = "{license_text}""#,
+                            ));
+                        }
+
+                        pyproject.push_str(&format!(
+                            r#"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = []
 
 [tool.maturin]
-module-name = "{{ module }}._{{ module }}"
+module-name = "{module}._{module}"
 binding = "pyo3"
 features = ["pyo3/extension-module"]
 
-"#
-                    .to_string(),
+"#,
+                        ));
+                        pyproject
+                    }
                 }
             } else {
                 bail!("A PyO3 Python manager is required for maturin projects");
             }
         }
-        ProjectManager::Poetry => r#"[tool.poetry]
-name = "{{ project_name }}"
-version = "{{ version }}"
-description = "{{ project_description }}"
-authors = ["{{ creator }} <{{ creator_email }}>"]
-{% if license != "NoLicense" -%}
-license = "{{ license }}"
-{% endif -%}
-readme = "README.md"
+        ProjectManager::Poetry => {
+            let mut pyproject = format!(
+                r#"[tool.poetry]
+name = "{project_name}"
+version = "{version}"
+description = "{project_description}"
+authors = ["{creator} <{creator_email}>"]
+"#
+            );
+
+            if license != &LicenseType::NoLicense {
+                pyproject.push_str(&format!(
+                    "license = \"{license_text}\"
+"
+                ));
+            }
+
+            pyproject.push_str(&format!(
+                r#"readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^{{ min_python_version }}"
+python = "^{min_python_version}"
 
 [tool.poetry.group.dev.dependencies]
-{{ dev_dependencies }}
+{dev_dependencies}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 "#
-        .to_string(),
-        ProjectManager::Setuptools => r#"[build-system]
+            ));
+            pyproject
+        }
+        ProjectManager::Setuptools => {
+            let mut pyproject = format!(
+                r#"[build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "{{ project_name }}"
-description = "{{ project_description }}"
+name = "{project_name}"
+description = "{project_description}"
 authors = [
-  { name = "{{ creator }}", email = "{{ creator_email }}" }
+  {{ name = "{creator}", email = "{creator_email}" }}
 ]
-{% if license != "NoLicense" -%}
-license = { text = "{{ license }}" }
-{% endif -%}
-requires-python = ">={{ min_python_version }}"
+"#
+            );
+
+            if license != &LicenseType::NoLicense {
+                pyproject.push_str(&format!(
+                    "license = {{ text = \"{license_text}\" }}
+"
+                ));
+            }
+
+            pyproject.push_str(&format!(
+                r#"requires-python = ">={min_python_version}"
 dynamic = ["version", "readme"]
 dependencies = []
 
 [tool.setuptools.dynamic]
-version = {attr = "{{ module }}.__version__"}
-readme = {file = ["README.md"]}
+version = {{attr = "{module}.__version__"}}
+readme = {{file = ["README.md"]}}
 
 [tool.setuptools.packages.find]
-include = ["{{ module }}*"]
+include = ["{module}*"]
 
 [tool.setuptools.package-data]
-{{ module }} = ["py.typed"]
+{module} = ["py.typed"]
 
-"#
-        .to_string(),
-        ProjectManager::Uv => r#"[build-system]
+"#,
+            ));
+            pyproject
+        }
+        ProjectManager::Uv => {
+            let mut pyproject = format!(
+                r#"[build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "{{ project_name }}"
-description = "{{ project_description }}"
+name = "{project_name}"
+description = "{project_description}"
 authors = [
-  { name = "{{ creator }}", email = "{{ creator_email }}" }
+  {{ name = "{creator}", email = "{creator_email}" }}
 ]
-{% if license != "NoLicense" -%}
-license = { file = "LICENSE" }
-{% endif -%}
-readme = "README.md"
-requires-python = ">={{ min_python_version }}"
+"#
+            );
+
+            if license != &LicenseType::NoLicense {
+                pyproject.push_str(
+                    "license = { file = \"LICENSE\" }
+",
+                );
+            }
+
+            pyproject.push_str(&format!(
+                r#"readme = "README.md"
+requires-python = ">={min_python_version}"
 dynamic = ["version"]
 dependencies = []
 
 [dependency-groups]
-dev = {{ dev_dependencies }}
+dev = {dev_dependencies}
 
 [tool.hatch.version]
-path = "{{ module }}/_version.py"
+path = "{module}/_version.py"
 
-"#
-        .to_string(),
-        ProjectManager::Pixi => r#"[build-system]
+"#,
+            ));
+            pyproject
+        }
+        ProjectManager::Pixi => {
+            let mut pyproject = format!(
+                r#"[build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "{{ project_name }}"
-description = "{{ project_description }}"
+name = "{project_name}"
+description = "{project_description}"
 authors = [
-  { name = "{{ creator }}", email = "{{ creator_email }}" }
+  {{ name = "{creator}", email = "{creator_email}" }}
 ]
-{% if license != "NoLicense" -%}
-license = { file = "LICENSE" }
-{% endif -%}
-readme = "README.md"
-requires-python = ">={{ min_python_version }}"
+"#
+            );
+
+            if license != &LicenseType::NoLicense {
+                pyproject.push_str(
+                    "license = { file = \"LICENSE\" }
+",
+                );
+            }
+
+            pyproject.push_str(&format!(
+                r#"readme = "README.md"
+requires-python = ">={min_python_version}"
 dynamic = ["version"]
 dependencies = []
 
@@ -628,26 +711,36 @@ channels = ["conda-forge", "bioconda"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
 [tool.pixi.feature.dev.tasks]
-run-mypy = "mypy {{ module }} tests"
-run-ruff-check = "ruff check {{ module }} tests"
-run-ruff-format = "ruff format {{ module }} tests"
+run-mypy = "mypy {module} tests"
+run-ruff-check = "ruff check {module} tests"
+run-ruff-format = "ruff format {module} tests"
 run-pytest = "pytest -x"
-{% if include_docs -%}
-run-deploy-docs = "mkdocs gh-deploy --force"
-{%- endif %}
+"#,
+            ));
 
+            if include_docs {
+                pyproject.push_str(
+                    "run-deploy-docs = \"mkdocs gh-deploy --force\"
+",
+                );
+            }
+
+            pyproject.push_str(&format!(
+                r#"
 [project.optional-dependencies]
-dev = {{ dev_dependencies }}
+dev = {dev_dependencies}
 
 [tool.pixi.environments]
-default = {features = [], solve-group = "default"}
-dev = {features = ["dev"], solve-group = "default"}
+default = {{features = [], solve-group = "default"}}
+dev = {{features = ["dev"], solve-group = "default"}}
 
 [tool.hatch.version]
-path = "{{ module }}/_version.py"
+path = "{module}/_version.py"
 
-"#
-        .to_string(),
+"#,
+            ));
+            pyproject
+        }
     };
 
     pyproject.push_str(
@@ -658,22 +751,45 @@ disallow_untyped_defs = true
 [[tool.mypy.overrides]]
 module = ["tests.*"]
 disallow_untyped_defs = false
+"#,
+    );
 
+    #[cfg(feature = "fastapi")]
+    if project_info.is_fastapi_project {
+        pyproject.push_str(
+            r#"
+[[tool.mypy.overrides]]
+module = ["asyncpg.*"]
+ignore_missing_imports = true
+"#,
+        );
+    }
+
+    pyproject.push_str(&format!(
+        r#"
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--cov={{ module }} --cov-report term-missing --no-cov-on-fail"
-{%- if is_async_project %}
-asyncio_mode = "auto"
+addopts = "--cov={module} --cov-report term-missing --no-cov-on-fail"
+"#,
+    ));
+
+    if project_info.is_async_project {
+        pyproject.push_str(
+            r#"asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 asyncio_default_test_loop_scope = "function"
-{%- endif %}
+"#,
+        );
+    }
 
+    pyproject.push_str(&format!(
+        r#"
 [tool.coverage.report]
 exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
 
 [tool.ruff]
-line-length = {{ max_line_length }}
-target-version = "py{{ pyupgrade_version }}"
+line-length = {max_line_length}
+target-version = "py{pyupgrade_version}"
 fix = true
 
 [tool.ruff.lint]
@@ -688,10 +804,17 @@ select = [
   "T203",  # pprint found
   "RUF022",  # Unsorted __all__
   "RUF023",  # Unforted __slots__
-  {%- if is_async_project %}
-  "ASYNC",  # flake8-async
-  {% endif %}
-]
+"#,
+    ));
+
+    if project_info.is_async_project {
+        pyproject.push_str(
+            r#"  "ASYNC",  # flake8-async
+"#,
+        );
+    }
+    pyproject.push_str(
+        r#"]
 ignore=[
   # Recommended ignores by ruff when using formatter
   "E501",
@@ -710,27 +833,19 @@ ignore=[
   "ISC001",
   "ISC002",
 ]
-
 "#,
     );
 
-    Ok(render!(
-        &pyproject,
-        project_name => module.replace('_', "-"),
-        version => project_info.version,
-        project_description => project_info.project_description,
-        creator => project_info.creator,
-        creator_email => project_info.creator_email,
-        license => license_text,
-        min_python_version => project_info.min_python_version,
-        dev_dependencies => build_latest_dev_dependencies(project_info)?,
-        max_line_length => project_info.max_line_length,
-        module => module,
-        is_application => project_info.is_application,
-        is_async_project => project_info.is_async_project,
-        include_docs => project_info.include_docs,
-        pyupgrade_version => pyupgrade_version,
-    ))
+    if project_info.project_manager == ProjectManager::Uv && project_info.is_application {
+        pyproject.push_str(
+            r#"
+[tool.uv]
+add-bounds = "exact"
+"#,
+        );
+    }
+
+    Ok(pyproject)
 }
 
 fn save_pyproject_toml_file(project_info: &ProjectInfo) -> Result<()> {
@@ -864,8 +979,11 @@ fn save_docs_css(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_poetry_justfile(module: &str) -> String {
-    format!(
+fn create_poetry_justfile(project_info: &ProjectInfo) -> String {
+    let module = project_info.module_name();
+
+    #[cfg_attr(not(feature = "fastapi"), allow(unused_mut))]
+    let mut justfile = format!(
         r#"@_default:
   just --list
 
@@ -886,21 +1004,87 @@ fn create_poetry_justfile(module: &str) -> String {
 @ruff-format:
   poetry run ruff format {module} tests
 
-@test *args="":
-  -poetry run pytest {{{{args}}}}
-
 @install:
   poetry install
+
+@test *args="":
+  poetry run pytest {{{{args}}}}
 "#
-    )
+    );
+
+    #[cfg(feature = "fastapi")]
+    if project_info.is_fastapi_project {
+        justfile.push_str(
+            r#"
+granian_cmd := if os() != "windows" {
+  "poetry run granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --loop uvloop --reload"
+} else {
+  "poetry run granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --reload"
 }
 
-fn create_pyo3_justfile(module: &str, pyo3_python_manager: &Pyo3PythonManager) -> String {
-    match pyo3_python_manager {
+@backend-server:
+  {{granian_cmd}}
+
+@test-parallel *args="":
+  poetry run pytest -n auto {{args}}
+
+@docker-up:
+  docker compose up --build
+
+@docker-up-detached:
+  docker compose up --build -d
+
+@docker-up-services:
+  docker compose up db valkey migrations
+
+@docker-up-services-detached:
+  docker compose up db valkey migrations -d
+
+@docker-down:
+  docker compose down
+
+@docker-down-volumes:
+  docker compose down --volumes
+
+@docker-pull:
+  docker compose pull db valkey migrations
+
+@docker-build:
+  docker compose build
+"#,
+        )
+    }
+
+    justfile
+}
+
+fn create_pyo3_justfile(project_info: &ProjectInfo) -> Result<String> {
+    let module = project_info.module_name();
+    let pyo3_python_manager = if let Some(manager) = &project_info.pyo3_python_manager {
+        manager
+    } else {
+        bail!("A PyO3 Python manager is required for maturin");
+    };
+    #[cfg_attr(not(feature = "fastapi"), allow(unused_mut))]
+    let mut justfile = match pyo3_python_manager {
         Pyo3PythonManager::Uv => {
-            format!(
+            let mut file = format!(
                 r#"@_default:
   just --list
+
+@lint:
+  echo cargo check
+  just --justfile {{{{justfile()}}}} check
+  echo cargo clippy
+  just --justfile {{{{justfile()}}}} clippy
+  echo cargo fmt
+  just --justfile {{{{justfile()}}}} fmt
+  echo mypy
+  just --justfile {{{{justfile()}}}} mypy
+  echo ruff check
+  just --justfile {{{{justfile()}}}} ruff-check
+  echo ruff formatting
+  just --justfile {{{{justfile()}}}} ruff-format
 
 @lock:
   uv lock
@@ -919,20 +1103,6 @@ fn create_pyo3_justfile(module: &str, pyo3_python_manager: &Pyo3PythonManager) -
 
 @install-release: && develop-release
   uv sync --frozen --all-extras
-
-@lint:
-  echo cargo check
-  just --justfile {{{{justfile()}}}} check
-  echo cargo clippy
-  just --justfile {{{{justfile()}}}} clippy
-  echo cargo fmt
-  just --justfile {{{{justfile()}}}} fmt
-  echo mypy
-  just --justfile {{{{justfile()}}}} mypy
-  echo ruff check
-  just --justfile {{{{justfile()}}}} ruff-check
-  echo ruff formatting
-  just --justfile {{{{justfile()}}}} ruff-format
 
 @check:
   cargo check
@@ -955,24 +1125,33 @@ fn create_pyo3_justfile(module: &str, pyo3_python_manager: &Pyo3PythonManager) -
 @test *args="":
   uv run pytest {{{{args}}}}
 "#
-            )
+            );
+
+            #[cfg(feature = "fastapi")]
+            if project_info.is_fastapi_project {
+                file.push_str(
+                    r#"
+@test-parallel *args="":
+  uv run pytest -n auto {{args}}
+
+granian_cmd := if os() != "windows" {
+  "uv run granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --loop uvloop --reload"
+} else {
+  "uv run granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --reload"
+}
+
+@backend-server:
+  {{granian_cmd}}
+"#,
+                );
+            }
+
+            file
         }
         Pyo3PythonManager::Setuptools => {
-            format!(
+            let mut file = format!(
                 r#"@_default:
   just --list
-
-@develop:
-  maturin develop
-
-@develop-release:
-  maturin develop -r
-
-@install: && develop
-  python -m pip install -r requirements-dev.txt
-
-@install-release: && develop-release
-  python -m pip install -r requirements-dev.txt
 
 @lint:
   echo cargo check
@@ -988,6 +1167,18 @@ fn create_pyo3_justfile(module: &str, pyo3_python_manager: &Pyo3PythonManager) -
   echo ruff formatting
   just --justfile {{{{justfile()}}}} ruff-format
 
+@develop:
+  python -m maturin develop
+
+@develop-release:
+  python -m maturin develop -r
+
+@install: && develop
+  python -m pip install -r requirements-dev.txt
+
+@install-release: && develop-release
+  python -m pip install -r requirements-dev.txt
+
 @check:
   cargo check
 
@@ -998,24 +1189,82 @@ fn create_pyo3_justfile(module: &str, pyo3_python_manager: &Pyo3PythonManager) -
   cargo fmt --all -- --check
 
 @mypy:
-  mypy {module} tests
+  python -m mypy {module} tests
 
 @ruff-check:
-  ruff check {module} tests --fix
+  python -m ruff check {module} tests --fix
 
 @ruff-format:
-  ruff format {module} tests
+  python -m ruff format {module} tests
 
 @test *arg="":
-  pytest {{{{args}}}}
+  python -m pytest {{{{args}}}}
 "#
-            )
-        }
-    }
+            );
+
+            #[cfg(feature = "fastapi")]
+            if project_info.is_fastapi_project {
+                file.push_str(
+                    r#"
+@test-parallel *args="":
+  python -m pytest -n auto {{{{args}}}}
+
+granian_cmd := if os() != "windows" {
+  "python -m granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --loop uvloop --reload"
+} else {
+  "python -m granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --reload"
 }
 
-fn create_setuptools_justfile(module: &str) -> String {
-    format!(
+@backend-server:
+  {{granian_cmd}}
+"#,
+                );
+            }
+
+            file
+        }
+    };
+
+    #[cfg(feature = "fastapi")]
+    if project_info.is_fastapi_project {
+        justfile.push_str(
+            r#"
+@docker-up:
+  docker compose up --build
+
+@docker-up-detached:
+  docker compose up --build -d
+
+@docker-up-services:
+  docker compose up db valkey migrations
+
+@docker-up-services-detached:
+  docker compose up db valkey migrations -d
+
+@docker-down:
+  docker compose down
+
+@docker-down-volumes:
+  docker compose down --volumes
+
+@docker-pull:
+  docker compose pull db valkey migrations
+
+@docker-build:
+  docker compose build
+}}}}
+"#,
+        )
+    }
+
+    Ok(justfile)
+}
+
+fn create_setuptools_justfile(project_info: &ProjectInfo) -> String {
+    let module = project_info.module_name();
+
+    #[cfg_attr(not(feature = "fastapi"), allow(unused_mut))]
+    let mut justfile = format!(
         r#"@_default:
   just --list
 
@@ -1036,17 +1285,65 @@ fn create_setuptools_justfile(module: &str) -> String {
 @ruff-format:
   python -m ruff format {module} tests
 
-@test *args="":
-  -python -m pytest {{{{args}}}}
-
 @install:
   python -m pip install -r requirements-dev.txt
+
+@test *args="":
+  python -m pytest {{{{args}}}}
 "#
-    )
+    );
+
+    #[cfg(feature = "fastapi")]
+    if project_info.is_fastapi_project {
+        justfile.push_str(
+            r#"
+@test-parallel *args="":
+  python -m pytest -n auto {{args}}
+
+granian_cmd := if os() != "windows" {
+  "python -m granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --loop uvloop --reload"
+} else {
+  "python -m granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --reload"
 }
 
-fn create_uv_justfile(module: &str) -> String {
-    format!(
+@backend-server:
+  {{granian_cmd}}
+
+@docker-up:
+  docker compose up --build
+
+@docker-up-detached:
+  docker compose up --build -d
+
+@docker-up-services:
+  docker compose up db valkey migrations
+
+@docker-up-services-detached:
+  docker compose up db valkey migrations -d
+
+@docker-down:
+  docker compose down
+
+@docker-down-volumes:
+  docker compose down --volumes
+
+@docker-pull:
+  docker compose pull db valkey migrations
+
+@docker-build:
+  docker compose build
+"#,
+        )
+    }
+
+    justfile
+}
+
+fn create_uv_justfile(project_info: &ProjectInfo) -> String {
+    let module = project_info.module_name();
+
+    #[cfg_attr(not(feature = "fastapi"), allow(unused_mut))]
+    let mut justfile = format!(
         r#"@_default:
   just --list
 
@@ -1067,9 +1364,6 @@ fn create_uv_justfile(module: &str) -> String {
 @ruff-format:
   uv run ruff format {module} tests
 
-@test *args="":
-  -uv run pytest {{{{args}}}}
-
 @lock:
   uv lock
 
@@ -1078,8 +1372,56 @@ fn create_uv_justfile(module: &str) -> String {
 
 @install:
   uv sync --frozen --all-extras
+
+@test *args="":
+  uv run pytest {{{{args}}}}
 "#
-    )
+    );
+
+    #[cfg(feature = "fastapi")]
+    if project_info.is_fastapi_project {
+        justfile.push_str(
+            r#"
+@test-parallel *args="":
+  uv run pytest -n auto {{args}}
+
+granian_cmd := if os() != "windows" {
+  "uv run granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --loop uvloop --reload"
+} else {
+  "uv run granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --reload"
+}
+
+@backend-server:
+  {{granian_cmd}}
+
+@docker-up:
+  docker compose up --build
+
+@docker-up-detached:
+  docker compose up --build -d
+
+@docker-up-services:
+  docker compose up db valkey migrations
+
+@docker-up-services-detached:
+  docker compose up db valkey migrations -d
+
+@docker-down:
+  docker compose down
+
+@docker-down-volumes:
+  docker compose down --volumes
+
+@docker-pull:
+  docker compose pull db valkey migrations
+
+@docker-build:
+  docker compose build
+"#,
+        )
+    }
+
+    justfile
 }
 
 fn create_pixi_justfile() -> String {
@@ -1104,7 +1446,7 @@ fn create_pixi_justfile() -> String {
   pixi run run-ruff-format
 
 @test:
-  -pixi run run-pytest
+  pixi run run-pytest
 
 @install:
   pixi install
@@ -1113,19 +1455,12 @@ fn create_pixi_justfile() -> String {
 }
 
 fn save_justfile(project_info: &ProjectInfo) -> Result<()> {
-    let module = project_info.source_dir.replace([' ', '-'], "_");
     let file_path = project_info.base_dir().join("justfile");
     let content = match &project_info.project_manager {
-        ProjectManager::Poetry => create_poetry_justfile(&module),
-        ProjectManager::Maturin => {
-            if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
-                create_pyo3_justfile(&module, pyo3_python_manager)
-            } else {
-                bail!("A PyO3 Python manager is required for maturin");
-            }
-        }
-        ProjectManager::Setuptools => create_setuptools_justfile(&module),
-        ProjectManager::Uv => create_uv_justfile(&module),
+        ProjectManager::Poetry => create_poetry_justfile(project_info),
+        ProjectManager::Maturin => create_pyo3_justfile(project_info)?,
+        ProjectManager::Setuptools => create_setuptools_justfile(project_info),
+        ProjectManager::Uv => create_uv_justfile(project_info),
         ProjectManager::Pixi => create_pixi_justfile(),
     };
 
@@ -1215,6 +1550,16 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
         _ => (),
     }
 
+    #[cfg(feature = "fastapi")]
+    if project_info.use_continuous_deployment {
+        if project_info.is_fastapi_project && save_deploy_files(project_info).is_err() {
+            bail!("Error creating deploy files");
+        } else if save_pypi_publish_file(project_info).is_err() {
+            bail!("Error creating PyPI publish file");
+        }
+    }
+
+    #[cfg(not(feature = "fastapi"))]
     if project_info.use_continuous_deployment && save_pypi_publish_file(project_info).is_err() {
         bail!("Error creating PyPI publish file");
     }
@@ -1267,6 +1612,9 @@ mod tests {
     use insta::assert_yaml_snapshot;
     use tmp_path::tmp_path;
 
+    #[cfg(feature = "fastapi")]
+    use crate::project_info::DatabaseManager;
+
     #[tmp_path]
     fn project_info_dummy() -> ProjectInfo {
         ProjectInfo {
@@ -1302,6 +1650,12 @@ mod tests {
             docs_info: None,
             download_latest_packages: false,
             project_root_dir: Some(tmp_path),
+
+            #[cfg(feature = "fastapi")]
+            is_fastapi_project: false,
+
+            #[cfg(feature = "fastapi")]
+            database_manager: None,
         }
     }
 
@@ -1943,10 +2297,83 @@ mod tests {
         assert_yaml_snapshot!(content);
     }
 
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_justfile_poetry_fastapi_project() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("justfile");
+        save_justfile(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_justfile_uv() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("justfile");
+        save_justfile(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_justfile_uv_fastapi_project() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("justfile");
+        save_justfile(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
     #[test]
     fn test_save_justfile_setuptools() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Setuptools;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("justfile");
+        save_justfile(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_justfile_setuptools_fastapi_project() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Setuptools;
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("justfile");
@@ -1964,6 +2391,25 @@ mod tests {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
         project_info.is_application = false;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("justfile");
+        save_justfile(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_justfile_maturin_fastapi_project() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("justfile");
