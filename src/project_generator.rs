@@ -257,7 +257,7 @@ fn create_pre_commit_file(download_latest_packages: bool) -> String {
             }
             PreCommitHook::Ruff => {
                 let info = format!(
-                    "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: ruff\n      args: [--fix, --exit-non-zero-on-fix]\n    - id: ruff-format",
+                    "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: ruff-check\n      args: [--fix, --exit-non-zero-on-fix]\n    - id: ruff-format",
                     hook.repo, hook.rev
                 );
                 pre_commit_str.push_str(&info);
