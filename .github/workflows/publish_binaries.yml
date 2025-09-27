@@ -37,7 +37,7 @@ jobs:
       - name: Add target
         run: rustup target add ${{ matrix.target }}
       - name: Build
-        run: cargo build --release --locked --target ${{ matrix.target }}
+        run: cargo build --release --locked --target ${{ matrix.target }} --all-features
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
@@ -70,7 +70,7 @@ jobs:
       - name: Create package
         id: create-deb
         run: |
-          cargo deb --deb-revision=""  # --deb-revision="" removes the -1 post tag
+          cargo deb --locked --all-features --deb-revision=""  # --deb-revision="" removes the -1 post tag
           cd target/debian
           echo "DEB_FILE=$(find python-project-generator*_*.deb)" >> "$GITHUB_OUTPUT"
       - name: Upload deb package to release
