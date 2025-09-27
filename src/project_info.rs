@@ -508,7 +508,7 @@ fn copyright_year_prompt(license: &LicenseType, default: Option<String>) -> Resu
     Ok(input)
 }
 
-#[cfg(feature = "fastapi")]
+/* #[cfg(feature = "fastapi")]
 fn database_manager_prompt(default: Option<DatabaseManager>) -> Result<DatabaseManager> {
     let default_str = match default {
         Some(d) => match d {
@@ -532,7 +532,7 @@ fn database_manager_prompt(default: Option<DatabaseManager>) -> Result<DatabaseM
     } else {
         bail!("Invalid selection");
     }
-}
+} */
 
 pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     let config = Config::default().load_config();
@@ -746,7 +746,8 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     };
 
     #[cfg(feature = "fastapi")]
-    let database_manager = if is_fastapi_project {
+    let database_manager = Some(DatabaseManager::AsyncPg);
+    /* let database_manager = if is_fastapi_project {
         if use_defaults {
             Some(config.database_manager.unwrap_or_default())
         } else {
@@ -755,7 +756,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         }
     } else {
         None
-    };
+    }; */
 
     let is_async_project = {
         #[cfg(feature = "fastapi")]
