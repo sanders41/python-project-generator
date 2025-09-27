@@ -836,6 +836,15 @@ ignore=[
 "#,
     );
 
+    if project_info.project_manager == ProjectManager::Uv && project_info.is_application {
+        pyproject.push_str(
+            r#"
+[tool.uv]
+add-bounds = "exact"
+"#,
+        );
+    }
+
     Ok(pyproject)
 }
 
