@@ -50,6 +50,16 @@ use_continuous_deployment=""
 use_release_drafter=""
 pyo3_python_manager=""
 
+# Check for user provided pyo3_python_manager input
+if [ $# -gt 2 ]; then
+  if [ $3 -lt 1 ] || [ $3 -gt 2 ]; then
+    echo "Invalid pyo3_python_manager value"
+    exit 1
+  else
+    pyo3_python_manager=$3
+  fi
+fi
+
 if [[ project_manager -eq 3 ]]; then
   ./target/release/python-project create -s << EOF
 $project_name
