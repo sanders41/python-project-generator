@@ -181,7 +181,7 @@ jobs:
       - name: Build package
         run: cargo build --release -F fastapi
       - name: Run creation
-        run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 1
+        run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 2
         shell: bash
       - name: Install Dependencies
         working-directory: ${{ env.WORKING_DIR }}
