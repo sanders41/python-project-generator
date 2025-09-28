@@ -761,4 +761,20 @@ mod tests {
 
         assert_yaml_snapshot!(content);
     }
+
+    #[test]
+    fn test_save_dockerfile_setuptools() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Setuptools;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("Dockerfile");
+        save_dockerfile(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
 }
