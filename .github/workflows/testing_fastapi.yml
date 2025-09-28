@@ -391,9 +391,9 @@ jobs:
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          python -m pre-commit install
+          pre-commit install
           git add .
-          python -m pre-commit run --all-files
+          pre-commit run --all-files
       - name: make .env
         working-directory: ${{ env.WORKING_DIR }}
         run: touch .env
