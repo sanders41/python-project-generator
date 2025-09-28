@@ -109,3 +109,90 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         if: matrix.project_type == 'application'
         run: uv run pytest
+  test-poetry-fastapi-project:
+    name: test-fastapi-poetry-setup-fastapi
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2.8.1
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
+      - name: Install Poetry
+        run: pipx install poetry
+      - name: Configure poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.MIN_PYTHON_VERSION }}
+      - name: Build package
+        run: cargo build --release -F fastapi
+      - name: Run creation
+        run: ./scripts/ci_run_fastapi.sh "fastapi" 2
+        shell: bash
+      - name: Install Dependencies
+        working-directory: ${{ env.WORKING_DIR }}
+        run: poetry install
+      - name: Pre-commit check
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          poetry run pre-commit install
+          git add .
+          poetry run pre-commit run --all-files
+      - name: make .env
+        working-directory: ${{ env.WORKING_DIR }}
+        run: touch .env
+      - name: Build and start Docker containers
+        working-directory: ${{ env.WORKING_DIR }}
+        run: docker compose up -d
+      - name: Test with pytest
+        working-directory: ${{ env.WORKING_DIR }}
+        run: poetry run pytest -n auto
+  test-poetry-non-fastapi-project:
+    name: test-fastapi-poetry-setup-non-fastapi
+    strategy:
+      fail-fast: false
+      matrix:
+        project_type: ["application", "lib"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2.8.1
+      - name: Install Poetry
+        run: pipx install poetry
+      - name: Configure poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.MIN_PYTHON_VERSION }}
+      - name: Build package
+        run: cargo build --release -F fastapi
+      - name: Run creation
+        run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 2
+        shell: bash
+      - name: Install Dependencies
+        working-directory: ${{ env.WORKING_DIR }}
+        run: poetry install
+      - name: Pre-commit check
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          poetry run pre-commit install
+          git add .
+          poetry run pre-commit run --all-files
+      - name: Test with pytest
+        working-directory: ${{ env.WORKING_DIR }}
+        if: matrix.project_type == 'application'
+        run: poetry run pytest

@@ -423,16 +423,11 @@ RUN sh /uv-installer.sh && rm /uv-installer.sh
 
 ENV PATH="/root/.local/bin:$PATH"
 
-COPY pyproject.toml uv.lock ./
+COPY . ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
   uv venv -p {python_version} \
-  && uv sync --locked --no-dev --no-install-project --no-editable
-
-COPY . /app
-
-RUN --mount=type=cache,target=/root/.cache/uv \
-  uv sync --locked --no-dev --no-editable
+  && uv sync --locked --no-dev --no-editable
 
 
 # Build production stage
@@ -462,6 +457,83 @@ USER appuser
 
 ENTRYPOINT ["./entrypoint.sh"]
 "#,
+        ),
+        ProjectManager::Poetry => format!(
+            r#"# syntax=docker/dockerfile:1
+
+FROM ubuntu:24.04 AS builder
+
+WORKDIR /app
+
+ENV \
+  PYTHONUNBUFFERED=true \
+  POETRY_NO_INTERACTION=true \
+  POETRY_VIRTUALENVS_IN_PROJECT=true \
+  POETRY_CACHE_DIR=/tmp/poetry_cache
+
+RUN : \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  curl \
+  ca-certificates \
+  software-properties-common \
+  && add-apt-repository ppa:deadsnakes/ppa \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  python{python_version} \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install Poetry
+RUN curl -sSL https://install.python-poetry.org | python{python_version} -
+
+ENV PATH="/root/.local/bin:$PATH"
+
+COPY pyproject.toml poetry.lock ./
+
+COPY . /app
+
+RUN --mount=type=cache,target=$POETRY_CACHE_DIR \
+  poetry config virtualenvs.in-project true \
+  && poetry install --only=main
+
+
+# Build production stage
+FROM ubuntu:24.04 AS prod
+
+RUN useradd appuser
+
+WORKDIR /app
+
+RUN chown appuser:appuser /app
+
+ENV \
+  PYTHONUNBUFFERED=true \
+  PATH="/app/.venv/bin:$PATH" \
+  PORT="8000"
+
+RUN : \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends\
+  software-properties-common \
+  && add-apt-repository ppa:deadsnakes/ppa \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends python{python_version} \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/my_project /app/my_project
+COPY ./scripts/entrypoint.sh /app
+
+RUN chmod +x /app/entrypoint.sh
+
+EXPOSE 8000
+
+USER appuser
+
+ENTRYPOINT ["./entrypoint.sh"]
+"#
         ),
         _ => todo!("Implement this"),
     }
@@ -539,4 +611,85 @@ pub fn save_entrypoint_script(project_info: &ProjectInfo) -> Result<()> {
     save_file_with_content(&file_path, &file_content)?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::project_info::{DatabaseManager, LicenseType, ProjectInfo, Pyo3PythonManager};
+    use insta::assert_yaml_snapshot;
+    use std::fs::create_dir_all;
+    use tmp_path::tmp_path;
+
+    #[tmp_path]
+    fn project_info_dummy() -> ProjectInfo {
+        ProjectInfo {
+            project_name: "My project".to_string(),
+            project_slug: "my-project".to_string(),
+            source_dir: "my_project".to_string(),
+            project_description: "This is a test".to_string(),
+            creator: "Arthur Dent".to_string(),
+            creator_email: "authur@heartofgold.com".to_string(),
+            license: LicenseType::Mit,
+            copyright_year: Some("2023".to_string()),
+            version: "0.1.0".to_string(),
+            python_version: "3.11".to_string(),
+            min_python_version: "3.9".to_string(),
+            project_manager: ProjectManager::Poetry,
+            pyo3_python_manager: Some(Pyo3PythonManager::Uv),
+            is_application: true,
+            is_async_project: false,
+            github_actions_python_test_versions: vec![
+                "3.9".to_string(),
+                "3.10".to_string(),
+                "3.11".to_string(),
+                "3.12".to_string(),
+            ],
+            max_line_length: 100,
+            use_dependabot: true,
+            dependabot_schedule: None,
+            dependabot_day: None,
+            use_continuous_deployment: true,
+            use_release_drafter: true,
+            use_multi_os_ci: true,
+            include_docs: false,
+            docs_info: None,
+            download_latest_packages: false,
+            project_root_dir: Some(tmp_path),
+            is_fastapi_project: true,
+            database_manager: Some(DatabaseManager::AsyncPg),
+        }
+    }
+
+    #[test]
+    fn test_save_dockerfile_uv() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("Dockerfile");
+        save_dockerfile(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_dockerfile_poetry() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Poetry;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("Dockerfile");
+        save_dockerfile(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
 }

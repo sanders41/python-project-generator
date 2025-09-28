@@ -17,7 +17,7 @@ use crate::{
     project_info::{LicenseType, ProjectInfo, ProjectManager, Pyo3PythonManager},
     python_files::generate_python_files,
     rust_files::{save_cargo_toml_file, save_lib_file},
-    utils::is_python_312_or_greater,
+    utils::is_python_311_or_greater,
 };
 
 #[cfg(feature = "fastapi")]
@@ -302,7 +302,7 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
     packages.push(PythonPackageVersion::new(PythonPackage::PytestCov));
     packages.push(PythonPackageVersion::new(PythonPackage::Ruff));
 
-    if !is_python_312_or_greater(&project_info.min_python_version)?
+    if !is_python_311_or_greater(&project_info.min_python_version)?
         && matches!(project_info.project_manager, ProjectManager::Poetry)
     {
         packages.push(PythonPackageVersion::new(PythonPackage::Tomli));
