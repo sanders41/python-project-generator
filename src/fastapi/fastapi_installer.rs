@@ -131,6 +131,19 @@ fn setuptools_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result
         bail!("Failed to install FastAPI dependencies: {stderr}");
     }
 
+    let freeze = std::process::Command::new(".venv/bin/python")
+        .args(["-m", "pip", "freeze"])
+        .current_dir(project_info.base_dir())
+        .output()?;
+
+    if !freeze.status.success() {
+        let stderr = String::from_utf8_lossy(&freeze.stderr);
+        bail!("Failed to get pip freeze output: {stderr}");
+    }
+
+    let requirements_path = project_info.base_dir().join("requirements.txt");
+    std::fs::write(requirements_path, freeze.stdout)?;
+
     Ok(())
 }
 
