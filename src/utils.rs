@@ -10,16 +10,6 @@ pub fn is_python_311_or_greater(version: &str) -> Result<bool> {
     }
 }
 
-pub fn is_python_312_or_greater(version: &str) -> Result<bool> {
-    let version_parts = split_version(version)?;
-
-    if version_parts.1 >= 12 {
-        Ok(true)
-    } else {
-        Ok(false)
-    }
-}
-
 #[cfg(feature = "fastapi")]
 pub fn is_allowed_fastapi_python_version(version: &str) -> Result<bool> {
     let version_parts = split_version(version)?;
@@ -48,21 +38,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_python_312_312() {
-        let result = is_python_312_or_greater("3.12").unwrap();
+    fn test_python_312() {
+        let result = is_python_311_or_greater("3.12").unwrap();
         assert!(result);
-    }
-
-    #[test]
-    fn test_python_312_313() {
-        let result = is_python_312_or_greater("3.13").unwrap();
-        assert!(result);
-    }
-
-    #[test]
-    fn test_python_312_311() {
-        let result = is_python_312_or_greater("3.11").unwrap();
-        assert!(!result);
     }
 
     #[test]
