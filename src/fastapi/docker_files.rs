@@ -535,6 +535,74 @@ USER appuser
 ENTRYPOINT ["./entrypoint.sh"]
 "#
         ),
+        ProjectManager::Setuptools => format!(
+            r#"# syntax=docker/dockerfile:1
+
+FROM ubuntu:24.04 AS builder
+
+WORKDIR /app
+
+ENV \
+  PYTHONUNBUFFERED=true \
+  PATH="/root/.local/bin:$PATH"
+
+RUN : \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  software-properties-common \
+  && add-apt-repository ppa:deadsnakes/ppa \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  python{python_version} \
+  python{python_version}-venv \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY . ./
+
+RUN : \
+  && python{python_version} -m venv .venv \
+  && .venv/bin/python -m pip install -r requirements.txt
+
+
+# Build production stage
+FROM ubuntu:24.04 AS prod
+
+ENV \
+  PYTHONUNBUFFERED=true \
+  PATH="/app/.venv/bin:$PATH" \
+  PORT="8000"
+
+RUN : \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  software-properties-common \
+  && add-apt-repository ppa:deadsnakes/ppa \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  python3.13 \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN useradd appuser
+
+WORKDIR /app
+
+RUN chown appuser:appuser /app
+
+COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/{source_dir} /app/{source_dir}
+COPY ./scripts/entrypoint.sh /app
+
+RUN chmod +x /app/entrypoint.sh
+
+EXPOSE 8000
+
+USER appuser
+
+ENTRYPOINT ["./entrypoint.sh"]
+"#
+        ),
         _ => todo!("Implement this"),
     }
 }
@@ -681,6 +749,22 @@ mod tests {
     fn test_save_dockerfile_poetry() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Poetry;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("Dockerfile");
+        save_dockerfile(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_dockerfile_setuptools() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Setuptools;
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("Dockerfile");
