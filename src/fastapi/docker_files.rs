@@ -561,7 +561,7 @@ RUN : \
 COPY . ./
 
 RUN : \
-  python{python_version} -m venv .venv \
+  && python{python_version} -m venv .venv \
   && .venv/bin/python -m pip install -r requirements.txt
 
 
@@ -592,7 +592,6 @@ RUN chown appuser:appuser /app
 
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/{source_dir} /app/{source_dir}
-COPY --from=builder /opt/uv/python /opt/uv/python
 COPY ./scripts/entrypoint.sh /app
 
 RUN chmod +x /app/entrypoint.sh
