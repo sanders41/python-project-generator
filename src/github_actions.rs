@@ -760,7 +760,7 @@ jobs:
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo fmt
-     run: cargo fmt --all -- --check
+      run: cargo fmt --all -- --check
   python-linting:
     runs-on: ubuntu-latest
     steps:
