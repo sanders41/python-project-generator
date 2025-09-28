@@ -60,7 +60,7 @@ if [ $# -gt 2 ]; then
   fi
 fi
 
-if [[ project_manager -eq 3 ]]; then
+if [[ $project_manager -eq 3 ]]; then
   ./target/release/python-project create -s << EOF
 $project_name
 $project_slug
@@ -71,6 +71,7 @@ $creator_email
 $license
 $copyright_year
 $version
+$fastapi_project
 $python_version
 $min_python_version
 $gha_versions
