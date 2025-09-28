@@ -423,7 +423,7 @@ RUN sh /uv-installer.sh && rm /uv-installer.sh
 
 ENV PATH="/root/.local/bin:$PATH"
 
-COPY pyproject.toml uv.lock ./
+COPY . ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
   uv venv -p {python_version} \
