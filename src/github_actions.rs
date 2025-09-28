@@ -1825,7 +1825,7 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install -U pip
-        python -m pip -r requirements-dev.txt
+        python -m pip install -r requirements-dev.txt
         python -m pip install build setuptools wheel twine
     - name: Build and publish package
       run: |
@@ -2057,7 +2057,7 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install -U pip
-        python -m pip -r requirements-dev.txt
+        python -m pip install -r requirements-dev.txt
     - name: Publish docs
       run: mkdocs gh-deploy --force
 "#
