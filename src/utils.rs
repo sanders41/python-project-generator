@@ -74,7 +74,7 @@ mod tests {
     #[test]
     fn test_python_311_310() {
         let result = is_python_311_or_greater("3.10").unwrap();
-        assert!(result);
+        assert!(!result);
     }
 
     #[cfg(feature = "fastapi")]
