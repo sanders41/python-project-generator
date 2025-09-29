@@ -54,7 +54,7 @@ jobs:
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - name: Publish
-        run: cargo publish --token ${{ secrets.CARGO_API_TOKEN }}
+        run: cargo publish --token ${{ secrets.CARGO_API_TOKEN }} --all-features
   build-deb:
     name: Build and upload deb package
     runs-on: ubuntu-latest
