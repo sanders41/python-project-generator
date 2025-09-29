@@ -135,7 +135,7 @@ impl fmt::Display for Database {
 pub enum DatabaseManager {
     #[default]
     AsyncPg,
-    SqlAlchemy,
+    // SqlAlchemy,
 }
 
 #[cfg(feature = "fastapi")]
@@ -143,7 +143,7 @@ impl fmt::Display for DatabaseManager {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::AsyncPg => write!(f, "asyncpg"),
-            Self::SqlAlchemy => write!(f, "SQLAlchemy"),
+            // Self::SqlAlchemy => write!(f, "SQLAlchemy"),
         }
     }
 }
