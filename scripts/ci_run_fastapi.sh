@@ -50,8 +50,19 @@ use_continuous_deployment=""
 use_release_drafter=""
 pyo3_python_manager=""
 
-if [[ project_manager -eq 3 ]]; then
-  ./target/release/python-project create -s << EOF
+# Check for user provided pyo3_python_manager input
+if [ $# -gt 2 ]; then
+  if [ $3 -lt 1 ] || [ $3 -gt 2 ]; then
+    echo "Invalid pyo3_python_manager value"
+    exit 1
+  else
+    pyo3_python_manager=$3
+  fi
+fi
+
+if [[ $project_manager -eq 3 ]]; then
+  if [ "$fastapi_project" = "1" ]; then
+    ./target/release/python-project create -s << EOF
 $project_name
 $project_slug
 $source_dir
@@ -61,17 +72,42 @@ $creator_email
 $license
 $copyright_year
 $version
+$fastapi_project
+$python_version
+$min_python_version
+$gha_versions
+$project_manager
+$pyo3_python_manager
+$max_line_length
+$use_dependabot
+$use_continuous_deployment
+$use_release_drafter
+EOF
+  else
+    ./target/release/python-project create -s << EOF
+$project_name
+$project_slug
+$source_dir
+$project_description
+$creator
+$creator_email
+$license
+$copyright_year
+$version
+$fastapi_project
 $python_version
 $min_python_version
 $gha_versions
 $project_manager
 $pyo3_python_manager
 $application
+$is_async_project
 $max_line_length
 $use_dependabot
 $use_continuous_deployment
 $use_release_drafter
 EOF
+  fi
 else
   if [ "$fastapi_project" = "1" ]; then
     ./target/release/python-project create -s << EOF
