@@ -66,7 +66,13 @@ git pull upstream main --ff-only
 #### Run linting
 
 ```sh
-cargo clippy --all-targets
+cargo clippy
+```
+
+To check with the FastAPI feature enabled
+
+```sh
+cargo clippy -F fastapi
 ```
 
 #### Run the code formater
@@ -91,18 +97,35 @@ To run the tests:
 cargo insta test
 ```
 
+To run tests with the fastapi feature enabled
+
+````sh
+cargo insta test -F fastapi
+
 If the code change is expected to update a snapshot, for example when updating a default
 dependency, run the tests with the verify flat and check that the new snapshots are correct, then
 accept them.
 
 ```sh
 cargo insta test --verify
+````
+
+For the fastapi feature
+
+```sh
+cargo insta test --verify -F fastapi
 ```
 
 #### Ensure the code compiles
 
 ```sh
-cargo check --all-targets
+cargo check
+```
+
+For the fastapi feature
+
+```sh
+cargo check -F fastapi
 ```
 
 Be sure to run all these checks before submitting your pull request.
@@ -120,13 +143,19 @@ just lint
 To run tests:
 
 ```sh
-just test
+just test-all
 ```
 
 To run tests and review snapshots:
 
 ```sh
 just test-review
+```
+
+To run tests with the FastAPI feature enabled and review snapshots:
+
+```sh
+just test-review-fastapi
 ```
 
 To see a full list of `just` commands run `just --list`

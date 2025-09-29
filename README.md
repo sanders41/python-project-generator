@@ -5,7 +5,7 @@
 
 Generates a Python project structure with github actions for continuous integration and continuous
 deployment. Both pure Python projects and Python projects with Rust modules using PyO3 can be
-created.
+created. Addtionally FastAPI projects can be generated.
 
 ## Pure Python project included packages
 
@@ -34,6 +34,25 @@ Dev packages:
 - [justfile](https://github.com/casey/just) for running commands (to use this you will need to
   install just)
 
+## FastAPI projects include
+
+- [asyncpg](https://github.com/MagicStack/asyncpg) for interacting with PostgreSQL
+- [camel-converter](https://github.com/sanders41/camel-converter) for converting to and from
+  camel/snake case in Pydantic models when serializing/deserializing JSON
+- [fastapi](https://github.com/fastapi/fastapi)
+- [granian](https://github.com/emmett-framework/granian) for handling the web requests
+- [httptools](https://github.com/MagicStack/httptools) for faster http parsing
+- [loguru](https://github.com/Delgan/loguru) for logging
+- [orjson](https://github.com/ijl/orjson) for faster JSON serization/deserilization
+- [pwdlib](https://github.com/frankie567/pwdlib) for password hashing
+- [pydantic](https://github.com/pydantic/pydantic) for model validation
+- [pydantic-settings](https://github.com/pydantic/pydantic-settings) for managing settings
+- [uvloop](https://github.com/MagicStack/uvloop) for enhanced performance (not available on Windows)
+- [postgresql](https://www.postgresql.org/) for the database layer
+- [valkey](https://github.com/valkey-io/valkey) for the caching layer
+- [traefik](https://github.com/traefik/traefik) for reverse proxy
+- [sqlx](https://github.com/launchbadge/sqlx) for migrations
+
 ## Docs
 
 If you chose to include docs then additional dev packages will be included for docs.
@@ -50,6 +69,12 @@ Install with `cargo`:
 
 ```sh
 cargo install python-project-generator
+```
+
+If you want to be able to generate FastAPI projects install with the fastapi feature
+
+```sh
+cargo install python-project-generator -F fastapi
 ```
 
 Install on Arch with the AUR:
@@ -118,13 +143,15 @@ python-project create -s
 - Application or Library
 
   Choosing application will create `main.py` and `__main__.py` files. Choosing library will omit
-  these files.
+  these files. FastAPI projects are automatically created as applications with a special FastAPI
+  main.py
 
 - Async Project
 
   Selecting yes for this option will add [pytest-asyncio](https://github.com/pytest-dev/pytest-asyncio)
   to the dev dependencies. Additionally if the project is an application the `main` function will
-  be made async.
+  be made async. This question is skipped with FastAPI projects and automatically set to an async
+  project
 
 - Max Line Length
 
@@ -147,6 +174,9 @@ python-project create -s
   [trusted publisher](https://docs.pypi.org/trusted-publishers/adding-a-publisher/) in PyPI with
   a workflow name of pypi_publish.yml.
 
+  If the project is a FastAPI project this will create workflows to deploy to test and production
+  servers using GitHub runners.
+
 - Release Drafter
 
   Choosing yes will create a [release drafter](https://github.com/release-drafter/release-drafter)
@@ -162,6 +192,9 @@ python-project create -s
 
   Choosing yes will setup CI to run tests on Linux, Mac, and Windows. If no is chosen tests will
   only run on Linux in CI.
+
+  This is skipped for FastAPI projects and defaults to Linux only. FastAPI projects use Docker
+  with is only available in Linux in GitHub Actions.
 
 - Include Docs
 
@@ -271,6 +304,15 @@ Install the pre-commit hooks.
 pre-commit install
 ```
 
+### FastAPI projects
+
+Create a .env file with the needed variables. the .env-example file can be used as a starter
+template. Then start the containers.
+
+```sh
+docker compose up
+```
+
 Now your project is ready to use.
 
 ### Save custom default values
@@ -367,6 +409,24 @@ lints fail pre-commit will cancel the commit. When possible, pre-commit will als
 fix any errors that fail. For example pre-commit can automatically apply changes that fail ruff
 fromatting. pre-commit caches information and only runs on files that have changed so it is fast
 and doesn't slow down your work flow will preventing you from forgetting to run checks.
+
+### FastAPI migrations
+
+[sqlx](https://github.com/launchbadge/sqlx) is used for migrations. A dedicated docker container
+runs the migrations each time docker is started. For creating new migrations install `sqlx-cli`.
+`sqlx-cli` also needs to be instealled in order to run the generated test suite.
+
+```sh
+cargo install sqlx-cli --no-default-features --features native-tls,postgres
+```
+
+Then to add a new migration run:
+
+```sh
+sqlx migrate add -r my_migration
+```
+
+This will create new migration up and down files in the migrations directory.
 
 ## Contributing
 
