@@ -4,9 +4,6 @@ use crate::project_info::{
     Day, DependabotSchedule, LicenseType, ProjectManager, Pyo3PythonManager,
 };
 
-#[cfg(feature = "fastapi")]
-use crate::project_info::{Database, DatabaseManager};
-
 #[derive(Clone, Debug, ValueEnum)]
 pub enum ApplicationOrLib {
     Application,
@@ -178,7 +175,7 @@ pub enum Param {
     /// Remove the is FastAPI project value
     ResetIsFastapiProject,
 
-    #[cfg(feature = "fastapi")]
+    /* #[cfg(feature = "fastapi")]
     /// Save a default database value
     Database { value: Database },
 
@@ -192,8 +189,7 @@ pub enum Param {
 
     #[cfg(feature = "fastapi")]
     /// Remove the database manager value
-    ResetDatabaseManager,
-
+    ResetDatabaseManager, */
     /// Rerset the config to the default values
     Reset,
 

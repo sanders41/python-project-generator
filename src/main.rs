@@ -428,7 +428,7 @@ fn main() {
                 }
             }
 
-            #[cfg(feature = "fastapi")]
+            /* #[cfg(feature = "fastapi")]
             Param::Database { value } => {
                 if let Err(e) = Config::default().save_database(value) {
                     print_error(e);
@@ -458,8 +458,7 @@ fn main() {
                     print_error(e);
                     exit(1);
                 }
-            }
-
+            } */
             Param::Reset => {
                 if Config::reset().is_err() {
                     let message = "Error resetting config.";

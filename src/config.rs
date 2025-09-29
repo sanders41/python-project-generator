@@ -14,9 +14,6 @@ use crate::project_info::{
     Pyo3PythonManager,
 };
 
-#[cfg(feature = "fastapi")]
-use crate::project_info::{Database, DatabaseManager};
-
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Config {
     pub creator: Option<String>,
@@ -42,12 +39,11 @@ pub struct Config {
     #[cfg(feature = "fastapi")]
     pub is_fastapi_project: Option<bool>,
 
-    #[cfg(feature = "fastapi")]
+    /* #[cfg(feature = "fastapi")]
     pub database: Option<Database>,
 
     #[cfg(feature = "fastapi")]
-    pub database_manager: Option<DatabaseManager>,
-
+    pub database_manager: Option<DatabaseManager>, */
     #[serde(skip)]
     config_dir: Rc<Option<PathBuf>>,
     #[serde(skip)]
@@ -81,12 +77,11 @@ impl Default for Config {
 
             #[cfg(feature = "fastapi")]
             is_fastapi_project: None,
-
-            #[cfg(feature = "fastapi")]
+            /* #[cfg(feature = "fastapi")]
             database: None,
 
             #[cfg(feature = "fastapi")]
-            database_manager: None,
+            database_manager: None, */
         }
     }
 }
@@ -123,12 +118,11 @@ impl Config {
 
                             #[cfg(feature = "fastapi")]
                             is_fastapi_project: config.is_fastapi_project,
-
-                            #[cfg(feature = "fastapi")]
+                            /* #[cfg(feature = "fastapi")]
                             database: config.database,
 
                             #[cfg(feature = "fastapi")]
-                            database_manager: config.database_manager,
+                            database_manager: config.database_manager, */
                         };
                     }
                 }
@@ -410,7 +404,7 @@ impl Config {
         Ok(())
     }
 
-    #[cfg(feature = "fastapi")]
+    /* #[cfg(feature = "fastapi")]
     pub fn save_database(&self, value: Database) -> Result<()> {
         self.handle_save_config(|config| &mut config.database, Some(value))?;
         Ok(())
@@ -432,7 +426,7 @@ impl Config {
     pub fn reset_database_manager(&self) -> Result<()> {
         self.handle_save_config(|config| &mut config.database_manager, None)?;
         Ok(())
-    }
+    } */
 
     pub fn show(&self) {
         let config = self.load_config();
@@ -990,7 +984,7 @@ mod tests {
         assert_eq!(result.is_fastapi_project, None);
     }
 
-    #[cfg(feature = "fastapi")]
+    /* #[cfg(feature = "fastapi")]
     #[test]
     fn test_save_database() {
         let config = mock_config();
@@ -1034,5 +1028,5 @@ mod tests {
         let result = config.load_config();
 
         assert_eq!(result.database_manager, None);
-    }
+    } */
 }

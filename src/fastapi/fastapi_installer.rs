@@ -1,6 +1,6 @@
 use anyhow::{bail, Result};
 
-use crate::project_info::{DatabaseManager, ProjectInfo, ProjectManager};
+use crate::project_info::{ProjectInfo, ProjectManager};
 
 const FASTAPI_BASE_DEPENDENCIES: &[&str] = &[
     "asyncpg",
@@ -34,11 +34,11 @@ pub fn install_fastapi_dependencies(project_info: &ProjectInfo) -> Result<()> {
 }
 
 fn uv_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result<()> {
-    let mut dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
-    if project_info.database_manager == Some(DatabaseManager::SqlAlchemy) {
+    let dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
+    /* if project_info.database_manager == Some(DatabaseManager::SqlAlchemy) {
         dependencies.push("sqlalchemy");
         dependencies.push("alembic");
-    }
+    } */
     let mut args = vec!["add"];
     args.extend(dependencies);
     let output = std::process::Command::new("uv")
@@ -68,11 +68,11 @@ fn uv_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result<()> {
 }
 
 fn poetry_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result<()> {
-    let mut dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
-    if project_info.database_manager == Some(DatabaseManager::SqlAlchemy) {
+    let dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
+    /* if project_info.database_manager == Some(DatabaseManager::SqlAlchemy) {
         dependencies.push("sqlalchemy");
         dependencies.push("alembic");
-    }
+    } */
     let mut args = vec!["add"];
     args.extend(dependencies);
     let output = std::process::Command::new("poetry")
@@ -112,12 +112,12 @@ fn setuptools_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result
         bail!("Failed to create virtual environment: {stderr}");
     }
 
-    let mut dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
+    let dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
     let dev_dependencies = FASTAPI_BASE_DEV_DEPENDENCIES.to_vec();
-    if project_info.database_manager == Some(DatabaseManager::SqlAlchemy) {
+    /* if project_info.database_manager == Some(DatabaseManager::SqlAlchemy) {
         dependencies.push("sqlalchemy");
         dependencies.push("alembic");
-    }
+    } */
     let mut args = vec!["-m", "pip", "install"];
     args.extend(dependencies);
     args.extend(dev_dependencies);
