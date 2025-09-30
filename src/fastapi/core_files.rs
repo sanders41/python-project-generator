@@ -168,7 +168,6 @@ fn create_core_utils_file() -> String {
 
 from collections.abc import Callable
 from typing import Any
-from uuid import uuid4
 
 from fastapi import APIRouter as FastAPIRouter
 from fastapi.types import DecoratedCallable
@@ -200,10 +199,6 @@ class APIRouter(FastAPIRouter):
             return add_path(func)
 
         return decorator
-
-
-def create_db_primary_key() -> str:
-    return str(uuid4())
 "#
     .to_string()
 }
@@ -229,7 +224,6 @@ from loguru import logger
 
 from {module}.core.config import settings
 from {module}.core.security import get_password_hash
-from {module}.core.utils import create_db_primary_key
 from {module}.exceptions import NoDbPoolError
 from {module}.services.db.user_services import get_user_by_email
 
@@ -290,9 +284,9 @@ class Database:
         logger.debug(f"User with email {{settings.FIRST_SUPERUSER_EMAIL}} not found, adding")
         query = """
             INSERT INTO users (
-              id, email, full_name, hashed_password, is_active, is_superuser
+              email, full_name, hashed_password, is_active, is_superuser
             )
-            VALUES ($1, $2, $3, $4, $5, $6)
+            VALUES ($1, $2, $3, $4, $5)
         """
 
         hashed_password = get_password_hash(settings.FIRST_SUPERUSER_PASSWORD.get_secret_value())
@@ -300,7 +294,6 @@ class Database:
             try:
                 await conn.execute(
                     query,
-                    create_db_primary_key(),
                     settings.FIRST_SUPERUSER_EMAIL,
                     settings.FIRST_SUPERUSER_NAME,
                     hashed_password,

@@ -70,7 +70,7 @@ fn create_dockercompose_file(project_info: &ProjectInfo) -> String {
       - traefik.http.routers.${{STACK_NAME?Variable not set}}-backend-https.middlewares=${{STACK_NAME?Variable not set}}-api-rate-limit,${{STACK_NAME?Variable not set}}-security-headers
 
   db:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
     container_name: {base_name}-db
     healthcheck:
@@ -84,7 +84,6 @@ fn create_dockercompose_file(project_info: &ProjectInfo) -> String {
     env_file:
       - .env
     environment:
-      - PGDATA=/var/lib/postgresql/data/pgdata
       - POSTGRES_PASSWORD=${{POSTGRES_PASSWORD?Variable not set}}
       - POSTGRES_USER=${{POSTGRES_USER?Variable not set}}
       - POSTGRES_DB=${{POSTGRES_DB?Variable not set}}

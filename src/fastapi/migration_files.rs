@@ -5,7 +5,7 @@ use crate::{file_manager::save_file_with_content, project_info::ProjectInfo};
 
 fn create_initial_up_migration() -> String {
     r#"CREATE TABLE IF NOT EXISTS users (
-  id TEXT PRIMARY KEY,
+  id UUID DEFAULT uuidv7() PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
   full_name TEXT NOT NULL,
   hashed_password TEXT NOT NULL,
