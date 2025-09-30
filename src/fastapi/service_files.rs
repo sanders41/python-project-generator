@@ -95,7 +95,6 @@ from typing import TYPE_CHECKING
 from loguru import logger
 
 from {module}.core.security import get_password_hash, verify_password
-from {module}.core.utils import create_db_primary_key
 from {module}.exceptions import DbInsertError, DbUpdateError, UserNotFoundError
 from {module}.models.users import (
     UpdatePassword,
@@ -127,16 +126,15 @@ async def authenticate(*, pool: Pool, email: str, password: str) -> UserInDb | N
 async def create_user(*, pool: Pool, cache_client: Valkey, user: UserCreate) -> UserInDb:
     query = """
     INSERT INTO users (
-        id,
         email,
         full_name,
         hashed_password,
         is_active,
         is_superuser
     )
-    VALUES ($1, $2, $3, $4, $5, $6)
+    VALUES ($1, $2, $3, $4, $5)
     RETURNING
-        id,
+        id::text,
         email,
         full_name,
         hashed_password,
@@ -148,7 +146,6 @@ async def create_user(*, pool: Pool, cache_client: Valkey, user: UserCreate) -> 
     async with pool.acquire() as conn:
         result = await conn.fetchrow(
             query,
-            create_db_primary_key(),
             user.email,
             user.full_name,
             get_password_hash(user.password),
@@ -167,7 +164,7 @@ async def create_user(*, pool: Pool, cache_client: Valkey, user: UserCreate) -> 
 
 
 async def delete_user(*, pool: Pool, cache_client: Valkey, user_id: str) -> None:
-    query = "DELETE FROM users WHERE id = $1"
+    query = "DELETE FROM users WHERE id::text = $1"
     async with pool.acquire() as conn:
         async with asyncio.TaskGroup() as tg:
             db_task = tg.create_task(conn.execute(query, user_id))
@@ -183,7 +180,7 @@ async def delete_user(*, pool: Pool, cache_client: Valkey, user_id: str) -> None
 
 async def get_users(*, pool: Pool, offset: int = 0, limit: int = 100) -> list[UserInDb] | None:
     query = """
-    SELECT id,
+    SELECT id::text,
         email,
         full_name,
         hashed_password,
@@ -241,7 +238,7 @@ async def get_users_public(
 
 async def get_user_by_email(*, pool: Pool, email: str) -> UserInDb | None:
     query = """
-    SELECT id,
+    SELECT id::text,
         email,
         full_name,
         hashed_password,
@@ -278,7 +275,7 @@ async def get_user_by_id(*, pool: Pool, cache_client: Valkey, user_id: str) -> U
         return cached_user
 
     query = """
-    SELECT id,
+    SELECT id::text,
         email,
         full_name,
         hashed_password,
@@ -286,7 +283,7 @@ async def get_user_by_id(*, pool: Pool, cache_client: Valkey, user_id: str) -> U
         is_superuser,
         last_login
     FROM users
-    WHERE id = $1
+    WHERE id::text = $1
     """
 
     async with pool.acquire() as conn:
@@ -341,9 +338,9 @@ async def update_user(
         query = """
         UPDATE users
         SET hashed_password=$1
-        WHERE id = $2
+        WHERE id::text = $2
         RETURNING
-            id,
+            id::text,
             email,
             full_name,
             hashed_password,
@@ -373,9 +370,9 @@ async def update_user(
         query = f"""
         UPDATE users
         SET {{set_clause}}
-        WHERE id = $1
+        WHERE id::text = $1
         RETURNING
-            id,
+            id::text,
             email,
             full_name,
             hashed_password,
