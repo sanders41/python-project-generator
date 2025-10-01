@@ -556,6 +556,8 @@ jobs:
     - uses: actions/checkout@v5
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo clippy
@@ -567,6 +569,8 @@ jobs:
     - uses: actions/checkout@v5
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo fmt
@@ -638,6 +642,8 @@ jobs:
     - uses: actions/checkout@v5
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo clippy
@@ -649,6 +655,8 @@ jobs:
     - uses: actions/checkout@v5
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo fmt
@@ -746,6 +754,8 @@ jobs:
     - uses: actions/checkout@v5
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo clippy
@@ -757,6 +767,8 @@ jobs:
     - uses: actions/checkout@v5
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo fmt
@@ -854,6 +866,8 @@ jobs:
     - uses: actions/checkout@v5
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo clippy
@@ -865,6 +879,8 @@ jobs:
     - uses: actions/checkout@v5
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo fmt
@@ -1200,6 +1216,8 @@ jobs:
     - uses: actions/checkout@v5
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo clippy
@@ -1211,6 +1229,8 @@ jobs:
     - uses: actions/checkout@v5
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo fmt
@@ -1283,6 +1303,8 @@ jobs:
     - uses: actions/checkout@v5
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo clippy
@@ -1294,6 +1316,8 @@ jobs:
     - uses: actions/checkout@v5
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Run cargo fmt
