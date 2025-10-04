@@ -112,6 +112,9 @@ generating the project. This feature can be disabled by using with either `-s` o
 retrieving the latest versions or if you have decided to skip looking up the latest version, the
 packages will be be created with default versions.
 
+Note that skipping the dependency check only works for dev packages. For FastAPI projects the
+versions are always checked to ensure compatibatibiliy of the installed packages.
+
 ```sh
 python-project create -s
 ```
