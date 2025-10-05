@@ -1098,10 +1098,12 @@ fn create_pyo3_justfile(project_info: &ProjectInfo) -> Result<String> {
 @develop-release:
   uv run maturin develop -r --uv
 
-@install: && develop
+@install:
+  uv run maturin develop --uv && \
   uv sync --frozen --all-extras
 
-@install-release: && develop-release
+@install-release:
+  uv run maturin develop -r --uv && \
   uv sync --frozen --all-extras
 
 @check:
@@ -1173,10 +1175,12 @@ granian_cmd := if os() != "windows" {
 @develop-release:
   python -m maturin develop -r
 
-@install: && develop
+@install:
+  python -m maturin develop && \
   python -m pip install -r requirements-dev.txt
 
-@install-release: && develop-release
+@install-release:
+  python -m maturin develop -r && \
   python -m pip install -r requirements-dev.txt
 
 @check:
