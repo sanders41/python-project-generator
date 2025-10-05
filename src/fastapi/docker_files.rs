@@ -656,7 +656,7 @@ RUN --mount=type=cache,target=/app/target/ \
 COPY uv.lock ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-  uv sync --locked --no-dev --no-install-project \
+  uv sync --locked --no-dev --no-install-project
 
 COPY . /app
 
