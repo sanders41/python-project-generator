@@ -646,17 +646,17 @@ RUN uv venv -p {python_version}
 
 COPY pyproject.toml Cargo.toml Cargo.lock README.md LICENSE ./
 COPY src/ ./src
+RUN md {source_dir}
 
 RUN --mount=type=cache,target=/app/target/ \
   --mount=type=cache,target=/usr/local/cargo/git/db \
   --mount=type=cache,target=/usr/local/cargo/registry/ \
-  uv tool run maturin build -r --out dist/
+  uv tool run maturin develop -r
 
 COPY uv.lock ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
   uv sync --locked --no-dev --no-install-project \
-  && uv pip install dist/*.whl
 
 COPY . /app
 
@@ -733,17 +733,17 @@ RUN python{python_version} -m venv .venv
 
 COPY pyproject.toml Cargo.toml Cargo.lock README.md LICENSE ./
 COPY src/ ./src
+RUN md {source_dir}
 
 RUN --mount=type=cache,target=/app/target/ \
   --mount=type=cache,target=/usr/local/cargo/git/db \
   --mount=type=cache,target=/usr/local/cargo/registry/ \
-  uv tool run maturin build -r --out dist/
+  uv tool run maturin develop -r
 
 COPY requirements.txt ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-  && .venv/bin/python -m pip install -r requirements.txt \
-  && .venv/bin/python -m pip install dist/*.whl
+  .venv/bin/python -m pip install -r requirements.txt
 
 COPY . /app
 
