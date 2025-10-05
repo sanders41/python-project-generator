@@ -644,7 +644,7 @@ ENV PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
 # Create virtual environment and download Python
 RUN uv venv -p {python_version}
 
-COPY pyproject.toml Cargo.toml Cargo.lock ./
+COPY pyproject.toml Cargo.toml Cargo.lock README.md LICENSE ./
 COPY src/ ./src
 
 RUN --mount=type=cache,target=/app/target/ \
@@ -731,7 +731,7 @@ ENV PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
 # Create virtual environment
 RUN python{python_version} -m venv .venv
 
-COPY pyproject.toml Cargo.toml Cargo.lock ./
+COPY pyproject.toml Cargo.toml Cargo.lock README.md LICENSE ./
 COPY src/ ./src
 
 RUN --mount=type=cache,target=/app/target/ \
