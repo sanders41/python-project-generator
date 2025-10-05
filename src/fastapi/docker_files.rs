@@ -742,7 +742,7 @@ RUN --mount=type=cache,target=/app/target/ \
 COPY requirements.txt ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-  && .venv/bin/python -m pip install -r requirements.txt
+  && .venv/bin/python -m pip install -r requirements.txt \
   && .venv/bin/python -m pip install dist/*.whl
 
 COPY . /app
