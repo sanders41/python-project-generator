@@ -422,11 +422,13 @@ RUN sh /uv-installer.sh && rm /uv-installer.sh
 
 ENV PATH="/root/.local/bin:$PATH"
 
+# Create virtual environment and download Python
+RUN uv venv -p {python_version}
+
 COPY . ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-  uv venv -p {python_version} \
-  && uv sync --locked --no-dev --no-editable
+  uv sync --locked --no-dev --no-editable
 
 
 # Build production stage
@@ -557,11 +559,12 @@ RUN : \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
+# Create virtual environment
+RUN python{python_version} -m venv .venv
+
 COPY . ./
 
-RUN : \
-  && python{python_version} -m venv .venv \
-  && .venv/bin/python -m pip install -r requirements.txt
+RUN .venv/bin/python -m pip install -r requirements.txt
 
 
 # Build production stage
@@ -638,22 +641,24 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --de
 
 ENV PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
 
-COPY Cargo.toml Cargo.lock ./
+# Create virtual environment and download Python
+RUN uv venv -p {python_version}
 
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml Cargo.toml Cargo.lock README.md LICENSE ./
+COPY src/ ./src
+RUN mkdir {source_dir}
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-  uv venv -p {python_version} \
-  && uv sync --locked --no-dev --no-install-project --no-editable
-
-COPY . ./
-
-RUN --mount=type=cache,target=/root/.cache/uv \
-  --mount=type=cache,target=/app/target/ \
+RUN --mount=type=cache,target=/app/target/ \
   --mount=type=cache,target=/usr/local/cargo/git/db \
   --mount=type=cache,target=/usr/local/cargo/registry/ \
-  uv sync --locked --no-dev --no-editable \
-  && uv tool run maturin develop -r
+  uv tool run maturin develop -r
+
+COPY uv.lock ./
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+  uv sync --locked --no-dev --no-install-project
+
+COPY . /app
 
 
 # Build production stage
@@ -723,13 +728,25 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --de
 
 ENV PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
 
+# Create virtual environment
+RUN python{python_version} -m venv .venv
+
+COPY pyproject.toml Cargo.toml Cargo.lock README.md LICENSE ./
+COPY src/ ./src
+RUN mkdir {source_dir}
+
+RUN --mount=type=cache,target=/app/target/ \
+  --mount=type=cache,target=/usr/local/cargo/git/db \
+  --mount=type=cache,target=/usr/local/cargo/registry/ \
+  uv tool run maturin develop -r
+
 COPY requirements.txt ./
 
-RUN : \
-  && python{python_version} -m venv .venv \
-  && .venv/bin/python -m pip install -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/uv \
+  .venv/bin/python -m pip install -r requirements.txt
 
-COPY . ./
+COPY . /app
+
 
 RUN --mount=type=cache,target=/usr/local/cargo/git/db \
   --mount=type=cache,target=/usr/local/cargo/registry/ \
