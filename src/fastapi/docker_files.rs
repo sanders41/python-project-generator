@@ -646,7 +646,7 @@ RUN uv venv -p {python_version}
 
 COPY pyproject.toml Cargo.toml Cargo.lock README.md LICENSE ./
 COPY src/ ./src
-RUN md {source_dir}
+RUN mkdir {source_dir}
 
 RUN --mount=type=cache,target=/app/target/ \
   --mount=type=cache,target=/usr/local/cargo/git/db \
@@ -733,7 +733,7 @@ RUN python{python_version} -m venv .venv
 
 COPY pyproject.toml Cargo.toml Cargo.lock README.md LICENSE ./
 COPY src/ ./src
-RUN md {source_dir}
+RUN mkdir {source_dir}
 
 RUN --mount=type=cache,target=/app/target/ \
   --mount=type=cache,target=/usr/local/cargo/git/db \
