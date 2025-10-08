@@ -346,7 +346,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
     - name: Set up Python
@@ -370,7 +370,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
     - name: Set up Python ${{{{ matrix.python-version }}}}
@@ -425,7 +425,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
     - name: Set up Python
@@ -455,7 +455,7 @@ jobs:
     - name: Install sqlx-cli
       run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
     - name: Set up Python ${{{{ matrix.python-version }}}}
@@ -580,7 +580,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
     - name: Set up Python
@@ -606,7 +606,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
     - name: Set up Python ${{{{ matrix.python-version }}}}
@@ -778,7 +778,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
     - name: Set up Python
@@ -810,7 +810,7 @@ jobs:
     - name: Install sqlx-cli
       run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
     - name: Set up Python ${{{{ matrix.python-version }}}}
@@ -1240,7 +1240,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
     - name: Set up Python
@@ -1267,7 +1267,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
     - name: Set up Python ${{{{ matrix.python-version }}}}
@@ -1394,7 +1394,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
     - name: Set up Python
@@ -1419,7 +1419,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
     - name: Set up Python ${{{{ matrix.python-version }}}}
@@ -1875,7 +1875,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
     - name: Set up Python
@@ -2125,7 +2125,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
     - name: Set up Python
