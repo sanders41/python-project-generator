@@ -1996,6 +1996,75 @@ jobs:
 }
 
 #[cfg(feature = "fastapi")]
+fn create_production_deploy_file() -> String {
+    r#"name: Deploy to Production
+on:
+  release:
+    types:
+      - published
+jobs:
+  deploy:
+    runs-on:
+      - self-hosted
+      - production
+    env:
+      ENVIRONMENT: production
+      DOMAIN: ${{ secrets.DOMAIN_PRODUCTION }}
+      STACK_NAME: ${{ secrets.STACK_NAME_PRODUCTION }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      FIRST_SUPERUSER_EMAIL: ${{ secrets.FIRST_SUPERUSER_EMAIL }}
+      FIRST_SUPERUSER_PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
+      FIRST_SUPERUSER_NAME: ${{ secrets.FIRST_SUPERUSER_NAME }}
+      POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      VALKEY_HOST: ${{ secrets.VALKEY_HOST }}
+      VALKEY_PASSWORD: ${{ secrets.VALKEY_PASSWORD }}
+      USERNAME: ${{ secrets.FIRST_SUPERUSER_EMAIL }}
+      PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
+      EMAIL: ${{ secrets.FIRST_SUPERUSER_EMAIL }}
+      LOG_LEVEL: "INFO"
+    steps:
+      - name: Fix permissions
+        run: |
+          if [ -d "./data" ]; then
+            sudo chown -R $USER:$USER ./data
+          fi
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Create .env file
+        run: |
+          HASHED_PASSWORD=$(openssl passwd -apr1 "${PASSWORD}" | sed 's/\$/\$\$/g')
+          cat > .env << EOF
+          ENVIRONMENT=${ENVIRONMENT}
+          DOMAIN=${DOMAIN}
+          STACK_NAME=${STACK_NAME}
+          SECRET_KEY=${SECRET_KEY}
+          FIRST_SUPERUSER_EMAIL=${FIRST_SUPERUSER_EMAIL}
+          FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD}
+          FIRST_SUPERUSER_NAME=${FIRST_SUPERUSER_NAME}
+          POSTGRES_HOST=${POSTGRES_HOST}
+          POSTGRES_USER=${POSTGRES_USER}
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+          POSTGRES_DB=${POSTGRES_DB}
+          VALKEY_HOST=${VALKEY_HOST}
+          VALKEY_PASSWORD=${VALKEY_PASSWORD}
+          USERNAME=${FIRST_SUPERUSER_EMAIL}
+          PASSWORD=${FIRST_SUPERUSER_PASSWORD}
+          HASHED_PASSWORD=${HASHED_PASSWORD}
+          EMAIL=${FIRST_SUPERUSER_EMAIL}
+          LOG_LEVEL=${LOG_LEVEL}
+          EOF
+      - name: Build and restart containers
+        timeout-minutes: 15
+        run: |
+          docker compose -f docker-compose.yml --project-name ${{ secrets.STACK_NAME_PRODUCTION }} build
+          docker compose -f docker-compose.yml --project-name ${{ secrets.STACK_NAME_PRODUCTION }} up -d
+"#.to_string()
+}
+
+#[cfg(feature = "fastapi")]
 pub fn save_deploy_files(project_info: &ProjectInfo) -> Result<()> {
     let testing_file_path = project_info
         .base_dir()
@@ -2007,7 +2076,7 @@ pub fn save_deploy_files(project_info: &ProjectInfo) -> Result<()> {
     let production_file_path = project_info
         .base_dir()
         .join(".github/workflows/deploy_production.yml");
-    let production_content = create_testing_deploy_file();
+    let production_content = create_production_deploy_file();
 
     save_file_with_content(&production_file_path, &production_content)?;
 
