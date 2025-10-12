@@ -34,6 +34,7 @@ use crate::{
     },
     file_manager::save_file_with_content,
     project_info::{DatabaseManager, ProjectInfo},
+    utils::is_python_version_or_greater,
 };
 
 pub fn generate_fastapi(project_info: &ProjectInfo) -> Result<()> {
@@ -279,19 +280,28 @@ fn save_main_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_types_file() -> String {
-    r#"from typing import Any, Literal, TypeAlias
+fn create_types_file(project_info: &ProjectInfo) -> Result<String> {
+    if is_python_version_or_greater(&project_info.min_python_version, 12)? {
+        Ok(r#"from typing import Any, Literal
+
+type ActiveFilter = Literal["all", "active", "inactive"]
+type Json = dict[str, Any]
+"#
+        .to_string())
+    } else {
+        Ok(r#"from typing import Any, Literal, TypeAlias
 
 ActiveFilter: TypeAlias = Literal["all", "active", "inactive"]
 Json: TypeAlias = dict[str, Any]
 "#
-    .to_string()
+        .to_string())
+    }
 }
 
 fn save_types_file(project_info: &ProjectInfo) -> Result<()> {
     let base = project_info.source_dir_path();
     let file_path = base.join("types.py");
-    let file_content = create_types_file();
+    let file_content = create_types_file(project_info)?;
 
     save_file_with_content(&file_path, &file_content)?;
 
