@@ -1556,8 +1556,10 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
 
     #[cfg(feature = "fastapi")]
     if project_info.use_continuous_deployment {
-        if project_info.is_fastapi_project && save_deploy_files(project_info).is_err() {
-            bail!("Error creating deploy files");
+        if project_info.is_fastapi_project {
+            if save_deploy_files(project_info).is_err() {
+                bail!("Error creating deploy files");
+            }
         } else if save_pypi_publish_file(project_info).is_err() {
             bail!("Error creating PyPI publish file");
         }
