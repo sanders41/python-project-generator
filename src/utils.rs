@@ -1,9 +1,9 @@
 use anyhow::{bail, Result};
 
-pub fn is_python_311_or_greater(version: &str) -> Result<bool> {
+pub fn is_python_version_or_greater(version: &str, min_minor_version: i32) -> Result<bool> {
     let version_parts = split_version(version)?;
 
-    if version_parts.1 >= 11 {
+    if version_parts.1 >= min_minor_version {
         Ok(true)
     } else {
         Ok(false)
@@ -39,19 +39,19 @@ mod tests {
 
     #[test]
     fn test_python_312() {
-        let result = is_python_311_or_greater("3.12").unwrap();
+        let result = is_python_version_or_greater("3.12", 11).unwrap();
         assert!(result);
     }
 
     #[test]
     fn test_python_311_311() {
-        let result = is_python_311_or_greater("3.11").unwrap();
+        let result = is_python_version_or_greater("3.11", 11).unwrap();
         assert!(result);
     }
 
     #[test]
     fn test_python_311_310() {
-        let result = is_python_311_or_greater("3.10").unwrap();
+        let result = is_python_version_or_greater("3.10", 11).unwrap();
         assert!(!result);
     }
 

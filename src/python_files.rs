@@ -5,7 +5,7 @@ use anyhow::{bail, Result};
 use crate::{
     file_manager::save_file_with_content,
     project_info::{ProjectInfo, ProjectManager},
-    utils::is_python_311_or_greater,
+    utils::is_python_version_or_greater,
 };
 
 fn create_dunder_main_file(module: &str, is_async_project: bool) -> String {
@@ -235,7 +235,7 @@ fn create_version_test_file(
     };
 
     if let Some(v) = version_test {
-        if is_python_311_or_greater(min_python_version)? {
+        if is_python_version_or_greater(min_python_version, 11)? {
             Ok(Some(format!(
                 r#"import tomllib
 from pathlib import Path
