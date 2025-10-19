@@ -410,6 +410,7 @@ ENV \
 RUN : \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
+  build-essential \
   curl \
   ca-certificates \
   && apt-get clean \
@@ -475,6 +476,7 @@ ENV \
 RUN : \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
+  build-essential \
   curl \
   ca-certificates \
   software-properties-common \
