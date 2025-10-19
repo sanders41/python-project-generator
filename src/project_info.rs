@@ -595,7 +595,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
 
     let python_version_default = match config.python_version {
         Some(python) => python,
-        None => "3.13".to_string(),
+        None => "3.14".to_string(),
     };
     let python_version = if use_defaults {
         python_version_default
@@ -619,7 +619,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
             } else {
                 match config.min_python_version {
                     Some(python) => python,
-                    None => "3.9".to_string(),
+                    None => "3.10".to_string(),
                 }
             }
         }
@@ -627,7 +627,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         {
             match config.min_python_version {
                 Some(python) => python,
-                None => "3.9".to_string(),
+                None => "3.10".to_string(),
             }
         }
     };
@@ -655,8 +655,8 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
                     } else {
                         let mut versions: Vec<String> = Vec::new();
 
-                        // Up to 3.13
-                        for i in min..14 {
+                        // Up to 3.14
+                        for i in min..15 {
                             versions.push(format!("3.{i}"));
                         }
 
@@ -665,25 +665,30 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
                 } else {
                     #[cfg(feature = "fastapi")]
                     if is_fastapi_project {
-                        vec!["3.11".to_string(), "3.12".to_string(), "3.13".to_string()]
+                        vec![
+                            "3.11".to_string(),
+                            "3.12".to_string(),
+                            "3.13".to_string(),
+                            "3.14".to_string(),
+                        ]
                     } else {
                         vec![
-                            "3.9".to_string(),
                             "3.10".to_string(),
                             "3.11".to_string(),
                             "3.12".to_string(),
                             "3.13".to_string(),
+                            "3.14".to_string(),
                         ]
                     }
 
                     #[cfg(not(feature = "fastapi"))]
                     {
                         vec![
-                            "3.9".to_string(),
                             "3.10".to_string(),
                             "3.11".to_string(),
                             "3.12".to_string(),
                             "3.13".to_string(),
+                            "3.14".to_string(),
                         ]
                     }
                 }
@@ -1020,7 +1025,7 @@ mod tests {
 
     #[test]
     fn test_valid_two_digit_python_version() {
-        assert!(is_valid_python_version("3.9"));
+        assert!(is_valid_python_version("3.10"));
     }
 
     #[test]
@@ -1055,6 +1060,6 @@ mod tests {
 
     #[test]
     fn test_invalid_python_version_non_numeric_patch() {
-        assert!(!is_valid_python_version("3.9.a"));
+        assert!(!is_valid_python_version("3.10.a"));
     }
 }

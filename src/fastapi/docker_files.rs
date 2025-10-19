@@ -410,6 +410,7 @@ ENV \
 RUN : \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
+  build-essential \
   curl \
   ca-certificates \
   && apt-get clean \
@@ -475,6 +476,7 @@ ENV \
 RUN : \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
+  build-essential \
   curl \
   ca-certificates \
   software-properties-common \
@@ -550,11 +552,13 @@ ENV \
 RUN : \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
+  build-essential \
   software-properties-common \
   && add-apt-repository ppa:deadsnakes/ppa \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   python{python_version} \
+  python{python_version}-dev \
   python{python_version}-venv \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
@@ -714,6 +718,7 @@ RUN : \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   python{python_version} \
+  python{python_version}-dev \
   python{python_version}-venv \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
@@ -896,16 +901,17 @@ mod tests {
             copyright_year: Some("2023".to_string()),
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
-            min_python_version: "3.9".to_string(),
+            min_python_version: "3.10".to_string(),
             project_manager: ProjectManager::Poetry,
             pyo3_python_manager: Some(Pyo3PythonManager::Uv),
             is_application: true,
             is_async_project: false,
             github_actions_python_test_versions: vec![
-                "3.9".to_string(),
                 "3.10".to_string(),
                 "3.11".to_string(),
                 "3.12".to_string(),
+                "3.13".to_string(),
+                "3.14".to_string(),
             ],
             max_line_length: 100,
             use_dependabot: true,
