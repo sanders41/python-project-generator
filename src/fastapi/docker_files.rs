@@ -484,6 +484,7 @@ RUN : \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   python{python_version} \
+  python{python_version}-dev \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -716,6 +717,7 @@ RUN : \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   python{python_version} \
+  python{python_version}-dev \
   python{python_version}-venv \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
