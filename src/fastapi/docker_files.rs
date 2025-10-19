@@ -552,6 +552,7 @@ ENV \
 RUN : \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
+  build-essential \
   software-properties-common \
   && add-apt-repository ppa:deadsnakes/ppa \
   && apt-get update \
