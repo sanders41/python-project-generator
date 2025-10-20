@@ -431,7 +431,6 @@ jobs:
         with:
           manifest-path: ${{ env.WORKING_DIR }}/pyproject.toml
           pixi-version: v0.57.0
-          cache: true
       - name: Set up Python
         working-directory: ${{ env.WORKING_DIR }}
         run: pixi add python=="${{ env.MIN_PYTHON_VERSION }}.*"
@@ -467,7 +466,6 @@ jobs:
         with:
           manifest-path: ${{ env.WORKING_DIR }}/pyproject.toml
           pixi-version: v0.57.0
-          cache: true
       - name: Set up Python
         working-directory: ${{ env.WORKING_DIR }}
         run: pixi add python=="${{ env.MIN_PYTHON_VERSION }}.*"
