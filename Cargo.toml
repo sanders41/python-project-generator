@@ -25,7 +25,7 @@ clap = { version = "4.5.50", features = ["color", "suggestions", "derive"] }
 colored = "3.0.0"
 dirs = "6.0.0"
 exponential-backoff = "2.0.0"
-indicatif = "0.18.0"
+indicatif = "0.18.1"
 rayon = "1.11.0"
 reqwest = { version = "0.12.24", features = ["json", "blocking"] }
 serde = { version = "1.0.227", features = ["derive"] }
