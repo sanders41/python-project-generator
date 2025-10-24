@@ -23,17 +23,17 @@ const FASTAPI_BASE_DEV_DEPENDENCIES: &[&str] = &["httpx", "pytest-xdist"];
 
 pub fn install_fastapi_dependencies(project_info: &ProjectInfo) -> Result<()> {
     match project_info.project_manager {
-        ProjectManager::Uv => uv_fastapi_depencency_installer(project_info)?,
-        ProjectManager::Poetry => poetry_fastapi_depencency_installer(project_info)?,
-        ProjectManager::Setuptools => setuptools_fastapi_depencency_installer(project_info)?,
+        ProjectManager::Uv => uv_fastapi_dependency_installer(project_info)?,
+        ProjectManager::Poetry => poetry_fastapi_dependency_installer(project_info)?,
+        ProjectManager::Setuptools => setuptools_fastapi_dependency_installer(project_info)?,
         ProjectManager::Pixi => bail!("Pixi is not currently supported for FastAPI projects"),
-        ProjectManager::Maturin => maturin_fastapi_depencency_installer(project_info)?,
+        ProjectManager::Maturin => maturin_fastapi_dependency_installer(project_info)?,
     };
 
     Ok(())
 }
 
-fn uv_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result<()> {
+fn uv_fastapi_dependency_installer(project_info: &ProjectInfo) -> Result<()> {
     let dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
     /* if project_info.database_manager == Some(DatabaseManager::SqlAlchemy) {
         dependencies.push("sqlalchemy");
@@ -67,7 +67,7 @@ fn uv_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn poetry_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result<()> {
+fn poetry_fastapi_dependency_installer(project_info: &ProjectInfo) -> Result<()> {
     let dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
     /* if project_info.database_manager == Some(DatabaseManager::SqlAlchemy) {
         dependencies.push("sqlalchemy");
@@ -101,7 +101,7 @@ fn poetry_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result<()>
     Ok(())
 }
 
-fn setuptools_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result<()> {
+fn setuptools_fastapi_dependency_installer(project_info: &ProjectInfo) -> Result<()> {
     let venv_output = std::process::Command::new("python")
         .args(["-m", "venv", ".venv"])
         .current_dir(project_info.base_dir())
@@ -147,15 +147,15 @@ fn setuptools_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result
     Ok(())
 }
 
-fn maturin_fastapi_depencency_installer(project_info: &ProjectInfo) -> Result<()> {
+fn maturin_fastapi_dependency_installer(project_info: &ProjectInfo) -> Result<()> {
     use crate::project_info::Pyo3PythonManager;
 
     if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
         match pyo3_python_manager {
-            Pyo3PythonManager::Uv => uv_fastapi_depencency_installer(project_info),
-            Pyo3PythonManager::Setuptools => setuptools_fastapi_depencency_installer(project_info),
+            Pyo3PythonManager::Uv => uv_fastapi_dependency_installer(project_info),
+            Pyo3PythonManager::Setuptools => setuptools_fastapi_dependency_installer(project_info),
         }
     } else {
-        bail!("No Python project mangager provided for PyO3 project");
+        bail!("No Python project manager provided for PyO3 project");
     }
 }

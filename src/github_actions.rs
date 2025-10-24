@@ -1462,7 +1462,7 @@ jobs:
     - name: Set up Python
       run: pixi add python=="${{{{ env.PYTHON_VERSION }}}}.*"
     - name: Ruff format check
-      run: pixi run run-ruff-formar
+      run: pixi run run-ruff-former
     - name: Lint with ruff
       run: pixi run run-ruff-check
     - name: mypy check

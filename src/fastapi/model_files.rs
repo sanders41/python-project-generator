@@ -31,7 +31,7 @@ fn create_token_models_file() -> String {
 
 
 class Token(BaseModel):
-    """Don't use CamelBase here because FastAPI requires snake case vairables for the token."""
+    """Don't use CamelBase here because FastAPI requires snake case variables for the token."""
 
     access_token: str
     token_type: str = "bearer"

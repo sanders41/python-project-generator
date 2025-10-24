@@ -182,7 +182,7 @@ logger.add(sys.stderr, level=settings.LOG_LEVEL)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncGenerator:  # pragma: no cover
-    logger.info("Initalizing database connection pool")
+    logger.info("Initializing database connection pool")
     try:
         await db.create_pool()
     except Exception as e:

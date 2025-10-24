@@ -27,7 +27,7 @@ impl fmt::Display for DependabotSchedule {
         match self {
             Self::Daily => write!(f, "Daily"),
             Self::Weekly => write!(f, "Weekly"),
-            Self::Monthly => write!(f, "Montly"),
+            Self::Monthly => write!(f, "Monthly"),
         }
     }
 }

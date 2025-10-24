@@ -757,7 +757,7 @@ mod tests {
     }
 
     #[test]
-    fn test_save_github_actions_pythong_test_versions() {
+    fn test_save_github_actions_python_test_versions() {
         let config = mock_config();
         let expected = vec!["3.11".to_string(), "3.12".to_string()];
         config
@@ -769,7 +769,7 @@ mod tests {
     }
 
     #[test]
-    fn test_reset_github_actions_pythong_test_versions() {
+    fn test_reset_github_actions_python_test_versions() {
         let config = mock_config();
         config
             .save_github_actions_python_test_versions("3.11, 3.12".to_string())
