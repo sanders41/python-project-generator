@@ -131,7 +131,7 @@ async def get_current_user(pool: DbPool, cache_client: CacheClient, token: Token
             detail="Could not validate credentials",
         ) from e
     if token_data.sub is None:  # pragma: no cover
-        logger.debug("Token does not countain sub data")
+        logger.debug("Token does not contain sub data")
         raise HTTPException(
             status_code=HTTP_403_FORBIDDEN, detail="Count not validate credientials"
         )

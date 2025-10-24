@@ -104,7 +104,7 @@ pub enum Param {
     /// Save a default value for Is Application
     ApplicationOrLibrary { value: ApplicationOrLib },
 
-    /// Remove the saved application or libary value
+    /// Remove the saved application or library value
     ResetApplicationOrLibrary,
 
     /// Save default Python versions for GitHub Action testing

@@ -574,7 +574,7 @@ pub fn save_login_route_test_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_test_uitls_file(project_info: &ProjectInfo) -> String {
+fn create_test_utils_file(project_info: &ProjectInfo) -> String {
     let module = &project_info.module_name();
 
     format!(
@@ -614,7 +614,7 @@ async def get_superuser_token_headers(test_client):
 pub fn save_test_utils_file(project_info: &ProjectInfo) -> Result<()> {
     let base = &project_info.base_dir();
     let file_path = base.join("tests/utils.py");
-    let file_content = create_test_uitls_file(project_info);
+    let file_content = create_test_utils_file(project_info);
 
     save_file_with_content(&file_path, &file_content)?;
 

@@ -75,7 +75,7 @@ To check with the FastAPI feature enabled
 cargo clippy -F fastapi
 ```
 
-#### Run the code formater
+#### Run the code formatter
 
 ```sh
 cargo fmt --all
@@ -245,7 +245,7 @@ git fetch upstream
 git rebase upstream/main
 ```
 
-There may be some merge conficts that need to be resolved. After the feature branch has been update
+There may be some merge conflicts that need to be resolved. After the feature branch has been update
 locally, you can now update your pull request by pushing to the branch on GitHub:
 
 ```sh

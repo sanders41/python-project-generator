@@ -1576,10 +1576,10 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
 
     if project_info.use_multi_os_ci {
         if save_ci_testing_multi_os_file(project_info).is_err() {
-            bail!("Error creating CI teesting file");
+            bail!("Error creating CI testing file");
         }
     } else if save_ci_testing_linux_only_file(project_info).is_err() {
-        bail!("Error creating CI teesting file");
+        bail!("Error creating CI testing file");
     }
 
     if project_info.include_docs {
