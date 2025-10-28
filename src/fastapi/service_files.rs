@@ -374,7 +374,7 @@ async def update_user(
 
         async with pool.acquire() as conn:
             async with conn.transaction():
-                result = await conn.fetchrow(query, db_user.id, *user_data.values()))
+                result = await conn.fetchrow(query, db_user.id, *user_data.values())
 
     if not result or result == "UPDATE 0":  # pragma: no cover
         raise DbUpdateError("Error updating user")
