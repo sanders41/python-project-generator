@@ -174,7 +174,7 @@ async def delete_user(*, pool: Pool, cache_client: Valkey, user_id: str) -> None
         raise UserNotFoundError(f"User with id {{user_id}} not found")
 
     logger.debug("Deleting cached user")
-    user_cache_services.delete_cached_user(cache_client=cache_client, user_id=user_id)
+    await user_cache_services.delete_cached_user(cache_client=cache_client, user_id=user_id)
 
 
 async def get_users(*, pool: Pool, offset: int = 0, limit: int = 100) -> list[UserInDb] | None:
