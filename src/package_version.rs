@@ -171,7 +171,7 @@ pub fn default_version(package: &PythonPackage) -> String {
         PythonPackage::MkdocsMaterial => "9.6.23".to_string(),
         PythonPackage::Mkdocstrings => "0.30.1".to_string(),
         PythonPackage::MyPy => "1.18.2".to_string(),
-        PythonPackage::PreCommit => "4.3.0".to_string(),
+        PythonPackage::PreCommit => "4.4.0".to_string(),
         PythonPackage::Pytest => "9.0.0".to_string(),
         PythonPackage::PytestAsyncio => "1.3.0".to_string(),
         PythonPackage::PytestCov => "7.0.0".to_string(),
