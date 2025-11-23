@@ -17,7 +17,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -30,7 +30,7 @@ jobs:
     name: clippy-fastapi
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -43,7 +43,7 @@ jobs:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: install Rust
         with:
           components: rustfmt
@@ -60,7 +60,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache dependencies
@@ -75,7 +75,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache dependencies
@@ -89,7 +89,7 @@ jobs:
         project_type: ["application", "lib"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
@@ -130,7 +130,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
@@ -172,7 +172,7 @@ jobs:
         project_type: ["application", "lib"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
@@ -211,7 +211,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
@@ -250,7 +250,7 @@ jobs:
         project_type: ["application", "lib"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Install Just
         uses: taiki-e/install-action@just
       - name: install Rust
@@ -302,7 +302,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
@@ -344,7 +344,7 @@ jobs:
         project_type: ["application", "lib"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
@@ -380,7 +380,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
@@ -416,7 +416,7 @@ jobs:
         project_type: ["application", "lib"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
@@ -451,7 +451,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
