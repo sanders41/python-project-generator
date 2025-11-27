@@ -23,7 +23,7 @@ jobs:
         with:
           components: clippy
       - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2.8.1
+        uses: Swatinem/rust-cache@v2.8.2
       - name: Run cargo clippy
         run: cargo clippy --all-targets -- --deny warnings
   clippy-fastapi:
@@ -36,7 +36,7 @@ jobs:
         with:
           components: clippy
       - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2.8.1
+        uses: Swatinem/rust-cache@v2.8.2
       - name: Run cargo clippy
         run: cargo clippy --all-targets -F fastapi -- --deny warnings
   fmt:
@@ -49,7 +49,7 @@ jobs:
           components: rustfmt
         uses: dtolnay/rust-toolchain@stable
       - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2.8.1
+        uses: Swatinem/rust-cache@v2.8.2
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
   test:
@@ -64,7 +64,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2.8.1
+        uses: Swatinem/rust-cache@v2.8.2
       - name: Run cargo test
         run: cargo test --locked
   test-fastapi:
@@ -79,7 +79,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2.8.1
+        uses: Swatinem/rust-cache@v2.8.2
       - name: Run cargo test
         run: cargo test --locked -F fastapi
   uv-linting:
@@ -93,7 +93,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2.8.1
+        uses: Swatinem/rust-cache@v2.8.2
       - name: Install uv on Linux
         if: runner.os != 'Windows'
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -134,7 +134,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2.8.1
+        uses: Swatinem/rust-cache@v2.8.2
       - name: Install uv on Linux
         if: runner.os != 'Windows'
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -176,7 +176,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2.8.1
+        uses: Swatinem/rust-cache@v2.8.2
       - name: Install Poetry
         run: pipx install poetry
       - name: Configure poetry
@@ -215,7 +215,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2.8.1
+        uses: Swatinem/rust-cache@v2.8.2
       - name: Install Poetry
         run: pipx install poetry
       - name: Configure poetry
@@ -258,7 +258,7 @@ jobs:
         with:
           components: clippy, rustfmt
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2.8.1
+        uses: Swatinem/rust-cache@v2.8.2
       - name: Install uv on Linux
         if: runner.os != 'Windows'
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -306,7 +306,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2.8.1
+        uses: Swatinem/rust-cache@v2.8.2
       - name: Install uv on Linux
         if: runner.os != 'Windows'
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -348,7 +348,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2.8.1
+        uses: Swatinem/rust-cache@v2.8.2
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -384,7 +384,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2.8.1
+        uses: Swatinem/rust-cache@v2.8.2
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -420,7 +420,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2.8.1
+        uses: Swatinem/rust-cache@v2.8.2
       - name: Build package
         run: cargo build --release
       - name: Run creation
@@ -455,7 +455,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2.8.1
+        uses: Swatinem/rust-cache@v2.8.2
       - name: Build package
         run: cargo build --release
       - name: Run creation
