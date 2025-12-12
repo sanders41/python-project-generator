@@ -115,33 +115,6 @@ impl PreCommitHookVersion {
     }
 }
 
-#[derive(Debug)]
-pub struct RustPackageVersion {
-    pub name: String,
-    pub version: String,
-    pub features: Option<Vec<String>>,
-}
-
-impl LatestVersion for RustPackageVersion {
-    fn get_latest_version(&mut self) -> Result<()> {
-        let url = format!("https://crates.io/api/v1/crates/{}", self.name);
-        let client = reqwest::blocking::Client::new();
-        let response = client
-            .get(url)
-            .header(reqwest::header::USER_AGENT, "python-project-generator")
-            .timeout(Duration::new(5, 0))
-            .send()?
-            .text()?;
-        let info: serde_json::Value = serde_json::from_str(&response)?;
-        self.name = info["crate"]["id"].to_string().replace('"', "");
-        self.version = info["crate"]["max_stable_version"]
-            .to_string()
-            .replace('"', "");
-
-        Ok(())
-    }
-}
-
 pub fn default_pre_commit_rev(hook: &PreCommitHook) -> String {
     match hook {
         PreCommitHook::MyPy => "v1.18.2".to_string(),

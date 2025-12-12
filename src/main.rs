@@ -27,7 +27,8 @@ use crate::{
     config::Config,
     dev_dependency_installer::install_dev_dependencies,
     project_generator::generate_project,
-    project_info::{get_project_info, ProjectInfo},
+    project_info::{get_project_info, ProjectInfo, ProjectManager},
+    rust_files::cargo_add_pyo3,
 };
 
 #[cfg(feature = "fastapi")]
@@ -41,6 +42,10 @@ fn create(project_info: &ProjectInfo) -> Result<()> {
         .args(["init", &project_info.project_slug])
         .output()
         .expect("Failed to initialize git");
+
+    if matches!(project_info.project_manager, ProjectManager::Maturin) {
+        cargo_add_pyo3(project_info)?;
+    }
 
     install_dev_dependencies(project_info)?;
 
