@@ -108,11 +108,6 @@ jobs:
         run: cargo build --release
       - name: Run creation
         run: ./scripts/ci_run.sh ${{ matrix.project_type }} 1
-      - name: Install Dependencies
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          uv lock
-          uv sync --frozen
       - name: MyPy
         working-directory: ${{ env.WORKING_DIR }}
         run: uv run mypy .
@@ -150,15 +145,9 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run.sh ${{ matrix.project_type }} 1
         shell: bash
-      - name: Install Dependencies
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          uv lock
-          uv sync --frozen
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          uv run pre-commit install
           git add .
           uv run pre-commit run --all-files
       - name: Test with pytest
@@ -191,9 +180,6 @@ jobs:
         run: cargo build --release
       - name: Run creation
         run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
-      - name: Install Dependencies
-        working-directory: ${{ env.WORKING_DIR }}
-        run: poetry install
       - name: MyPy
         working-directory: ${{ env.WORKING_DIR }}
         run: poetry run mypy .
@@ -231,13 +217,9 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
         shell: bash
-      - name: Install Dependencies
-        working-directory: ${{ env.WORKING_DIR }}
-        run: poetry install
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          poetry run pre-commit install
           git add .
           poetry run pre-commit run --all-files
       - name: Test with pytest
@@ -273,12 +255,6 @@ jobs:
         run: cargo build --release
       - name: Run creation
         run: ./scripts/ci_run.sh ${{ matrix.project_type }} 3
-      - name: Install Dependencies
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          uv lock
-          uv sync --frozen
-          uv run maturin build
       - name: MyPy
         working-directory: ${{ env.WORKING_DIR }}
         run: just mypy
@@ -325,13 +301,10 @@ jobs:
       - name: Install Dependencies
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          uv lock
-          uv sync --frozen
           uv run maturin build
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          uv run pre-commit install
           git add .
           uv run pre-commit run --all-files
       - name: Test with pytest
@@ -358,11 +331,6 @@ jobs:
       - name: Run creation
         run: |
           ./scripts/ci_run.sh ${{ matrix.project_type }} 4
-      - name: Install Dependencies
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          python -m pip install -U pip
-          python -m pip install -r requirements-dev.txt
       - name: MyPy
         working-directory: ${{ env.WORKING_DIR }}
         run: mypy .
@@ -394,15 +362,9 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run.sh ${{ matrix.project_type }} 4
         shell: bash
-      - name: Install Dependencies
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          python -m pip install -U pip
-          python -m pip install -r requirements-dev.txt
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          pre-commit install
           git add .
           pre-commit run --all-files
       - name: Test with pytest
@@ -472,7 +434,6 @@ jobs:
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          pixi run -e dev pre-commit install
           git add .
           pixi run -e dev pre-commit run --all-files
       - name: Test with pytest
