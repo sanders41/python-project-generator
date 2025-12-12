@@ -1,8 +1,6 @@
 use std::fs::create_dir_all;
 
 use anyhow::{bail, Result};
-use colored::*;
-use rayon::prelude::*;
 
 use crate::{
     file_manager::{save_empty_src_file, save_file_with_content},
@@ -11,7 +9,7 @@ use crate::{
         save_docs_publish_file, save_pypi_publish_file, save_release_drafter_file,
     },
     licenses::{generate_license, license_str},
-    package_version::{LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackage},
+    package_version::{PreCommitHook, PythonPackage},
     project_info::{LicenseType, ProjectInfo, ProjectManager, Pyo3PythonManager},
     python_files::generate_python_files,
     rust_files::{save_cargo_toml_file, save_lib_file},
@@ -251,49 +249,39 @@ pub fn format_package_with_extras(package: &PythonPackage) -> String {
     }
 }
 
-fn build_latest_pre_commit_dependencies() -> Vec<PreCommitHookVersion> {
-    let mut hooks = vec![
-        PreCommitHookVersion::new(PreCommitHook::PreCommit),
-        PreCommitHookVersion::new(PreCommitHook::MyPy),
-        PreCommitHookVersion::new(PreCommitHook::Ruff),
+fn create_pre_commit_file() -> String {
+    use crate::package_version::{default_pre_commit_rev, pre_commit_repo};
+
+    let mut pre_commit_str = "repos:".to_string();
+    let hooks = vec![
+        PreCommitHook::PreCommit,
+        PreCommitHook::MyPy,
+        PreCommitHook::Ruff,
     ];
 
-    hooks.par_iter_mut().for_each(|hook| {
-        if hook.get_latest_version().is_err() {
-            let error_message = format!(
-                "Error retrieving latest pre-commit version for {}. Using default.",
-                hook.hook
-            );
-            println!("\n{}", error_message.yellow());
-        }
-    });
-
-    hooks
-}
-
-fn create_pre_commit_file() -> String {
-    let mut pre_commit_str = "repos:".to_string();
-    let hooks = build_latest_pre_commit_dependencies();
     for hook in hooks {
-        match hook.hook {
+        let repo = pre_commit_repo(&hook);
+        let rev = default_pre_commit_rev(&hook);
+
+        match hook {
             PreCommitHook::PreCommit => {
                 let info = format!(
                     "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: check-added-large-files\n    - id: check-toml\n    - id: check-yaml\n    - id: debug-statements\n    - id: end-of-file-fixer\n    - id: trailing-whitespace",
-                    hook.repo, hook.rev
+                    repo, rev
                 );
                 pre_commit_str.push_str(&info);
             }
             PreCommitHook::MyPy => {
                 let info = format!(
                     "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: mypy",
-                    hook.repo, hook.rev
+                    repo, rev
                 );
                 pre_commit_str.push_str(&info);
             }
             PreCommitHook::Ruff => {
                 let info = format!(
                     "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: ruff-check\n      args: [--fix, --exit-non-zero-on-fix]\n    - id: ruff-format",
-                    hook.repo, hook.rev
+                    repo, rev
                 );
                 pre_commit_str.push_str(&info);
             }

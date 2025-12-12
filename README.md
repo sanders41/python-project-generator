@@ -226,76 +226,8 @@ generating the project.
   `https://github.com/sanders41/python-project-generator`
 
 After running the generator a new directory will be created with the name you used for the
-`Project Slug`. Change to this directory then install the python packages and pre-commit hooks.
-
-### Pure Python Projects
-
-#### Install the Python dependencies when using Poetry.
-
-```sh
-poetry install
-```
-
-#### Install the Python dependencies when using setuptools.
-
-First create a virtual environment and activate it.
-
-```sh
-python -m venv .venv
-. .venv/bin/activate
-```
-
-```sh
-python -m pip install -r requirements-dev.txt
-```
-
-#### Install the Python dependencies when using uv.
-
-First create a virtual environment and activate it.
-
-```sh
-uv venv
-. .venv/bin/activate
-```
-
-Next create a lock file
-
-```sh
-uv lock
-```
-
-Then install the dependencies
-
-```sh
-uv sync --frozen
-```
-
-Install the pre-commit hooks.
-
-```sh
-pre-commit install
-```
-
-### PyO3 projects
-
-First create a virtual environment and activate it.
-
-```sh
-python -m venv .venv
-. .venv/bin/activate
-```
-
-Install the dependencies and build the rust module.
-
-```sh
-just install
-```
-
-Install the pre-commit hooks.
-
-```sh
-pre-commit install
-```
+`Project Slug`. Change to this directory and your project is ready to use. If the project is a
+PyO3 project the rust code will need to be compiled. Running `just install` will do this.
 
 ### FastAPI projects
 

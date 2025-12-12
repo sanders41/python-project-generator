@@ -1,7 +1,4 @@
-use std::{fmt, thread, time::Duration};
-
-use anyhow::{bail, Result};
-use exponential_backoff::Backoff;
+use std::fmt;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum PythonPackage {
@@ -50,68 +47,6 @@ impl fmt::Display for PreCommitHook {
             PreCommitHook::PreCommit => write!(f, "pre-commit"),
             PreCommitHook::Ruff => write!(f, "ruff"),
         }
-    }
-}
-
-pub trait LatestVersion {
-    fn get_latest_version(&mut self) -> Result<()>;
-}
-
-#[derive(Debug)]
-pub struct PreCommitHookVersion {
-    pub hook: PreCommitHook,
-    pub repo: String,
-    pub rev: String,
-}
-
-impl LatestVersion for PreCommitHookVersion {
-    fn get_latest_version(&mut self) -> Result<()> {
-        let client = reqwest::blocking::Client::new();
-        let attempts = 3;
-        let min = Duration::from_millis(100); // 10ms
-        let max = Duration::from_secs(1);
-        let backoff = Backoff::new(attempts, min, max);
-        let api_url = format!(
-            "{}/releases",
-            self.repo
-                .replace("https://github.com", "https://api.github.com/repos")
-        );
-
-        for duration in backoff {
-            let response = client
-                .get(&api_url)
-                .header(reqwest::header::USER_AGENT, "python-project-generator")
-                .timeout(Duration::new(5, 0))
-                .send();
-
-            match response {
-                Ok(r) => {
-                    let result = r.text()?;
-                    let info: Vec<serde_json::Value> = serde_json::from_str(&result)?;
-                    for i in info {
-                        if i["draft"] == false && i["prerelease"] == false {
-                            self.rev = i["tag_name"].to_string().replace('"', "");
-                            break;
-                        }
-                    }
-
-                    return Ok(());
-                }
-                Err(e) => match duration {
-                    Some(duration) => thread::sleep(duration),
-                    None => bail!("{e}"),
-                },
-            }
-        }
-        bail!("Error retrieving latest version");
-    }
-}
-
-impl PreCommitHookVersion {
-    pub fn new(hook: PreCommitHook) -> Self {
-        let rev = default_pre_commit_rev(&hook);
-        let repo = pre_commit_repo(&hook);
-        PreCommitHookVersion { hook, repo, rev }
     }
 }
 
