@@ -45,7 +45,7 @@ use_multi_os_ci=""
 pyo3_python_manager=""
 
 if [[ project_manager -eq 3 ]]; then
-  ./target/release/python-project create -s << EOF
+  ./target/release/python-project create << EOF
 $project_name
 $project_slug
 $source_dir
@@ -68,7 +68,7 @@ $use_release_drafter
 $use_multi_os_ci
 EOF
 else
-  ./target/release/python-project create -s << EOF
+  ./target/release/python-project create << EOF
 $project_name
 $project_slug
 $source_dir
