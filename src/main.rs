@@ -1,5 +1,6 @@
 mod cli;
 mod config;
+mod dev_dependency_installer;
 mod file_manager;
 mod github_actions;
 mod licenses;
@@ -24,6 +25,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use crate::{
     cli::{Args, BooleanChoice, Command, Param},
     config::Config,
+    dev_dependency_installer::install_dev_dependencies,
     project_generator::generate_project,
     project_info::{get_project_info, ProjectInfo},
 };
@@ -39,6 +41,8 @@ fn create(project_info: &ProjectInfo) -> Result<()> {
         .args(["init", &project_info.project_slug])
         .output()
         .expect("Failed to initialize git");
+
+    install_dev_dependencies(project_info)?;
 
     #[cfg(feature = "fastapi")]
     if project_info.is_fastapi_project {
@@ -66,18 +70,14 @@ fn delete_slug(project_info: &ProjectInfo) -> Result<()> {
 fn main() {
     let args = Args::parse();
     match args.command {
-        Command::Create {
-            skip_download_latest_packages,
-            default,
-        } => {
-            let mut project_info = match get_project_info(default) {
+        Command::Create { default } => {
+            let project_info = match get_project_info(default) {
                 Ok(pi) => pi,
                 Err(e) => {
                     print_error(e);
                     exit(1);
                 }
             };
-            project_info.download_latest_packages = !skip_download_latest_packages;
 
             let create_result: Result<()>;
             if let Ok(progress_style) = ProgressStyle::with_template("{spinner:.green} {msg}") {
@@ -383,26 +383,6 @@ fn main() {
                     exit(1);
                 }
             }
-            Param::DownloadLatestPackages { value } => match value {
-                BooleanChoice::True => {
-                    if let Err(e) = Config::default().save_download_latest_packages(true) {
-                        print_error(e);
-                        exit(1);
-                    }
-                }
-                BooleanChoice::False => {
-                    if let Err(e) = Config::default().save_download_latest_packages(false) {
-                        print_error(e);
-                        exit(1);
-                    }
-                }
-            },
-            Param::ResetDownloadLatestPackages => {
-                if let Err(e) = Config::default().reset_download_latest_packages() {
-                    print_error(e);
-                    exit(1);
-                }
-            }
 
             #[cfg(feature = "fastapi")]
             Param::IsFastapiProject { value } => match value {
@@ -515,7 +495,6 @@ mod tests {
             use_multi_os_ci: true,
             include_docs: false,
             docs_info: None,
-            download_latest_packages: false,
             project_root_dir: Some(tmp_path),
 
             #[cfg(feature = "fastapi")]

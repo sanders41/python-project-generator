@@ -116,28 +116,6 @@ impl PreCommitHookVersion {
 }
 
 #[derive(Debug)]
-pub struct PythonPackageVersion {
-    pub package: PythonPackage,
-    pub version: String,
-}
-
-impl LatestVersion for PythonPackageVersion {
-    fn get_latest_version(&mut self) -> Result<()> {
-        self.version = get_latest_python_version(&self.package.to_string())?;
-
-        Ok(())
-    }
-}
-
-impl PythonPackageVersion {
-    pub fn new(package: PythonPackage) -> Self {
-        let version = default_version(&package);
-
-        PythonPackageVersion { package, version }
-    }
-}
-
-#[derive(Debug)]
 pub struct RustPackageVersion {
     pub name: String,
     pub version: String,
@@ -164,22 +142,6 @@ impl LatestVersion for RustPackageVersion {
     }
 }
 
-pub fn default_version(package: &PythonPackage) -> String {
-    match package {
-        PythonPackage::Maturin => "1.9.5".to_string(),
-        PythonPackage::Mkdocs => "1.6.1".to_string(),
-        PythonPackage::MkdocsMaterial => "9.6.23".to_string(),
-        PythonPackage::Mkdocstrings => "0.30.1".to_string(),
-        PythonPackage::MyPy => "1.18.2".to_string(),
-        PythonPackage::PreCommit => "4.4.0".to_string(),
-        PythonPackage::Pytest => "9.0.1".to_string(),
-        PythonPackage::PytestAsyncio => "1.3.0".to_string(),
-        PythonPackage::PytestCov => "7.0.0".to_string(),
-        PythonPackage::Ruff => "0.14.4".to_string(),
-        PythonPackage::Tomli => "2.2.1".to_string(),
-    }
-}
-
 pub fn default_pre_commit_rev(hook: &PreCommitHook) -> String {
     match hook {
         PreCommitHook::MyPy => "v1.18.2".to_string(),
@@ -194,30 +156,4 @@ pub fn pre_commit_repo(hook: &PreCommitHook) -> String {
         PreCommitHook::PreCommit => "https://github.com/pre-commit/pre-commit-hooks".to_string(),
         PreCommitHook::Ruff => "https://github.com/astral-sh/ruff-pre-commit".to_string(),
     }
-}
-
-fn get_latest_python_version(name: &str) -> Result<String> {
-    let url = format!("https://pypi.org/pypi/{name}/json");
-    let client = reqwest::blocking::Client::new();
-    let attempts = 3;
-    let min = Duration::from_millis(100); // 10ms
-    let max = Duration::from_secs(1);
-    let backoff = Backoff::new(attempts, min, max);
-
-    for duration in backoff {
-        let response = client.get(&url).timeout(Duration::new(5, 0)).send();
-
-        match response {
-            Ok(r) => {
-                let result = r.text()?;
-                let info: serde_json::Value = serde_json::from_str(&result)?;
-                return Ok(info["info"]["version"].to_string().replace('"', ""));
-            }
-            Err(e) => match duration {
-                Some(duration) => thread::sleep(duration),
-                None => bail!("{e}"),
-            },
-        }
-    }
-    bail!("Error retrieving latest version");
 }

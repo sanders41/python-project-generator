@@ -11,9 +11,7 @@ use crate::{
         save_docs_publish_file, save_pypi_publish_file, save_release_drafter_file,
     },
     licenses::{generate_license, license_str},
-    package_version::{
-        LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackage, PythonPackageVersion,
-    },
+    package_version::{LatestVersion, PreCommitHook, PreCommitHookVersion, PythonPackage},
     project_info::{LicenseType, ProjectInfo, ProjectManager, Pyo3PythonManager},
     python_files::generate_python_files,
     rust_files::{save_cargo_toml_file, save_lib_file},
@@ -212,33 +210,70 @@ fn save_gitigngore_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn build_latest_pre_commit_dependencies(
-    download_latest_packages: bool,
-) -> Vec<PreCommitHookVersion> {
+pub fn determine_dev_packages(project_info: &ProjectInfo) -> Result<Vec<PythonPackage>> {
+    let mut packages = Vec::new();
+
+    if matches!(project_info.project_manager, ProjectManager::Maturin) {
+        packages.push(PythonPackage::Maturin);
+    }
+
+    if project_info.include_docs {
+        packages.push(PythonPackage::Mkdocs);
+        packages.push(PythonPackage::MkdocsMaterial);
+        packages.push(PythonPackage::Mkdocstrings);
+    }
+
+    packages.push(PythonPackage::MyPy);
+    packages.push(PythonPackage::PreCommit);
+    packages.push(PythonPackage::Pytest);
+
+    if project_info.is_async_project {
+        packages.push(PythonPackage::PytestAsyncio);
+    }
+
+    packages.push(PythonPackage::PytestCov);
+    packages.push(PythonPackage::Ruff);
+
+    if !is_python_version_or_greater(&project_info.min_python_version, 11)?
+        && matches!(project_info.project_manager, ProjectManager::Poetry)
+    {
+        packages.push(PythonPackage::Tomli);
+    }
+
+    Ok(packages)
+}
+
+pub fn format_package_with_extras(package: &PythonPackage) -> String {
+    match package {
+        PythonPackage::MyPy => "mypy[faster-cache]".to_string(),
+        PythonPackage::Mkdocstrings => "mkdocstrings[python]".to_string(),
+        _ => package.to_string(),
+    }
+}
+
+fn build_latest_pre_commit_dependencies() -> Vec<PreCommitHookVersion> {
     let mut hooks = vec![
         PreCommitHookVersion::new(PreCommitHook::PreCommit),
         PreCommitHookVersion::new(PreCommitHook::MyPy),
         PreCommitHookVersion::new(PreCommitHook::Ruff),
     ];
 
-    if download_latest_packages {
-        hooks.par_iter_mut().for_each(|hook| {
-            if hook.get_latest_version().is_err() {
-                let error_message = format!(
-                    "Error retrieving latest pre-commit version for {}. Using default.",
-                    hook.hook
-                );
-                println!("\n{}", error_message.yellow());
-            }
-        });
-    }
+    hooks.par_iter_mut().for_each(|hook| {
+        if hook.get_latest_version().is_err() {
+            let error_message = format!(
+                "Error retrieving latest pre-commit version for {}. Using default.",
+                hook.hook
+            );
+            println!("\n{}", error_message.yellow());
+        }
+    });
 
     hooks
 }
 
-fn create_pre_commit_file(download_latest_packages: bool) -> String {
+fn create_pre_commit_file() -> String {
     let mut pre_commit_str = "repos:".to_string();
-    let hooks = build_latest_pre_commit_dependencies(download_latest_packages);
+    let hooks = build_latest_pre_commit_dependencies();
     for hook in hooks {
         match hook.hook {
             PreCommitHook::PreCommit => {
@@ -271,201 +306,10 @@ fn create_pre_commit_file(download_latest_packages: bool) -> String {
 
 fn save_pre_commit_file(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info.base_dir().join(".pre-commit-config.yaml");
-    let content = create_pre_commit_file(project_info.download_latest_packages);
+    let content = create_pre_commit_file();
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
-}
-
-fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
-    let mut version_string = String::new();
-    let mut packages = if matches!(project_info.project_manager, ProjectManager::Maturin) {
-        vec![PythonPackageVersion::new(PythonPackage::Maturin)]
-    } else {
-        Vec::new()
-    };
-
-    if project_info.include_docs {
-        packages.push(PythonPackageVersion::new(PythonPackage::Mkdocs));
-        packages.push(PythonPackageVersion::new(PythonPackage::MkdocsMaterial));
-        packages.push(PythonPackageVersion::new(PythonPackage::Mkdocstrings));
-    }
-
-    packages.push(PythonPackageVersion::new(PythonPackage::MyPy));
-    packages.push(PythonPackageVersion::new(PythonPackage::PreCommit));
-    packages.push(PythonPackageVersion::new(PythonPackage::Pytest));
-
-    if project_info.is_async_project {
-        packages.push(PythonPackageVersion::new(PythonPackage::PytestAsyncio));
-    }
-
-    packages.push(PythonPackageVersion::new(PythonPackage::PytestCov));
-    packages.push(PythonPackageVersion::new(PythonPackage::Ruff));
-
-    if !is_python_version_or_greater(&project_info.min_python_version, 11)?
-        && matches!(project_info.project_manager, ProjectManager::Poetry)
-    {
-        packages.push(PythonPackageVersion::new(PythonPackage::Tomli));
-    }
-
-    if project_info.download_latest_packages {
-        packages.par_iter_mut().for_each(|package| {
-            if package.get_latest_version().is_err() {
-                let error_message = format!(
-                    "Error retrieving latest python package version for {}. Using default.",
-                    package.package
-                );
-                println!("\n{}", error_message.yellow());
-            }
-        })
-    }
-
-    if let ProjectManager::Uv | ProjectManager::Pixi = project_info.project_manager {
-        version_string.push_str("[\n");
-    }
-
-    if let ProjectManager::Maturin = project_info.project_manager {
-        if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
-            if pyo3_python_manager == &Pyo3PythonManager::Uv {
-                version_string.push_str("[\n");
-            }
-        }
-    }
-
-    for package in packages {
-        match project_info.project_manager {
-            ProjectManager::Poetry => {
-                if package.package == PythonPackage::MyPy {
-                    version_string.push_str(&format!(
-                        "{} = {{version = \"{}\", extras = [\"faster-cache\"]}}\n",
-                        package.package, package.version
-                    ));
-                } else if package.package == PythonPackage::Tomli {
-                    version_string.push_str(&format!(
-                        "{} = {{version = \"{}\", python = \"<3.11\"}}\n",
-                        package.package, package.version
-                    ));
-                } else if package.package == PythonPackage::Mkdocstrings {
-                    version_string.push_str(&format!(
-                        "{} = {{version = \"{}\", extras = [\"python\"]}}\n",
-                        package.package, package.version
-                    ));
-                } else {
-                    version_string
-                        .push_str(&format!("{} = \"{}\"\n", package.package, package.version));
-                }
-            }
-            ProjectManager::Uv | ProjectManager::Pixi => {
-                if package.package == PythonPackage::MyPy {
-                    version_string.push_str(&format!(
-                        "  \"{}[faster-cache]=={}\",\n",
-                        package.package, package.version
-                    ));
-                } else if package.package == PythonPackage::Mkdocstrings {
-                    version_string.push_str(&format!(
-                        "  \"{}[python]=={}\",\n",
-                        package.package, package.version
-                    ));
-                } else {
-                    version_string.push_str(&format!(
-                        "  \"{}=={}\",\n",
-                        package.package, package.version
-                    ));
-                }
-            }
-            ProjectManager::Maturin => {
-                if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
-                    match pyo3_python_manager {
-                        Pyo3PythonManager::Uv => {
-                            if package.package == PythonPackage::MyPy {
-                                version_string.push_str(&format!(
-                                    "  \"{}[faster-cache]=={}\",\n",
-                                    package.package, package.version
-                                ));
-                            } else if package.package == PythonPackage::Mkdocstrings {
-                                version_string.push_str(&format!(
-                                    "  \"{}[python]=={}\",\n",
-                                    package.package, package.version
-                                ));
-                            } else {
-                                version_string.push_str(&format!(
-                                    "  \"{}=={}\",\n",
-                                    package.package, package.version
-                                ));
-                            }
-                        }
-                        Pyo3PythonManager::Setuptools => {
-                            if package.package == PythonPackage::MyPy {
-                                version_string.push_str(&format!(
-                                    "{}[faster-cachw]=={}\n",
-                                    package.package, package.version
-                                ));
-                            } else if package.package == PythonPackage::Mkdocstrings {
-                                version_string.push_str(&format!(
-                                    "{}[python]=={}\n",
-                                    package.package, package.version
-                                ));
-                            } else {
-                                version_string.push_str(&format!(
-                                    "{}=={}\n",
-                                    package.package, package.version
-                                ));
-                            }
-                        }
-                    }
-                } else {
-                    bail!("A PyO3 Python manager is required with maturin");
-                }
-            }
-            ProjectManager::Setuptools => {
-                if package.package == PythonPackage::MyPy {
-                    version_string.push_str(&format!(
-                        "{}[faster-cache]=={}\n",
-                        package.package, package.version
-                    ));
-                } else if package.package == PythonPackage::Mkdocstrings {
-                    version_string.push_str(&format!(
-                        "{}[python]=={}\n",
-                        package.package, package.version
-                    ));
-                } else {
-                    version_string.push_str(&format!("{}=={}\n", package.package, package.version));
-                }
-            }
-        }
-    }
-
-    match project_info.project_manager {
-        ProjectManager::Poetry => Ok(version_string.trim().to_string()),
-        ProjectManager::Uv => {
-            version_string.push(']');
-            Ok(version_string)
-        }
-        ProjectManager::Pixi => {
-            version_string.push(']');
-            Ok(version_string)
-        }
-        ProjectManager::Maturin => {
-            if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
-                match pyo3_python_manager {
-                    Pyo3PythonManager::Uv => {
-                        version_string.push(']');
-                        Ok(version_string)
-                    }
-                    Pyo3PythonManager::Setuptools => {
-                        version_string.push_str("-e .\n");
-                        Ok(version_string)
-                    }
-                }
-            } else {
-                bail!("A PyO3 Python manager is required for maturin");
-            }
-        }
-        ProjectManager::Setuptools => {
-            version_string.push_str("-e .\n");
-            Ok(version_string)
-        }
-    }
 }
 
 fn create_pyproject_toml(project_info: &ProjectInfo) -> Result<String> {
@@ -479,7 +323,6 @@ fn create_pyproject_toml(project_info: &ProjectInfo) -> Result<String> {
     let version = &project_info.version;
     let license = &project_info.license;
     let license_text = license_str(&project_info.license);
-    let dev_dependencies = build_latest_dev_dependencies(project_info)?;
     let max_line_length = &project_info.max_line_length;
     let include_docs = project_info.include_docs;
 
@@ -516,7 +359,7 @@ requires-python = ">={min_python_version}"
 dependencies = []
 
 [dependency-groups]
-dev = {dev_dependencies}
+dev = []
 
 [tool.maturin]
 module-name = "{module}._{module}"
@@ -589,7 +432,6 @@ authors = ["{creator} <{creator_email}>"]
 python = "^{min_python_version}"
 
 [tool.poetry.group.dev.dependencies]
-{dev_dependencies}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -669,7 +511,7 @@ dynamic = ["version"]
 dependencies = []
 
 [dependency-groups]
-dev = {dev_dependencies}
+dev = []
 
 [tool.hatch.version]
 path = "{module}/_version.py"
@@ -728,7 +570,7 @@ run-pytest = "pytest -x"
             pyproject.push_str(&format!(
                 r#"
 [project.optional-dependencies]
-dev = {dev_dependencies}
+dev = []
 
 [tool.pixi.environments]
 default = {{features = [], solve-group = "default"}}
@@ -851,15 +693,6 @@ add-bounds = "exact"
 fn save_pyproject_toml_file(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info.base_dir().join("pyproject.toml");
     let content = create_pyproject_toml(project_info)?;
-
-    save_file_with_content(&file_path, &content)?;
-
-    Ok(())
-}
-
-fn save_dev_requirements(project_info: &ProjectInfo) -> Result<()> {
-    let file_path = project_info.base_dir().join("requirements-dev.txt");
-    let content = build_latest_dev_dependencies(project_info)?;
 
     save_file_with_content(&file_path, &content)?;
 
@@ -1528,13 +1361,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
 
     match &project_info.project_manager {
         ProjectManager::Maturin => {
-            if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
-                if pyo3_python_manager == &Pyo3PythonManager::Setuptools
-                    && save_dev_requirements(project_info).is_err()
-                {
-                    bail!("Error creating requirements-dev.txt file");
-                }
-
+            if let Some(_pyo3_python_manager) = &project_info.pyo3_python_manager {
                 if save_lib_file(project_info).is_err() {
                     bail!("Error creating Rust lib.rs file");
                 }
@@ -1546,11 +1373,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
                 bail!("A PyO3 Python Manager is required with Maturin");
             }
         }
-        ProjectManager::Setuptools => {
-            if save_dev_requirements(project_info).is_err() {
-                bail!("Error creating requirements-dev.txt file");
-            }
-        }
+        ProjectManager::Setuptools => {}
         _ => (),
     }
 
@@ -1655,7 +1478,6 @@ mod tests {
             use_multi_os_ci: true,
             include_docs: false,
             docs_info: None,
-            download_latest_packages: false,
             project_root_dir: Some(tmp_path),
 
             #[cfg(feature = "fastapi")]
@@ -2139,88 +1961,6 @@ mod tests {
 
         insta::with_settings!({filters => vec![
             (r"\d+\.\d+\.\d+", "1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_pyo3_dev_requirements_application_file() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Maturin;
-        project_info.is_application = true;
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("requirements-dev.txt");
-        save_dev_requirements(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_pyo3_dev_requirements_lib_file() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Maturin;
-        project_info.is_application = false;
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("requirements-dev.txt");
-        save_dev_requirements(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_setuptools_dev_requirements_application_file() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Maturin;
-        project_info.pyo3_python_manager = Some(Pyo3PythonManager::Setuptools);
-        project_info.is_application = true;
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("requirements-dev.txt");
-        save_dev_requirements(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_setuptools_dev_requirements_lib_file() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Maturin;
-        project_info.pyo3_python_manager = Some(Pyo3PythonManager::Setuptools);
-        project_info.is_application = false;
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("requirements-dev.txt");
-        save_dev_requirements(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
         ]}, { assert_yaml_snapshot!(content)});
     }
 

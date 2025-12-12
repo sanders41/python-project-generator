@@ -9,7 +9,7 @@ use crate::{
     project_info::{LicenseType, ProjectInfo},
 };
 
-fn build_latest_dependencies(download_latest_packages: bool) -> String {
+fn build_latest_dependencies() -> String {
     let mut version_string = String::new();
     let mut packages = vec![RustPackageVersion {
         name: "pyo3".to_string(),
@@ -17,17 +17,15 @@ fn build_latest_dependencies(download_latest_packages: bool) -> String {
         features: Some(vec!["extension-module".to_string()]),
     }];
 
-    if download_latest_packages {
-        packages.par_iter_mut().for_each(|package| {
-            if package.get_latest_version().is_err() {
-                let error_message = format!(
-                    "Error retrieving latest crate version for {}. Using default.",
-                    package.name
-                );
-                println!("\n{}", error_message.yellow());
-            }
-        })
-    }
+    packages.par_iter_mut().for_each(|package| {
+        if package.get_latest_version().is_err() {
+            let error_message = format!(
+                "Error retrieving latest crate version for {}. Using default.",
+                package.name
+            );
+            println!("\n{}", error_message.yellow());
+        }
+    });
 
     for package in packages {
         if let Some(features) = &package.features {
@@ -59,9 +57,8 @@ fn create_cargo_toml_file(
     project_description: &str,
     source_dir: &str,
     license_type: &LicenseType,
-    download_latest_packages: bool,
 ) -> String {
-    let versions = build_latest_dependencies(download_latest_packages);
+    let versions = build_latest_dependencies();
     let license = license_str(license_type);
     let name = source_dir.replace([' ', '-'], "_");
 
@@ -91,7 +88,6 @@ pub fn save_cargo_toml_file(project_info: &ProjectInfo) -> Result<()> {
         &project_info.project_description,
         &project_info.source_dir,
         &project_info.license,
-        project_info.download_latest_packages,
     );
 
     save_file_with_content(&file_path, &content)?;
@@ -170,7 +166,6 @@ mod tests {
             use_multi_os_ci: true,
             include_docs: false,
             docs_info: None,
-            download_latest_packages: false,
             project_root_dir: Some(tmp_path),
 
             #[cfg(feature = "fastapi")]

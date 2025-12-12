@@ -217,7 +217,6 @@ pub struct ProjectInfo {
     pub use_multi_os_ci: bool,
     pub include_docs: bool,
     pub docs_info: Option<DocsInfo>,
-    pub download_latest_packages: bool,
     pub project_root_dir: Option<PathBuf>,
 
     #[cfg(feature = "fastapi")]
@@ -906,7 +905,6 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         use_multi_os_ci,
         include_docs,
         docs_info,
-        download_latest_packages: false,
         project_root_dir: None,
 
         #[cfg(feature = "fastapi")]
