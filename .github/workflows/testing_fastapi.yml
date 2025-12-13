@@ -339,12 +339,12 @@ jobs:
       - name: Compile Rust
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          python -m maturin build
+          .venv/bin/maturin build
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          pre-commit run --all-files
+          .venv/bin/pre-commit run --all-files
       - name: make .env
         working-directory: ${{ env.WORKING_DIR }}
         run: touch .env
@@ -353,7 +353,7 @@ jobs:
         run: docker compose up -d
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
-        run: python -m pytest -n auto
+        run: .venv/bin/pytest -n auto
   test-pyo3-setuptools-non-fastapi-project:
     name: test-fastapi-setuptools-pyo3-setup-non-fastapi
     strategy:
@@ -379,13 +379,13 @@ jobs:
       - name: Compile Rust
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          python -m maturin build
+          .venv/bin/maturin build
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          pre-commit run --all-files
+          .venv/bin/pre-commit run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         if: matrix.project_type == 'application'
-        run: python -m pytest
+        run: .venv/bin/pytest
