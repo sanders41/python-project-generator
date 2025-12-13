@@ -536,7 +536,7 @@ requires-python = ">={min_python_version}"
 dynamic = ["version"]
 dependencies = []
 
-[tool.pixi.project]
+[tool.pixi.workspace]
 channels = ["conda-forge", "bioconda"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
