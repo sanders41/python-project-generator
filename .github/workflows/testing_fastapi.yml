@@ -50,15 +50,9 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh "fastapi" 1
         shell: bash
-      - name: Install Dependencies
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          uv lock
-          uv sync --frozen
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          uv run pre-commit install
           git add .
           uv run pre-commit run --all-files
       - name: make .env
@@ -94,15 +88,9 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 1
         shell: bash
-      - name: Install Dependencies
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          uv lock
-          uv sync --frozen
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          uv run pre-commit install
           git add .
           uv run pre-commit run --all-files
       - name: Test with pytest
@@ -137,13 +125,9 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh "fastapi" 2
         shell: bash
-      - name: Install Dependencies
-        working-directory: ${{ env.WORKING_DIR }}
-        run: poetry install
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          poetry run pre-commit install
           git add .
           poetry run pre-commit run --all-files
       - name: make .env
@@ -183,13 +167,9 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 2
         shell: bash
-      - name: Install Dependencies
-        working-directory: ${{ env.WORKING_DIR }}
-        run: poetry install
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          poetry run pre-commit install
           git add .
           poetry run pre-commit run --all-files
       - name: Test with pytest
@@ -218,15 +198,9 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh "fastapi" 4
         shell: bash
-      - name: Install Dependencies
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          python -m pip install -U pip
-          python -m pip install -r requirements-dev.txt -r requirements.txt
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          pre-commit install
           git add .
           pre-commit run --all-files
       - name: make .env
@@ -260,15 +234,9 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 4
         shell: bash
-      - name: Install Dependencies
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          python -m pip install -U pip
-          python -m pip install -r requirements-dev.txt
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          pre-commit install
           git add .
           pre-commit run --all-files
       - name: Test with pytest
@@ -299,16 +267,9 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh "fastapi" 3
         shell: bash
-      - name: Install Dependencies
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          uv lock
-          uv sync --frozen
-          uv run maturin build
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          uv run pre-commit install
           git add .
           uv run pre-commit run --all-files
       - name: make .env
@@ -344,16 +305,9 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 3
         shell: bash
-      - name: Install Dependencies
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          uv lock
-          uv sync --frozen
-          uv run maturin build
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          uv run pre-commit install
           git add .
           uv run pre-commit run --all-files
       - name: Test with pytest
@@ -382,16 +336,13 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh "fastapi" 3 2
         shell: bash
-      - name: Install Dependencies
+      - name: Compile Rust
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          python -m pip install -U pip
-          python -m pip install -r requirements.txt -r requirements-dev.txt
           python -m maturin build
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          pre-commit install
           git add .
           pre-commit run --all-files
       - name: make .env
@@ -425,16 +376,13 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 3 2
         shell: bash
-      - name: Install Dependencies
+      - name: Compile Rust
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          python -m pip install -U pip
-          python -m pip install -r requirements-dev.txt
           python -m maturin build
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          pre-commit install
           git add .
           pre-commit run --all-files
       - name: Test with pytest
