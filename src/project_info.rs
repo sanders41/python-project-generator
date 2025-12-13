@@ -99,7 +99,6 @@ pub enum ProjectManager {
     Setuptools,
     #[default]
     Uv,
-    Pixi,
 }
 
 impl fmt::Display for ProjectManager {
@@ -109,7 +108,6 @@ impl fmt::Display for ProjectManager {
             Self::Poetry => write!(f, "Poetry"),
             Self::Setuptools => write!(f, "Setuptools"),
             Self::Uv => write!(f, "uv"),
-            Self::Pixi => write!(f, "Pixi"),
         }
     }
 }
@@ -404,12 +402,11 @@ fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectMana
             ProjectManager::Poetry => "2".to_string(),
             ProjectManager::Maturin => "3".to_string(),
             ProjectManager::Setuptools => "4".to_string(),
-            ProjectManager::Pixi => "5".to_string(),
         },
         None => "poetry".to_string(),
     };
     let prompt_text =
-        "Project Manager\n  1 - uv\n  2 - Poetry\n  3 - Maturin\n  4 - setuptools\n  5 - Pixi\n  Choose from [1, 2, 3, 4, 5]"
+        "Project Manager\n  1 - uv\n  2 - Poetry\n  3 - Maturin\n  4 - setuptools\n  Choose from [1, 2, 3, 4, 5]"
             .to_string();
     let prompt = Prompt {
         prompt_text,
@@ -425,8 +422,6 @@ fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectMana
         Ok(ProjectManager::Maturin)
     } else if input == "4" {
         Ok(ProjectManager::Setuptools)
-    } else if input == "5" {
-        Ok(ProjectManager::Pixi)
     } else {
         bail!("Invalid selection");
     }
@@ -706,11 +701,6 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         let default = config.project_manager.unwrap_or_default();
         project_manager_prompt(Some(default))?
     };
-
-    #[cfg(feature = "fastapi")]
-    if is_fastapi_project && project_manager == ProjectManager::Pixi {
-        bail!("Pixi is not currently supported for FastAPI projects");
-    }
 
     let pyo3_python_manager = if project_manager == ProjectManager::Maturin {
         if use_defaults {
