@@ -62,7 +62,7 @@ fi
 
 if [[ $project_manager -eq 3 ]]; then
   if [ "$fastapi_project" = "1" ]; then
-    ./target/release/python-project create -s << EOF
+    ./target/release/python-project create << EOF
 $project_name
 $project_slug
 $source_dir
@@ -84,7 +84,7 @@ $use_continuous_deployment
 $use_release_drafter
 EOF
   else
-    ./target/release/python-project create -s << EOF
+    ./target/release/python-project create << EOF
 $project_name
 $project_slug
 $source_dir
@@ -110,7 +110,7 @@ EOF
   fi
 else
   if [ "$fastapi_project" = "1" ]; then
-    ./target/release/python-project create -s << EOF
+    ./target/release/python-project create << EOF
 $project_name
 $project_slug
 $source_dir
@@ -131,7 +131,7 @@ $use_continuous_deployment
 $use_release_drafter
 EOF
   else
-    ./target/release/python-project create -s << EOF
+    ./target/release/python-project create << EOF
 $project_name
 $project_slug
 $source_dir

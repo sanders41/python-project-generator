@@ -101,14 +101,17 @@ fn poetry_fastapi_dependency_installer(project_info: &ProjectInfo) -> Result<()>
 }
 
 fn setuptools_fastapi_dependency_installer(project_info: &ProjectInfo) -> Result<()> {
-    let venv_output = std::process::Command::new("python")
-        .args(["-m", "venv", ".venv"])
-        .current_dir(project_info.base_dir())
-        .output()?;
+    let venv_path = project_info.base_dir().join(".venv");
+    if !venv_path.exists() {
+        let venv_output = std::process::Command::new("python")
+            .args(["-m", "venv", ".venv"])
+            .current_dir(project_info.base_dir())
+            .output()?;
 
-    if !venv_output.status.success() {
-        let stderr = String::from_utf8_lossy(&venv_output.stderr);
-        bail!("Failed to create virtual environment: {stderr}");
+        if !venv_output.status.success() {
+            let stderr = String::from_utf8_lossy(&venv_output.stderr);
+            bail!("Failed to create virtual environment: {stderr}");
+        }
     }
 
     let dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();

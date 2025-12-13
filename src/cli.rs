@@ -30,12 +30,6 @@ pub enum Command {
         #[clap(
             short,
             long,
-            help = "If set the default package versions will be used instead of the latest"
-        )]
-        skip_download_latest_packages: bool,
-        #[clap(
-            short,
-            long,
             help = "Use saved configuration and default values instead of prompting where possible"
         )]
         default: bool,
@@ -160,12 +154,6 @@ pub enum Param {
 
     /// Remove the saved include docs value
     ResetIncludeDocs,
-
-    /// Save a default value for Download Latest Packages
-    DownloadLatestPackages { value: BooleanChoice },
-
-    /// Remove the save download latest packages value
-    ResetDownloadLatestPackages,
 
     #[cfg(feature = "fastapi")]
     /// Save a default value for is FastAPI project
