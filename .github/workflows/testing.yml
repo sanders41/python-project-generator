@@ -333,13 +333,13 @@ jobs:
           ./scripts/ci_run.sh ${{ matrix.project_type }} 4
       - name: MyPy
         working-directory: ${{ env.WORKING_DIR }}
-        run: mypy .
+        run: /venv/bin/mypy .
       - name: ruff check
         working-directory: ${{ env.WORKING_DIR }}
-        run: ruff check .
+        run: .venv/bin/ruff check .
       - name: ruff format
         working-directory: ${{ env.WORKING_DIR }}
-        run: ruff format --check .
+        run: .venv/bin/ruff format --check .
   setuptools-test:
     strategy:
       fail-fast: false
@@ -366,11 +366,11 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          pre-commit run --all-files
+          .venv/bin/pre-commit run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         if: matrix.project_type == 'application'
-        run: python -m pytest
+        run: .venv/bin/pytest
   pixi-linting:
     strategy:
       fail-fast: false

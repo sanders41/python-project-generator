@@ -308,7 +308,7 @@ jobs:
       - name: Compile Rust
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          .venv/bin/maturin build
+          uv run maturin develop
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
@@ -343,7 +343,7 @@ jobs:
       - name: Compile Rust
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          .venv/bin/maturin build
+          .venv/bin/maturin develop
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
@@ -383,7 +383,7 @@ jobs:
       - name: Compile Rust
         working-directory: ${{ env.WORKING_DIR }}
         run: |
-          .venv/bin/maturin build
+          .venv/bin/maturin develop
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
