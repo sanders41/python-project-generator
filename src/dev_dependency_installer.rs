@@ -80,18 +80,18 @@ fn setuptools_dev_dependency_installer(project_info: &ProjectInfo) -> Result<()>
         }
     }
 
+    let python_bin = if cfg!(windows) {
+        ".venv/Scripts/python.exe"
+    } else {
+        ".venv/bin/python"
+    };
+
     let packages = determine_dev_packages(project_info)?;
     let package_specs: Vec<String> = packages.iter().map(format_package_with_extras).collect();
 
     let mut args = vec!["-m", "pip", "install"];
     let package_refs: Vec<&str> = package_specs.iter().map(|s| s.as_str()).collect();
     args.extend(package_refs);
-
-    let python_bin = if cfg!(windows) {
-        ".venv/Scripts/python.exe"
-    } else {
-        ".venv/bin/python"
-    };
 
     let output = std::process::Command::new(python_bin)
         .args(args)
