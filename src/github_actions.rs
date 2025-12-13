@@ -2184,7 +2184,6 @@ mod tests {
             use_multi_os_ci: true,
             include_docs: false,
             docs_info: None,
-            download_latest_packages: false,
             project_root_dir: Some(tmp_path),
 
             #[cfg(feature = "fastapi")]

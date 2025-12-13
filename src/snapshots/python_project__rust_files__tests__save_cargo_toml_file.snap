@@ -1,6 +1,5 @@
 ---
 source: src/rust_files.rs
 expression: content
-snapshot_kind: text
 ---
-"[package]\nname = \"my-project\"\nversion = \"1.0.0\"\ndescription = \"This is a test\"\nedition = \"2021\"\nlicense = \"MIT\"\nreadme = \"README.md\"\n\n[lib]\nname = \"_my_project\"\ncrate-type = [\"cdylib\"]\n\n[dependencies]\npyo3 = { version = \"1.0.0\", features = [\"extension-module\"] }\n"
+"[package]\nname = \"my-project\"\nversion = \"1.0.0\"\ndescription = \"This is a test\"\nedition = \"2021\"\nlicense = \"MIT\"\nreadme = \"README.md\"\n\n[lib]\nname = \"_my_project\"\ncrate-type = [\"cdylib\"]\n\n[dependencies]\n"

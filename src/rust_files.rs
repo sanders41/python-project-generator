@@ -1,67 +1,17 @@
 use anyhow::Result;
-use colored::*;
-use rayon::prelude::*;
 
 use crate::{
     file_manager::save_file_with_content,
     licenses::license_str,
-    package_version::{LatestVersion, RustPackageVersion},
     project_info::{LicenseType, ProjectInfo},
 };
-
-fn build_latest_dependencies(download_latest_packages: bool) -> String {
-    let mut version_string = String::new();
-    let mut packages = vec![RustPackageVersion {
-        name: "pyo3".to_string(),
-        version: "0.27.1".to_string(),
-        features: Some(vec!["extension-module".to_string()]),
-    }];
-
-    if download_latest_packages {
-        packages.par_iter_mut().for_each(|package| {
-            if package.get_latest_version().is_err() {
-                let error_message = format!(
-                    "Error retrieving latest crate version for {}. Using default.",
-                    package.name
-                );
-                println!("\n{}", error_message.yellow());
-            }
-        })
-    }
-
-    for package in packages {
-        if let Some(features) = &package.features {
-            let mut feature_str = "[".to_string();
-            for feature in features {
-                feature_str.push_str(&format!(r#""{feature}", "#));
-            }
-
-            feature_str.truncate(feature_str.len() - 2);
-            feature_str.push(']');
-
-            version_string.push_str(&format!(
-                "{} = {{ version = \"{}\", features = {} }}\n",
-                package.name, package.version, feature_str
-            ));
-        } else {
-            version_string.push_str(&format!(
-                "{} = {{ version = \"{}\" }}\n",
-                package.name, package.version
-            ));
-        }
-    }
-
-    version_string.trim().to_string()
-}
 
 fn create_cargo_toml_file(
     project_slug: &str,
     project_description: &str,
     source_dir: &str,
     license_type: &LicenseType,
-    download_latest_packages: bool,
 ) -> String {
-    let versions = build_latest_dependencies(download_latest_packages);
     let license = license_str(license_type);
     let name = source_dir.replace([' ', '-'], "_");
 
@@ -79,7 +29,6 @@ name = "_{name}"
 crate-type = ["cdylib"]
 
 [dependencies]
-{versions}
 "#
     )
 }
@@ -91,10 +40,25 @@ pub fn save_cargo_toml_file(project_info: &ProjectInfo) -> Result<()> {
         &project_info.project_description,
         &project_info.source_dir,
         &project_info.license,
-        project_info.download_latest_packages,
     );
 
     save_file_with_content(&file_path, &content)?;
+
+    Ok(())
+}
+
+pub fn cargo_add_pyo3(project_info: &ProjectInfo) -> Result<()> {
+    use anyhow::bail;
+
+    let output = std::process::Command::new("cargo")
+        .args(["add", "pyo3", "--features", "extension-module"])
+        .current_dir(project_info.base_dir())
+        .output()?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        bail!("Failed to add pyo3 dependency: {stderr}");
+    }
 
     Ok(())
 }
@@ -170,7 +134,6 @@ mod tests {
             use_multi_os_ci: true,
             include_docs: false,
             docs_info: None,
-            download_latest_packages: false,
             project_root_dir: Some(tmp_path),
 
             #[cfg(feature = "fastapi")]

@@ -34,7 +34,6 @@ pub struct Config {
     pub use_release_drafter: Option<bool>,
     pub use_multi_os_ci: Option<bool>,
     pub include_docs: Option<bool>,
-    pub download_latest_packages: Option<bool>,
 
     #[cfg(feature = "fastapi")]
     pub is_fastapi_project: Option<bool>,
@@ -71,7 +70,6 @@ impl Default for Config {
             use_release_drafter: None,
             use_multi_os_ci: None,
             include_docs: None,
-            download_latest_packages: None,
             config_dir: config_dir(),
             config_file_path: config_file_path(),
 
@@ -112,7 +110,6 @@ impl Config {
                             use_release_drafter: config.use_release_drafter,
                             use_multi_os_ci: config.use_multi_os_ci,
                             include_docs: config.include_docs,
-                            download_latest_packages: config.download_latest_packages,
                             config_dir: self.config_dir.clone(),
                             config_file_path: self.config_file_path.clone(),
 
@@ -370,16 +367,6 @@ impl Config {
         Ok(())
     }
 
-    pub fn save_download_latest_packages(&self, value: bool) -> Result<()> {
-        self.handle_save_config(|config| &mut config.download_latest_packages, Some(value))?;
-        Ok(())
-    }
-
-    pub fn reset_download_latest_packages(&self) -> Result<()> {
-        self.handle_save_config(|config| &mut config.download_latest_packages, None)?;
-        Ok(())
-    }
-
     fn handle_save_config<F, T>(&self, func: F, value: Option<T>) -> Result<()>
     where
         F: FnOnce(&mut Self) -> &mut Option<T>,
@@ -469,7 +456,6 @@ impl Config {
         print_config_value("Use Release Drafter", &config.use_release_drafter);
         print_config_value("Use Multi OS CI", &config.use_multi_os_ci);
         print_config_value("Include Docs", &config.include_docs);
-        print_config_value("Download Latest Packages", &config.download_latest_packages);
 
         #[cfg(feature = "fastapi")]
         print_config_value("FastAPI Project", &config.is_fastapi_project);
@@ -940,26 +926,6 @@ mod tests {
         let result = config.load_config();
 
         assert_eq!(result.include_docs, None);
-    }
-
-    #[test]
-    fn test_save_download_latest_packages() {
-        let config = mock_config();
-        let expected = false;
-        config.save_download_latest_packages(expected).unwrap();
-        let result = config.load_config();
-
-        assert_eq!(result.download_latest_packages, Some(expected));
-    }
-
-    #[test]
-    fn test_reset_download_latest_packages() {
-        let config = mock_config();
-        config.save_download_latest_packages(false).unwrap();
-        config.reset_download_latest_packages().unwrap();
-        let result = config.load_config();
-
-        assert_eq!(result.download_latest_packages, None);
     }
 
     #[cfg(feature = "fastapi")]

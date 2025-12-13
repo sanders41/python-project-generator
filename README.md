@@ -106,17 +106,7 @@ python-project create
 
 You will be asked a series of questions that will be used to generate your project. The project
 generator will check pypi for the latest version of the included packages and use those while
-generating the project. This feature can be disabled by using with either `-s` or
-`--skip-download-latest-packages` when running the generator. If either there is an issue with
-retrieving the latest versions or if you have decided to skip looking up the latest version, the
-packages will be be created with default versions.
-
-Note that skipping the dependency check only works for dev packages. For FastAPI projects the
-versions are always checked to ensure compatibatibiliy of the installed packages.
-
-```sh
-python-project create -s
-```
+generating the project.
 
 #### Options
 
@@ -235,76 +225,8 @@ python-project create -s
   `https://github.com/sanders41/python-project-generator`
 
 After running the generator a new directory will be created with the name you used for the
-`Project Slug`. Change to this directory then install the python packages and pre-commit hooks.
-
-### Pure Python Projects
-
-#### Install the Python dependencies when using Poetry.
-
-```sh
-poetry install
-```
-
-#### Install the Python dependencies when using setuptools.
-
-First create a virtual environment and activate it.
-
-```sh
-python -m venv .venv
-. .venv/bin/activate
-```
-
-```sh
-python -m pip install -r requirements-dev.txt
-```
-
-#### Install the Python dependencies when using uv.
-
-First create a virtual environment and activate it.
-
-```sh
-uv venv
-. .venv/bin/activate
-```
-
-Next create a lock file
-
-```sh
-uv lock
-```
-
-Then install the dependencies
-
-```sh
-uv sync --frozen
-```
-
-Install the pre-commit hooks.
-
-```sh
-pre-commit install
-```
-
-### PyO3 projects
-
-First create a virtual environment and activate it.
-
-```sh
-python -m venv .venv
-. .venv/bin/activate
-```
-
-Install the dependencies and build the rust module.
-
-```sh
-just install
-```
-
-Install the pre-commit hooks.
-
-```sh
-pre-commit install
-```
+`Project Slug`. Change to this directory and your project is ready to use. If the project is a
+PyO3 project the rust code will need to be compiled. Running `just install` will do this.
 
 ### FastAPI projects
 
