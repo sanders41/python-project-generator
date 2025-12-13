@@ -193,13 +193,7 @@ fn setuptools_precommit_autoupdate(project_info: &ProjectInfo) -> Result<()> {
         bail!("Virtual environment not found at {}", venv_path.display());
     }
 
-    let precommit_bin = if cfg!(windows) {
-        venv_path.join("Scripts").join("pre-commit.exe")
-    } else {
-        venv_path.join("bin").join("pre-commit")
-    };
-
-    let output = std::process::Command::new(&precommit_bin)
+    let output = std::process::Command::new(".venv/bin/pre-commit")
         .args(["autoupdate"])
         .current_dir(base_dir)
         .output()?;
@@ -285,13 +279,7 @@ fn setuptools_precommit_install(project_info: &ProjectInfo) -> Result<()> {
         bail!("Virtual environment not found at {}", venv_path.display());
     }
 
-    let precommit_bin = if cfg!(windows) {
-        venv_path.join("Scripts").join("pre-commit.exe")
-    } else {
-        venv_path.join("bin").join("pre-commit")
-    };
-
-    let output = std::process::Command::new(&precommit_bin)
+    let output = std::process::Command::new(".venv/bin/pre-commit")
         .args(["install"])
         .current_dir(base_dir)
         .output()?;
