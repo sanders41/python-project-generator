@@ -390,6 +390,8 @@ jobs:
         with:
           pixi-version: v0.57.0
           run-install: false
+        env:
+          PIXI_NO_PROMPT: "1"
       - name: Run creation
         run: ./scripts/ci_run.sh ${{ matrix.project_type }} 5
         shell: bash
@@ -425,6 +427,8 @@ jobs:
         with:
           pixi-version: v0.57.0
           run-install: false
+        env:
+          PIXI_NO_PROMPT: "1"
       - name: Run creation
         run: ./scripts/ci_run.sh ${{ matrix.project_type }} 5
         shell: bash
