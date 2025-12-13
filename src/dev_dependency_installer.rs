@@ -66,7 +66,8 @@ fn poetry_dev_dependency_installer(project_info: &ProjectInfo) -> Result<()> {
 }
 
 fn setuptools_dev_dependency_installer(project_info: &ProjectInfo) -> Result<()> {
-    let venv_path = project_info.base_dir().join(".venv");
+    let base_dir = project_info.base_dir().canonicalize()?;
+    let venv_path = base_dir.join(".venv");
     if !venv_path.exists() {
         let venv_output = std::process::Command::new("python")
             .args(["-m", "venv", ".venv"])
@@ -80,9 +81,9 @@ fn setuptools_dev_dependency_installer(project_info: &ProjectInfo) -> Result<()>
     }
 
     let python_bin = if cfg!(windows) {
-        ".venv/Scripts/python.exe"
+        venv_path.join("Scripts").join("python.exe")
     } else {
-        ".venv/bin/python"
+        venv_path.join("bin").join("python")
     };
 
     let packages = determine_dev_packages(project_info)?;
@@ -92,7 +93,7 @@ fn setuptools_dev_dependency_installer(project_info: &ProjectInfo) -> Result<()>
     let package_refs: Vec<&str> = package_specs.iter().map(|s| s.as_str()).collect();
     args.extend(package_refs);
 
-    let output = std::process::Command::new(python_bin)
+    let output = std::process::Command::new(&python_bin)
         .args(args)
         .current_dir(project_info.base_dir())
         .output()?;
@@ -169,21 +170,21 @@ fn poetry_precommit_autoupdate(project_info: &ProjectInfo) -> Result<()> {
 }
 
 fn setuptools_precommit_autoupdate(project_info: &ProjectInfo) -> Result<()> {
-    let base_dir = project_info.base_dir();
+    let base_dir = project_info.base_dir().canonicalize()?;
     let venv_path = base_dir.join(".venv");
 
     if !venv_path.exists() {
         bail!("Virtual environment not found at {}", venv_path.display());
     }
 
-    let precommit_bin = if cfg!(windows) {
-        ".venv/Scripts/pre-commit.exe"
+    let python_bin = if cfg!(windows) {
+        venv_path.join("Scripts").join("python.exe")
     } else {
-        ".venv/bin/pre-commit"
+        venv_path.join("bin").join("python")
     };
 
-    let output = std::process::Command::new(precommit_bin)
-        .args(["autoupdate"])
+    let output = std::process::Command::new(&python_bin)
+        .args(["-m", "pre_commit", "autoupdate"])
         .current_dir(base_dir)
         .output()?;
 
@@ -246,21 +247,21 @@ fn poetry_precommit_install(project_info: &ProjectInfo) -> Result<()> {
 }
 
 fn setuptools_precommit_install(project_info: &ProjectInfo) -> Result<()> {
-    let base_dir = project_info.base_dir();
+    let base_dir = project_info.base_dir().canonicalize()?;
     let venv_path = base_dir.join(".venv");
 
     if !venv_path.exists() {
         bail!("Virtual environment not found at {}", venv_path.display());
     }
 
-    let precommit_bin = if cfg!(windows) {
-        ".venv/Scripts/pre-commit.exe"
+    let python_bin = if cfg!(windows) {
+        venv_path.join("Scripts").join("python.exe")
     } else {
-        ".venv/bin/pre-commit"
+        venv_path.join("bin").join("python")
     };
 
-    let output = std::process::Command::new(precommit_bin)
-        .args(["install"])
+    let output = std::process::Command::new(&python_bin)
+        .args(["-m", "pre_commit", "install"])
         .current_dir(base_dir)
         .output()?;
 
