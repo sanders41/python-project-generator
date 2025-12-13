@@ -392,6 +392,7 @@ jobs:
         uses: prefix-dev/setup-pixi@v0.9.3
         with:
           pixi-version: v0.57.0
+          run-install: false
       - name: Set up Python
         working-directory: ${{ env.WORKING_DIR }}
         run: pixi add python=="${{ env.MIN_PYTHON_VERSION }}.*"
@@ -426,6 +427,7 @@ jobs:
         uses: prefix-dev/setup-pixi@v0.9.3
         with:
           pixi-version: v0.57.0
+          run-install: false
       - name: Set up Python
         working-directory: ${{ env.WORKING_DIR }}
         run: pixi add python=="${{ env.MIN_PYTHON_VERSION }}.*"
