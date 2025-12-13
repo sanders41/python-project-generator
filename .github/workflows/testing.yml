@@ -333,7 +333,7 @@ jobs:
           ./scripts/ci_run.sh ${{ matrix.project_type }} 4
       - name: MyPy
         working-directory: ${{ env.WORKING_DIR }}
-        run: /venv/bin/mypy .
+        run: .venv/bin/mypy .
       - name: ruff check
         working-directory: ${{ env.WORKING_DIR }}
         run: .venv/bin/ruff check .
