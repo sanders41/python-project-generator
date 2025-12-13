@@ -298,7 +298,7 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run.sh ${{ matrix.project_type }} 3
         shell: bash
-      - name: Install Dependencies
+      - name: Compile Rust
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           uv run maturin build

@@ -305,6 +305,10 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 3
         shell: bash
+      - name: Compile Rust
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          .venv/bin/maturin build
       - name: Pre-commit check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
