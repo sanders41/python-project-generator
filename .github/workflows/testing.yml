@@ -333,13 +333,22 @@ jobs:
           ./scripts/ci_run.sh ${{ matrix.project_type }} 4
       - name: MyPy
         working-directory: ${{ env.WORKING_DIR }}
-        run: .venv/bin/python -m mypy .
+        run: $PYTHON -m mypy .
+        shell: bash
+        env:
+          PYTHON: ${{ runner.os == 'Windows' && '.venv/Scripts/python.exe' || '.venv/bin/python' }}
       - name: ruff check
         working-directory: ${{ env.WORKING_DIR }}
-        run: .venv/bin/python -m ruff check .
+        run: $PYTHON -m ruff check .
+        shell: bash
+        env:
+          PYTHON: ${{ runner.os == 'Windows' && '.venv/Scripts/python.exe' || '.venv/bin/python' }}
       - name: ruff format
         working-directory: ${{ env.WORKING_DIR }}
-        run: .venv/bin/python -m ruff format --check .
+        run: $PYTHON -m ruff format --check .
+        shell: bash
+        env:
+          PYTHON: ${{ runner.os == 'Windows' && '.venv/Scripts/python.exe' || '.venv/bin/python' }}
   setuptools-test:
     strategy:
       fail-fast: false
@@ -366,8 +375,14 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          .venv/bin/python -m pre_commit run --all-files
+          $PYTHON -m pre_commit run --all-files
+        shell: bash
+        env:
+          PYTHON: ${{ runner.os == 'Windows' && '.venv/Scripts/python.exe' || '.venv/bin/python' }}
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         if: matrix.project_type == 'application'
-        run: .venv/bin/python -m pytest
+        run: $PYTHON -m pytest
+        shell: bash
+        env:
+          PYTHON: ${{ runner.os == 'Windows' && '.venv/Scripts/python.exe' || '.venv/bin/python' }}
