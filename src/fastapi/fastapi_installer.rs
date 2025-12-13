@@ -26,7 +26,6 @@ pub fn install_fastapi_dependencies(project_info: &ProjectInfo) -> Result<()> {
         ProjectManager::Uv => uv_fastapi_dependency_installer(project_info)?,
         ProjectManager::Poetry => poetry_fastapi_dependency_installer(project_info)?,
         ProjectManager::Setuptools => setuptools_fastapi_dependency_installer(project_info)?,
-        ProjectManager::Pixi => bail!("Pixi is not currently supported for FastAPI projects"),
         ProjectManager::Maturin => maturin_fastapi_dependency_installer(project_info)?,
     };
 

@@ -11,7 +11,6 @@ pub fn install_dev_dependencies(project_info: &ProjectInfo) -> Result<()> {
         ProjectManager::Uv => uv_dev_dependency_installer(project_info)?,
         ProjectManager::Poetry => poetry_dev_dependency_installer(project_info)?,
         ProjectManager::Setuptools => setuptools_dev_dependency_installer(project_info)?,
-        ProjectManager::Pixi => pixi_dev_dependency_installer(project_info)?,
         ProjectManager::Maturin => maturin_dev_dependency_installer(project_info)?,
     };
 
@@ -119,27 +118,6 @@ fn setuptools_dev_dependency_installer(project_info: &ProjectInfo) -> Result<()>
     Ok(())
 }
 
-fn pixi_dev_dependency_installer(project_info: &ProjectInfo) -> Result<()> {
-    let packages = determine_dev_packages(project_info)?;
-    let package_specs: Vec<String> = packages.iter().map(format_package_with_extras).collect();
-
-    let mut args = vec!["add", "--feature", "dev"];
-    let package_refs: Vec<&str> = package_specs.iter().map(|s| s.as_str()).collect();
-    args.extend(package_refs);
-
-    let output = std::process::Command::new("pixi")
-        .args(args)
-        .current_dir(project_info.base_dir())
-        .output()?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("Failed to install dev dependencies: {stderr}");
-    }
-
-    Ok(())
-}
-
 fn maturin_dev_dependency_installer(project_info: &ProjectInfo) -> Result<()> {
     if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
         match pyo3_python_manager {
@@ -156,7 +134,6 @@ pub fn update_precommit_hooks(project_info: &ProjectInfo) -> Result<()> {
         ProjectManager::Uv => uv_precommit_autoupdate(project_info)?,
         ProjectManager::Poetry => poetry_precommit_autoupdate(project_info)?,
         ProjectManager::Setuptools => setuptools_precommit_autoupdate(project_info)?,
-        ProjectManager::Pixi => pixi_precommit_autoupdate(project_info)?,
         ProjectManager::Maturin => maturin_precommit_autoupdate(project_info)?,
     };
 
@@ -218,20 +195,6 @@ fn setuptools_precommit_autoupdate(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn pixi_precommit_autoupdate(project_info: &ProjectInfo) -> Result<()> {
-    let output = std::process::Command::new("pixi")
-        .args(["run", "pre-commit", "autoupdate"])
-        .current_dir(project_info.base_dir())
-        .output()?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("Failed to update pre-commit hooks: {stderr}");
-    }
-
-    Ok(())
-}
-
 fn maturin_precommit_autoupdate(project_info: &ProjectInfo) -> Result<()> {
     if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
         match pyo3_python_manager {
@@ -248,7 +211,6 @@ pub fn install_precommit_hooks(project_info: &ProjectInfo) -> Result<()> {
         ProjectManager::Uv => uv_precommit_install(project_info)?,
         ProjectManager::Poetry => poetry_precommit_install(project_info)?,
         ProjectManager::Setuptools => setuptools_precommit_install(project_info)?,
-        ProjectManager::Pixi => pixi_precommit_install(project_info)?,
         ProjectManager::Maturin => maturin_precommit_install(project_info)?,
     };
 
@@ -300,20 +262,6 @@ fn setuptools_precommit_install(project_info: &ProjectInfo) -> Result<()> {
     let output = std::process::Command::new(precommit_bin)
         .args(["install"])
         .current_dir(base_dir)
-        .output()?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("Failed to install pre-commit hooks: {stderr}");
-    }
-
-    Ok(())
-}
-
-fn pixi_precommit_install(project_info: &ProjectInfo) -> Result<()> {
-    let output = std::process::Command::new("pixi")
-        .args(["run", "pre-commit", "install"])
-        .current_dir(project_info.base_dir())
         .output()?;
 
     if !output.status.success() {

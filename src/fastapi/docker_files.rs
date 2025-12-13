@@ -802,7 +802,6 @@ ENTRYPOINT ["./entrypoint.sh"]
                 bail!("A PyO3 python manager is required for Maturin projects")
             }
         }
-        ProjectManager::Pixi => bail!("Pixi is not currently supported for FastAPI projects"),
     }
 }
 
