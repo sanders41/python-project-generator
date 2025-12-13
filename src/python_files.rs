@@ -634,16 +634,4 @@ mod tests {
 
         assert!(!expected_file.is_file());
     }
-
-    #[test]
-    fn test_save_version_test_file_pixi() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Pixi;
-        let base = project_info.base_dir();
-        create_dir_all(base.join("tests")).unwrap();
-        let expected_file = base.join("tests/test_version.py");
-        save_version_test_file(&project_info).unwrap();
-
-        assert!(!expected_file.is_file());
-    }
 }

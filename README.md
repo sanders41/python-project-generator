@@ -14,7 +14,6 @@ For package management choose between:
 - [poetry](https://python-poetry.org/)
 - [setuptools](https://github.com/pypa/setuptools)
 - [uv](https://docs.astral.sh/uv/)
-- [pixi](https://prefix.dev/)
 
 Dev packages:
 

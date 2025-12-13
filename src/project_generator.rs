@@ -132,9 +132,6 @@ target/
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# pixi environments
-.pixi
-
 # IPython
 profile_default/
 ipython_config.py
@@ -320,7 +317,7 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
         })
     }
 
-    if let ProjectManager::Uv | ProjectManager::Pixi = project_info.project_manager {
+    if let ProjectManager::Uv = project_info.project_manager {
         version_string.push_str("[\n");
     }
 
@@ -355,7 +352,7 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
                         .push_str(&format!("{} = \"{}\"\n", package.package, package.version));
                 }
             }
-            ProjectManager::Uv | ProjectManager::Pixi => {
+            ProjectManager::Uv => {
                 if package.package == PythonPackage::MyPy {
                     version_string.push_str(&format!(
                         "  \"{}[faster-cache]=={}\",\n",
@@ -441,10 +438,6 @@ fn build_latest_dev_dependencies(project_info: &ProjectInfo) -> Result<String> {
             version_string.push(']');
             Ok(version_string)
         }
-        ProjectManager::Pixi => {
-            version_string.push(']');
-            Ok(version_string)
-        }
         ProjectManager::Maturin => {
             if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
                 match pyo3_python_manager {
@@ -481,7 +474,6 @@ fn create_pyproject_toml(project_info: &ProjectInfo) -> Result<String> {
     let license_text = license_str(&project_info.license);
     let dev_dependencies = build_latest_dev_dependencies(project_info)?;
     let max_line_length = &project_info.max_line_length;
-    let include_docs = project_info.include_docs;
 
     let mut pyproject = match &project_info.project_manager {
         ProjectManager::Maturin => {
@@ -670,69 +662,6 @@ dependencies = []
 
 [dependency-groups]
 dev = {dev_dependencies}
-
-[tool.hatch.version]
-path = "{module}/_version.py"
-
-"#,
-            ));
-            pyproject
-        }
-        ProjectManager::Pixi => {
-            let mut pyproject = format!(
-                r#"[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[project]
-name = "{project_name}"
-description = "{project_description}"
-authors = [
-  {{ name = "{creator}", email = "{creator_email}" }}
-]
-"#
-            );
-
-            if license != &LicenseType::NoLicense {
-                pyproject.push_str(
-                    "license = { file = \"LICENSE\" }
-",
-                );
-            }
-
-            pyproject.push_str(&format!(
-                r#"readme = "README.md"
-requires-python = ">={min_python_version}"
-dynamic = ["version"]
-dependencies = []
-
-[tool.pixi.project]
-channels = ["conda-forge", "bioconda"]
-platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
-
-[tool.pixi.feature.dev.tasks]
-run-mypy = "mypy {module} tests"
-run-ruff-check = "ruff check {module} tests"
-run-ruff-format = "ruff format {module} tests"
-run-pytest = "pytest -x"
-"#,
-            ));
-
-            if include_docs {
-                pyproject.push_str(
-                    "run-deploy-docs = \"mkdocs gh-deploy --force\"
-",
-                );
-            }
-
-            pyproject.push_str(&format!(
-                r#"
-[project.optional-dependencies]
-dev = {dev_dependencies}
-
-[tool.pixi.environments]
-default = {{features = [], solve-group = "default"}}
-dev = {{features = ["dev"], solve-group = "default"}}
 
 [tool.hatch.version]
 path = "{module}/_version.py"
@@ -1428,36 +1357,6 @@ granian_cmd := if os() != "windows" {
     justfile
 }
 
-fn create_pixi_justfile() -> String {
-    (r#"@_default:
-  just --list
-
-@lint:
-  echo mypy
-  just --justfile {{{{justfile()}}}} mypy
-  echo ruff-check
-  just --justfile {{{{justfile()}}}} ruff-check
-  echo ruff-format
-  just --justfile {{{{justfile()}}}} ruff-format
-
-@mypy:
-  pixi run run-mypy
-
-@ruff-check:
-  pixi run run-ruff-check
-
-@ruff-format:
-  pixi run run-ruff-format
-
-@test:
-  pixi run run-pytest
-
-@install:
-  pixi install
-"#)
-    .to_string()
-}
-
 fn save_justfile(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info.base_dir().join("justfile");
     let content = match &project_info.project_manager {
@@ -1465,7 +1364,6 @@ fn save_justfile(project_info: &ProjectInfo) -> Result<()> {
         ProjectManager::Maturin => create_pyo3_justfile(project_info)?,
         ProjectManager::Setuptools => create_setuptools_justfile(project_info),
         ProjectManager::Uv => create_uv_justfile(project_info),
-        ProjectManager::Pixi => create_pixi_justfile(),
     };
 
     save_file_with_content(&file_path, &content)?;
@@ -2024,90 +1922,6 @@ mod tests {
         let mut project_info = project_info_dummy();
         project_info.license = LicenseType::Mit;
         project_info.project_manager = ProjectManager::Uv;
-        project_info.is_application = false;
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_pixi_pyproject_toml_file_mit_application() {
-        let mut project_info = project_info_dummy();
-        project_info.license = LicenseType::Mit;
-        project_info.project_manager = ProjectManager::Pixi;
-        project_info.is_application = true;
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_pixi_pyproject_toml_file_apache_application() {
-        let mut project_info = project_info_dummy();
-        project_info.license = LicenseType::Apache2;
-        project_info.project_manager = ProjectManager::Pixi;
-        project_info.is_application = true;
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_pixi_pyproject_toml_file_no_license_application() {
-        let mut project_info = project_info_dummy();
-        project_info.license = LicenseType::NoLicense;
-        project_info.project_manager = ProjectManager::Pixi;
-        project_info.is_application = true;
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r"==\d+\.\d+\.\d+", "==1.0.0"),
-            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_create_pixi_pyproject_toml_mit_lib() {
-        let mut project_info = project_info_dummy();
-        project_info.license = LicenseType::Mit;
-        project_info.project_manager = ProjectManager::Pixi;
         project_info.is_application = false;
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
