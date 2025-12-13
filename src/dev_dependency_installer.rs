@@ -87,7 +87,13 @@ fn setuptools_dev_dependency_installer(project_info: &ProjectInfo) -> Result<()>
     let package_refs: Vec<&str> = package_specs.iter().map(|s| s.as_str()).collect();
     args.extend(package_refs);
 
-    let output = std::process::Command::new(".venv/bin/python")
+    let python_bin = if cfg!(windows) {
+        ".venv/Scripts/python.exe"
+    } else {
+        ".venv/bin/python"
+    };
+
+    let output = std::process::Command::new(python_bin)
         .args(args)
         .current_dir(project_info.base_dir())
         .output()?;
@@ -97,7 +103,7 @@ fn setuptools_dev_dependency_installer(project_info: &ProjectInfo) -> Result<()>
         bail!("Failed to install dev dependencies: {stderr}");
     }
 
-    let freeze = std::process::Command::new(".venv/bin/python")
+    let freeze = std::process::Command::new(python_bin)
         .args(["-m", "pip", "freeze"])
         .current_dir(project_info.base_dir())
         .output()?;
@@ -193,7 +199,13 @@ fn setuptools_precommit_autoupdate(project_info: &ProjectInfo) -> Result<()> {
         bail!("Virtual environment not found at {}", venv_path.display());
     }
 
-    let output = std::process::Command::new(".venv/bin/pre-commit")
+    let precommit_bin = if cfg!(windows) {
+        ".venv/Scripts/pre-commit.exe"
+    } else {
+        ".venv/bin/pre-commit"
+    };
+
+    let output = std::process::Command::new(precommit_bin)
         .args(["autoupdate"])
         .current_dir(base_dir)
         .output()?;
@@ -279,7 +291,13 @@ fn setuptools_precommit_install(project_info: &ProjectInfo) -> Result<()> {
         bail!("Virtual environment not found at {}", venv_path.display());
     }
 
-    let output = std::process::Command::new(".venv/bin/pre-commit")
+    let precommit_bin = if cfg!(windows) {
+        ".venv/Scripts/pre-commit.exe"
+    } else {
+        ".venv/bin/pre-commit"
+    };
+
+    let output = std::process::Command::new(precommit_bin)
         .args(["install"])
         .current_dir(base_dir)
         .output()?;
