@@ -548,7 +548,11 @@ asyncio_default_test_loop_scope = "function"
     pyproject.push_str(&format!(
         r#"
 [tool.coverage.report]
-exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
+exclude_lines = [
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+  "pragma: no cover",
+]
 
 [tool.ruff]
 line-length = {max_line_length}
