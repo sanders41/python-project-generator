@@ -34,7 +34,7 @@ jobs:
   linting:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Poetry
       run: pipx install poetry
     - name: Configure poetry
@@ -61,7 +61,7 @@ jobs:
         python-version: [{python_versions}]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Poetry
       run: pipx install poetry
     - name: Configure poetry
@@ -119,7 +119,7 @@ jobs:
   linting:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
     - name: Cache dependencies
@@ -152,7 +152,7 @@ jobs:
         python-version: [{python_versions}]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Poetry
       run: pipx install poetry
     - name: Configure poetry
@@ -197,7 +197,7 @@ jobs:
   linting:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
@@ -220,7 +220,7 @@ jobs:
         python-version: [{python_versions}]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v6
       with:
@@ -274,7 +274,7 @@ jobs:
   linting:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
@@ -297,7 +297,7 @@ jobs:
         python-version: [{python_versions}]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
     - name: Cache dependencies
@@ -344,7 +344,7 @@ jobs:
   linting:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
@@ -368,7 +368,7 @@ jobs:
         python-version: [{python_versions}]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
@@ -423,7 +423,7 @@ jobs:
   linting:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
@@ -447,7 +447,7 @@ jobs:
         python-version: [{python_versions}]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
     - name: Cache dependencies
@@ -500,7 +500,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
@@ -513,7 +513,7 @@ jobs:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
@@ -525,7 +525,7 @@ jobs:
   python-linting:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
@@ -551,7 +551,7 @@ jobs:
         python-version: [{python_versions}]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
@@ -586,7 +586,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
@@ -599,7 +599,7 @@ jobs:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
@@ -611,7 +611,7 @@ jobs:
   python-linting:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
@@ -636,7 +636,7 @@ jobs:
         python-version: [{python_versions}]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v6
       with:
@@ -698,7 +698,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
@@ -711,7 +711,7 @@ jobs:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
@@ -723,7 +723,7 @@ jobs:
   python-linting:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
@@ -749,7 +749,7 @@ jobs:
         python-version: [{python_versions}]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
     - name: Cache dependencies
@@ -810,7 +810,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
@@ -823,7 +823,7 @@ jobs:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
@@ -835,7 +835,7 @@ jobs:
   python-linting:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
@@ -860,7 +860,7 @@ jobs:
         python-version: [{python_versions}]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
     - name: Cache dependencies
@@ -1021,7 +1021,7 @@ jobs:
   linting:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Poetry
       run: pipx install poetry
     - name: Configure poetry
@@ -1049,7 +1049,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{{{ matrix.os }}}}
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Poetry
       run: pipx install poetry
     - name: Configure poetry
@@ -1090,7 +1090,7 @@ jobs:
   linting:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
@@ -1114,7 +1114,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{{{ matrix.os }}}}
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v6
       with:
@@ -1156,7 +1156,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
@@ -1169,7 +1169,7 @@ jobs:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
@@ -1181,7 +1181,7 @@ jobs:
   python-linting:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
@@ -1208,7 +1208,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{{{ matrix.os }}}}
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
@@ -1243,7 +1243,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
@@ -1256,7 +1256,7 @@ jobs:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
@@ -1268,7 +1268,7 @@ jobs:
   python-linting:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
@@ -1294,7 +1294,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{{{ matrix.os }}}}
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python ${{{{ matrix.python-version }}}}
       uses: actions/setup-python@v6
       with:
@@ -1335,7 +1335,7 @@ jobs:
   linting:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
@@ -1360,7 +1360,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{{{ matrix.os }}}}
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
@@ -1580,7 +1580,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Poetry
       run: pipx install poetry
     - name: Set up Python
@@ -1613,7 +1613,7 @@ jobs:
       matrix:
         target: [x86_64, x86, aarch64, armv7, s390x, ppc64le]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "{python_version}"
@@ -1635,7 +1635,7 @@ jobs:
       matrix:
         target: [x64, x86]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "{python_version}"
@@ -1657,7 +1657,7 @@ jobs:
       matrix:
         target: [x86_64, aarch64]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "{python_version}"
@@ -1675,7 +1675,7 @@ jobs:
   sdist:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "{python_version}"
@@ -1725,7 +1725,7 @@ jobs:
       # For PyPI's trusted publishing.
       id-token: write
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
@@ -1758,7 +1758,7 @@ jobs:
       # For PyPI's trusted publishing.
       id-token: write
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
@@ -1817,7 +1817,7 @@ jobs:
             sudo chown -R $USER:$USER ./data
           fi
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Create .env file
         run: |
           HASHED_PASSWORD=$(openssl passwd -apr1 "${PASSWORD}" | sed 's/\$/\$\$/g')
@@ -1888,7 +1888,7 @@ jobs:
             sudo chown -R $USER:$USER ./data
           fi
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Create .env file
         run: |
           HASHED_PASSWORD=$(openssl passwd -apr1 "${PASSWORD}" | sed 's/\$/\$\$/g')
@@ -1968,7 +1968,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install Poetry
       run: pipx install poetry
     - name: Set up Python
@@ -1996,7 +1996,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
@@ -2023,7 +2023,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:

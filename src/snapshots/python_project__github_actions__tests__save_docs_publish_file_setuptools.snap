@@ -2,4 +2,4 @@
 source: src/github_actions.rs
 expression: content
 ---
-"name: Docs Publish\non:\n  release:\n    types:\n    - published\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v5\n    - name: Set up Python\n      uses: actions/setup-python@v6\n      with:\n        python-version: \"3.12\"\n        cache: \"pip\"\n    - name: Install Dependencies\n      run: |\n        python -m pip install -U pip\n        python -m pip install -r requirements-dev.txt\n    - name: Publish docs\n      run: mkdocs gh-deploy --force\n"
+"name: Docs Publish\non:\n  release:\n    types:\n    - published\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v6\n    - name: Set up Python\n      uses: actions/setup-python@v6\n      with:\n        python-version: \"3.12\"\n        cache: \"pip\"\n    - name: Install Dependencies\n      run: |\n        python -m pip install -U pip\n        python -m pip install -r requirements-dev.txt\n    - name: Publish docs\n      run: mkdocs gh-deploy --force\n"
