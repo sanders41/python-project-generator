@@ -145,11 +145,11 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run.sh ${{ matrix.project_type }} 1
         shell: bash
-      - name: Pre-commit check
+      - name: Prek check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          uv run pre-commit run --all-files
+          uv run prek run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         if: matrix.project_type == 'application'
@@ -217,11 +217,11 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run.sh ${{ matrix.project_type }} 2
         shell: bash
-      - name: Pre-commit check
+      - name: prek check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          poetry run pre-commit run --all-files
+          poetry run prek run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         run: poetry run pytest
@@ -302,11 +302,11 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           uv run maturin build
-      - name: Pre-commit check
+      - name: prek check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          uv run pre-commit run --all-files
+          uv run prek run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         run: uv run pytest
@@ -371,11 +371,11 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run.sh ${{ matrix.project_type }} 4
         shell: bash
-      - name: Pre-commit check
+      - name: prek check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          $PYTHON -m pre_commit run --all-files
+          $PYTHON -m prek run --all-files
         shell: bash
         env:
           PYTHON: ${{ runner.os == 'Windows' && '.venv/Scripts/python.exe' || '.venv/bin/python' }}
