@@ -50,11 +50,11 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh "fastapi" 1
         shell: bash
-      - name: Pre-commit check
+      - name: prek check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          uv run pre-commit run --all-files
+          uv run prek run --all-files
       - name: make .env
         working-directory: ${{ env.WORKING_DIR }}
         run: touch .env
@@ -88,11 +88,11 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 1
         shell: bash
-      - name: Pre-commit check
+      - name: prek check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          uv run pre-commit run --all-files
+          uv run prek run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         if: matrix.project_type == 'application'
@@ -125,11 +125,11 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh "fastapi" 2
         shell: bash
-      - name: Pre-commit check
+      - name: prek check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          poetry run pre-commit run --all-files
+          poetry run prek run --all-files
       - name: make .env
         working-directory: ${{ env.WORKING_DIR }}
         run: touch .env
@@ -167,11 +167,11 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 2
         shell: bash
-      - name: Pre-commit check
+      - name: prek check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          poetry run pre-commit run --all-files
+          poetry run prek run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         if: matrix.project_type == 'application'
@@ -198,11 +198,11 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh "fastapi" 4
         shell: bash
-      - name: Pre-commit check
+      - name: prek check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          .venv/bin/pre-commit run --all-files
+          .venv/bin/prek run --all-files
       - name: make .env
         working-directory: ${{ env.WORKING_DIR }}
         run: touch .env
@@ -234,11 +234,11 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 4
         shell: bash
-      - name: Pre-commit check
+      - name: prek check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          .venv/bin/pre-commit run --all-files
+          .venv/bin/prek run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         if: matrix.project_type == 'application'
@@ -267,11 +267,11 @@ jobs:
       - name: Run creation
         run: ./scripts/ci_run_fastapi.sh "fastapi" 3
         shell: bash
-      - name: Pre-commit check
+      - name: prek check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          uv run pre-commit run --all-files
+          uv run prek run --all-files
       - name: make .env
         working-directory: ${{ env.WORKING_DIR }}
         run: touch .env
@@ -309,11 +309,11 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           uv run maturin develop
-      - name: Pre-commit check
+      - name: prek check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          uv run pre-commit run --all-files
+          uv run prek run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         if: matrix.project_type == 'application'
@@ -344,11 +344,11 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           .venv/bin/maturin develop
-      - name: Pre-commit check
+      - name: prek check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          .venv/bin/pre-commit run --all-files
+          .venv/bin/prek run --all-files
       - name: make .env
         working-directory: ${{ env.WORKING_DIR }}
         run: touch .env
@@ -384,11 +384,11 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           .venv/bin/maturin develop
-      - name: Pre-commit check
+      - name: prek check
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          .venv/bin/pre-commit run --all-files
+          .venv/bin/prek run --all-files
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         if: matrix.project_type == 'application'
