@@ -178,13 +178,13 @@ fn setuptools_prek_autoupdate(project_info: &ProjectInfo) -> Result<()> {
     }
 
     let python_bin = if cfg!(windows) {
-        venv_path.join("Scripts").join("python.exe")
+        venv_path.join("Scripts").join("prek.exe")
     } else {
-        venv_path.join("bin").join("python")
+        venv_path.join("bin").join("prek")
     };
 
     let output = std::process::Command::new(&python_bin)
-        .args(["-m", "prek", "autoupdate"])
+        .args(["autoupdate"])
         .current_dir(base_dir)
         .output()?;
 
@@ -255,13 +255,13 @@ fn setuptools_prek_install(project_info: &ProjectInfo) -> Result<()> {
     }
 
     let python_bin = if cfg!(windows) {
-        venv_path.join("Scripts").join("python.exe")
+        venv_path.join("Scripts").join("prek.exe")
     } else {
-        venv_path.join("bin").join("python")
+        venv_path.join("bin").join("prek")
     };
 
     let output = std::process::Command::new(&python_bin)
-        .args(["-m", "prek", "install"])
+        .args(["install"])
         .current_dir(base_dir)
         .output()?;
 
