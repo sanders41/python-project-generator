@@ -375,10 +375,10 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           git add .
-          $PYTHON -m prek run --all-files
+          $PREK run --all-files
         shell: bash
         env:
-          PYTHON: ${{ runner.os == 'Windows' && '.venv/Scripts/python.exe' || '.venv/bin/python' }}
+          PYTHON: ${{ runner.os == 'Windows' && '.venv/Scripts/prek.exe' || '.venv/bin/prek' }}
       - name: Test with pytest
         working-directory: ${{ env.WORKING_DIR }}
         if: matrix.project_type == 'application'
