@@ -261,7 +261,7 @@ fn setuptools_prek_install(project_info: &ProjectInfo) -> Result<()> {
     };
 
     let output = std::process::Command::new(&python_bin)
-        .args(["-m", "pre_commit", "install"])
+        .args(["-m", "prek", "install"])
         .current_dir(base_dir)
         .output()?;
 
