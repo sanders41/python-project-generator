@@ -130,46 +130,46 @@ fn maturin_dev_dependency_installer(project_info: &ProjectInfo) -> Result<()> {
     }
 }
 
-pub fn update_precommit_hooks(project_info: &ProjectInfo) -> Result<()> {
+pub fn update_prek_hooks(project_info: &ProjectInfo) -> Result<()> {
     match project_info.project_manager {
-        ProjectManager::Uv => uv_precommit_autoupdate(project_info)?,
-        ProjectManager::Poetry => poetry_precommit_autoupdate(project_info)?,
-        ProjectManager::Setuptools => setuptools_precommit_autoupdate(project_info)?,
-        ProjectManager::Maturin => maturin_precommit_autoupdate(project_info)?,
+        ProjectManager::Uv => uv_prek_autoupdate(project_info)?,
+        ProjectManager::Poetry => poetry_prek_autoupdate(project_info)?,
+        ProjectManager::Setuptools => setuptools_prek_autoupdate(project_info)?,
+        ProjectManager::Maturin => maturin_prek_autoupdate(project_info)?,
     };
 
     Ok(())
 }
 
-fn uv_precommit_autoupdate(project_info: &ProjectInfo) -> Result<()> {
+fn uv_prek_autoupdate(project_info: &ProjectInfo) -> Result<()> {
     let output = std::process::Command::new("uv")
-        .args(["run", "pre-commit", "autoupdate"])
+        .args(["run", "prek", "autoupdate"])
         .current_dir(project_info.base_dir())
         .output()?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("Failed to update pre-commit hooks: {stderr}");
+        bail!("Failed to update prek hooks: {stderr}");
     }
 
     Ok(())
 }
 
-fn poetry_precommit_autoupdate(project_info: &ProjectInfo) -> Result<()> {
+fn poetry_prek_autoupdate(project_info: &ProjectInfo) -> Result<()> {
     let output = std::process::Command::new("poetry")
-        .args(["run", "pre-commit", "autoupdate"])
+        .args(["run", "prek", "autoupdate"])
         .current_dir(project_info.base_dir())
         .output()?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("Failed to update pre-commit hooks: {stderr}");
+        bail!("Failed to update prek hooks: {stderr}");
     }
 
     Ok(())
 }
 
-fn setuptools_precommit_autoupdate(project_info: &ProjectInfo) -> Result<()> {
+fn setuptools_prek_autoupdate(project_info: &ProjectInfo) -> Result<()> {
     let base_dir = project_info.base_dir().canonicalize()?;
     let venv_path = base_dir.join(".venv");
 
@@ -178,75 +178,75 @@ fn setuptools_precommit_autoupdate(project_info: &ProjectInfo) -> Result<()> {
     }
 
     let python_bin = if cfg!(windows) {
-        venv_path.join("Scripts").join("python.exe")
+        venv_path.join("Scripts").join("prek.exe")
     } else {
-        venv_path.join("bin").join("python")
+        venv_path.join("bin").join("prek")
     };
 
     let output = std::process::Command::new(&python_bin)
-        .args(["-m", "pre_commit", "autoupdate"])
+        .args(["autoupdate"])
         .current_dir(base_dir)
         .output()?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("Failed to update pre-commit hooks: {stderr}");
+        bail!("Failed to update prek hooks: {stderr}");
     }
 
     Ok(())
 }
 
-fn maturin_precommit_autoupdate(project_info: &ProjectInfo) -> Result<()> {
+fn maturin_prek_autoupdate(project_info: &ProjectInfo) -> Result<()> {
     if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
         match pyo3_python_manager {
-            Pyo3PythonManager::Uv => uv_precommit_autoupdate(project_info),
-            Pyo3PythonManager::Setuptools => setuptools_precommit_autoupdate(project_info),
+            Pyo3PythonManager::Uv => uv_prek_autoupdate(project_info),
+            Pyo3PythonManager::Setuptools => setuptools_prek_autoupdate(project_info),
         }
     } else {
         bail!("No Python project manager provided for PyO3 project");
     }
 }
 
-pub fn install_precommit_hooks(project_info: &ProjectInfo) -> Result<()> {
+pub fn install_prek_hooks(project_info: &ProjectInfo) -> Result<()> {
     match project_info.project_manager {
-        ProjectManager::Uv => uv_precommit_install(project_info)?,
-        ProjectManager::Poetry => poetry_precommit_install(project_info)?,
-        ProjectManager::Setuptools => setuptools_precommit_install(project_info)?,
-        ProjectManager::Maturin => maturin_precommit_install(project_info)?,
+        ProjectManager::Uv => uv_prek_install(project_info)?,
+        ProjectManager::Poetry => poetry_prek_install(project_info)?,
+        ProjectManager::Setuptools => setuptools_prek_install(project_info)?,
+        ProjectManager::Maturin => maturin_prek_install(project_info)?,
     };
 
     Ok(())
 }
 
-fn uv_precommit_install(project_info: &ProjectInfo) -> Result<()> {
+fn uv_prek_install(project_info: &ProjectInfo) -> Result<()> {
     let output = std::process::Command::new("uv")
-        .args(["run", "pre-commit", "install"])
+        .args(["run", "prek", "install"])
         .current_dir(project_info.base_dir())
         .output()?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("Failed to install pre-commit hooks: {stderr}");
+        bail!("Failed to install prek hooks: {stderr}");
     }
 
     Ok(())
 }
 
-fn poetry_precommit_install(project_info: &ProjectInfo) -> Result<()> {
+fn poetry_prek_install(project_info: &ProjectInfo) -> Result<()> {
     let output = std::process::Command::new("poetry")
-        .args(["run", "pre-commit", "install"])
+        .args(["run", "prek", "install"])
         .current_dir(project_info.base_dir())
         .output()?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("Failed to install pre-commit hooks: {stderr}");
+        bail!("Failed to install prek hooks: {stderr}");
     }
 
     Ok(())
 }
 
-fn setuptools_precommit_install(project_info: &ProjectInfo) -> Result<()> {
+fn setuptools_prek_install(project_info: &ProjectInfo) -> Result<()> {
     let base_dir = project_info.base_dir().canonicalize()?;
     let venv_path = base_dir.join(".venv");
 
@@ -255,29 +255,29 @@ fn setuptools_precommit_install(project_info: &ProjectInfo) -> Result<()> {
     }
 
     let python_bin = if cfg!(windows) {
-        venv_path.join("Scripts").join("python.exe")
+        venv_path.join("Scripts").join("prek.exe")
     } else {
-        venv_path.join("bin").join("python")
+        venv_path.join("bin").join("prek")
     };
 
     let output = std::process::Command::new(&python_bin)
-        .args(["-m", "pre_commit", "install"])
+        .args(["install"])
         .current_dir(base_dir)
         .output()?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("Failed to install pre-commit hooks: {stderr}");
+        bail!("Failed to install prek hooks: {stderr}");
     }
 
     Ok(())
 }
 
-fn maturin_precommit_install(project_info: &ProjectInfo) -> Result<()> {
+fn maturin_prek_install(project_info: &ProjectInfo) -> Result<()> {
     if let Some(pyo3_python_manager) = &project_info.pyo3_python_manager {
         match pyo3_python_manager {
-            Pyo3PythonManager::Uv => uv_precommit_install(project_info),
-            Pyo3PythonManager::Setuptools => setuptools_precommit_install(project_info),
+            Pyo3PythonManager::Uv => uv_prek_install(project_info),
+            Pyo3PythonManager::Setuptools => setuptools_prek_install(project_info),
         }
     } else {
         bail!("No Python project manager provided for PyO3 project");

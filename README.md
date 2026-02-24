@@ -325,13 +325,13 @@ You can also run all 3 with 1 `just` command:
 just lint
 ```
 
-### pre-commit
+### prek
 
-[pre-commit](https://pre-commit.com/) runs linting and formatting on your code (as defined in the
+[prek](https://github.com/j178/prek) runs linting and formatting on your code (as defined in the
 provided .pre-commit-config.yaml file) every time you make a commit to your code. If any of the
-lints fail pre-commit will cancel the commit. When possible, pre-commit will also automatically
-fix any errors that fail. For example pre-commit can automatically apply changes that fail ruff
-formatting. pre-commit caches information and only runs on files that have changed so it is fast
+lints fail prek will cancel the commit. When possible, prek will also automatically
+fix any errors that fail. For example prek can automatically apply changes that fail ruff
+formatting. prek caches information and only runs on files that have changed so it is fast
 and doesn't slow down your work flow will preventing you from forgetting to run checks.
 
 ### FastAPI migrations

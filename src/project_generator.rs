@@ -9,7 +9,7 @@ use crate::{
         save_docs_publish_file, save_pypi_publish_file, save_release_drafter_file,
     },
     licenses::{generate_license, license_str},
-    package_version::{PreCommitHook, PythonPackage},
+    package_version::{PrekHook, PythonPackage},
     project_info::{LicenseType, ProjectInfo, ProjectManager, Pyo3PythonManager},
     python_files::generate_python_files,
     rust_files::{save_cargo_toml_file, save_lib_file},
@@ -219,7 +219,7 @@ pub fn determine_dev_packages(project_info: &ProjectInfo) -> Result<Vec<PythonPa
     }
 
     packages.push(PythonPackage::MyPy);
-    packages.push(PythonPackage::PreCommit);
+    packages.push(PythonPackage::Prek);
     packages.push(PythonPackage::Pytest);
 
     if project_info.is_async_project {
@@ -250,32 +250,28 @@ fn create_pre_commit_file() -> String {
     use crate::package_version::{default_pre_commit_rev, pre_commit_repo};
 
     let mut pre_commit_str = "repos:".to_string();
-    let hooks = vec![
-        PreCommitHook::PreCommit,
-        PreCommitHook::MyPy,
-        PreCommitHook::Ruff,
-    ];
+    let hooks = vec![PrekHook::PreCommit, PrekHook::MyPy, PrekHook::Ruff];
 
     for hook in hooks {
         let repo = pre_commit_repo(&hook);
         let rev = default_pre_commit_rev(&hook);
 
         match hook {
-            PreCommitHook::PreCommit => {
+            PrekHook::PreCommit => {
                 let info = format!(
                     "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: check-added-large-files\n    - id: check-toml\n    - id: check-yaml\n    - id: debug-statements\n    - id: end-of-file-fixer\n    - id: trailing-whitespace",
                     repo, rev
                 );
                 pre_commit_str.push_str(&info);
             }
-            PreCommitHook::MyPy => {
+            PrekHook::MyPy => {
                 let info = format!(
                     "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: mypy",
                     repo, rev
                 );
                 pre_commit_str.push_str(&info);
             }
-            PreCommitHook::Ruff => {
+            PrekHook::Ruff => {
                 let info = format!(
                     "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: ruff-check\n      args: [--fix, --exit-non-zero-on-fix]\n    - id: ruff-format",
                     repo, rev

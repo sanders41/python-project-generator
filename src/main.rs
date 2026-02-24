@@ -25,9 +25,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use crate::{
     cli::{Args, BooleanChoice, Command, Param},
     config::Config,
-    dev_dependency_installer::{
-        install_dev_dependencies, install_precommit_hooks, update_precommit_hooks,
-    },
+    dev_dependency_installer::{install_dev_dependencies, install_prek_hooks, update_prek_hooks},
     project_generator::generate_project,
     project_info::{get_project_info, ProjectInfo, ProjectManager},
     rust_files::cargo_add_pyo3,
@@ -50,8 +48,8 @@ fn create(project_info: &ProjectInfo) -> Result<()> {
     }
 
     install_dev_dependencies(project_info)?;
-    update_precommit_hooks(project_info)?;
-    install_precommit_hooks(project_info)?;
+    update_prek_hooks(project_info)?;
+    install_prek_hooks(project_info)?;
 
     #[cfg(feature = "fastapi")]
     if project_info.is_fastapi_project {
