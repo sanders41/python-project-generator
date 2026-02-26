@@ -165,7 +165,6 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import ORJSONResponse
 from loguru import logger
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.cors import CORSMiddleware
@@ -226,7 +225,6 @@ app = FastAPI(
     title=settings.TITLE,
     lifespan=lifespan,
     openapi_url=openapi_url,
-    default_response_class=ORJSONResponse,
 )
 
 
