@@ -2093,30 +2093,30 @@ jobs:
 }
 
 fn create_release_drafter_template_file() -> String {
-    r#"name-template: 'v$RESOLVED_VERSION'
-tag-template: 'v$RESOLVED_VERSION'
+    r#"name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
 exclude-labels:
-  - 'dependencies'
-  - 'skip-changelog'
+  - "dependencies"
+  - "skip-changelog"
 version-resolver:
   major:
     labels:
-      - 'breaking-change'
+      - "breaking-change"
   minor:
     labels:
-      - 'enhancement'
+      - "enhancement"
   default: patch
 categories:
-  - title: '⚠ Breaking changes'
+  - title: "⚠ Breaking changes"
     labels:
-      -'breaking-change'
-  - title: 'Features'
+      -"breaking-change"
+  - title: "Features"
     labels:
-      - 'enhancement'
-  - title: 'Bug Fixes'
+      - "enhancement"
+  - title: "Bug Fixes"
     labels:
-      - 'bug'
-change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+      - "bug"
+change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
 template: |
   ## Changes
 
