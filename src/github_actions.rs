@@ -2083,7 +2083,7 @@ jobs:
   update_release_draft:
     runs-on: ubuntu-latest
     steps:
-      - uses: release-drafter/release-drafter@v6
+      - uses: release-drafter/release-drafter@v7
         with:
           config-name: release_drafter_template.yml
         env:
@@ -2108,11 +2108,14 @@ version-resolver:
   default: patch
 categories:
   - title: '⚠ Breaking changes'
-    label: 'breaking-change'
+    labels:
+      -'breaking-change'
   - title: 'Features'
-    labels: 'enhancement'
+    labels:
+      - 'enhancement'
   - title: 'Bug Fixes'
-    labels: 'bug'
+    labels:
+      - 'bug'
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 template: |
   ## Changes
