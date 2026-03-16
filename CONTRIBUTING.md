@@ -12,7 +12,7 @@ for something that interests you.
 
 Please include:
 
-1.  A short, self-contained snippet reproducing the problem. You can format the code by using
+1. A short, self-contained snippet reproducing the problem. You can format the code by using
     [GitHub markdown](https://docs.github.com/en/free-pro-team@latest/github/writing-on-github). For
     example:
 
@@ -20,7 +20,7 @@ Please include:
         python-project create
         ```
 
-2.  Explain what is currently happening and what you expect instead.
+2. Explain what is currently happening and what you expect instead.
 
 ## Working on the code
 
@@ -207,6 +207,14 @@ documentation. You should also double check your branch changes against the bran
 1. Click on Branches
 1. Click on the Compare button for your feature branch
 1. Select the base and compare branches, if necessary. This will be main and my-new-feature, respectively.
+
+### Automated Code and AI
+
+Pull Pequests authored and/or co-authored by AI (for example LLMs) will not be accepted. You can use
+these tools, however as the person submitting the Pull Request you are responsible for manually
+reviewing and testing 100% of the changes before creating a Pull Request, and the AI should not be
+listed as a creator. Failure to do this will result in the Pull Request being closed.
+
 
 ### Make the pull request
 
