@@ -136,7 +136,7 @@ volumes:
   valkey-data:
 
 networks:
-  traefik-public
+  traefik-public:
     name: traefik-public
     # Allow setting it to false for testing
     external: true
