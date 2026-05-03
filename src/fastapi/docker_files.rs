@@ -398,7 +398,7 @@ fn create_dockerfile(project_info: &ProjectInfo) -> Result<String> {
         ProjectManager::Uv => Ok(format!(
             r#"# syntax=docker/dockerfile:1
 
-FROM ubuntu:24.04 AS builder
+FROM ubuntu:26.04 AS builder
 
 WORKDIR /app
 
@@ -433,7 +433,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 
 # Build production stage
-FROM ubuntu:24.04 AS prod
+FROM ubuntu:26.04 AS prod
 
 RUN useradd appuser
 
@@ -463,7 +463,7 @@ ENTRYPOINT ["./entrypoint.sh"]
         ProjectManager::Poetry => Ok(format!(
             r#"# syntax=docker/dockerfile:1
 
-FROM ubuntu:24.04 AS builder
+FROM ubuntu:26.04 AS builder
 
 WORKDIR /app
 
@@ -502,7 +502,7 @@ RUN --mount=type=cache,target=$POETRY_CACHE_DIR \
 
 
 # Build production stage
-FROM ubuntu:24.04 AS prod
+FROM ubuntu:26.04 AS prod
 
 RUN useradd appuser
 
@@ -541,7 +541,7 @@ ENTRYPOINT ["./entrypoint.sh"]
         ProjectManager::Setuptools => Ok(format!(
             r#"# syntax=docker/dockerfile:1
 
-FROM ubuntu:24.04 AS builder
+FROM ubuntu:26.04 AS builder
 
 WORKDIR /app
 
@@ -572,7 +572,7 @@ RUN .venv/bin/python -m pip install -r requirements.txt
 
 
 # Build production stage
-FROM ubuntu:24.04 AS prod
+FROM ubuntu:26.04 AS prod
 
 ENV \
   PYTHONUNBUFFERED=true \
@@ -615,7 +615,7 @@ ENTRYPOINT ["./entrypoint.sh"]
                     Pyo3PythonManager::Uv => Ok(format!(
                         r#"# syntax=docker/dockerfile:1
 
-FROM ubuntu:24.04 AS builder
+FROM ubuntu:26.04 AS builder
 
 WORKDIR /app
 
@@ -666,7 +666,7 @@ COPY . /app
 
 
 # Build production stage
-FROM ubuntu:24.04 AS prod
+FROM ubuntu:26.04 AS prod
 
 RUN useradd appuser
 
@@ -696,7 +696,7 @@ ENTRYPOINT ["./entrypoint.sh"]
                     Pyo3PythonManager::Setuptools => Ok(format!(
                         r#"# syntax=docker/dockerfile:1
 
-FROM ubuntu:24.04 AS builder
+FROM ubuntu:26.04 AS builder
 
 WORKDIR /app
 
@@ -760,7 +760,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/git/db \
 
 
 # Build production stage
-FROM ubuntu:24.04 AS prod
+FROM ubuntu:26.04 AS prod
 
 RUN useradd appuser
 
