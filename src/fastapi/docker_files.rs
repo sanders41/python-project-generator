@@ -14,7 +14,7 @@ fn create_dockercompose_file(project_info: &ProjectInfo) -> String {
     image: {base_name}-backend:latest
     restart: unless-stopped
     networks:
-      - traefik-public-{base_name}
+      - traefik-public
       - default
     build:
       context: .
@@ -41,7 +41,7 @@ fn create_dockercompose_file(project_info: &ProjectInfo) -> String {
       - VALKEY_HOST=valkey
     labels:
       - traefik.enable=true
-      - traefik.docker.network=traefik-public-{base_name}
+      - traefik.docker.network=traefik-public
       - traefik.constraint-label=traefik-public
 
       - traefik.http.services.${{STACK_NAME?Variable not set}}-backend.loadbalancer.server.port=8000
@@ -72,7 +72,7 @@ fn create_dockercompose_file(project_info: &ProjectInfo) -> String {
   db:
     image: postgres:18-alpine
     restart: unless-stopped
-    container_name: {base_name}-db
+    container_name: db
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
       interval: 10s
@@ -88,12 +88,12 @@ fn create_dockercompose_file(project_info: &ProjectInfo) -> String {
       - POSTGRES_USER=${{POSTGRES_USER?Variable not set}}
       - POSTGRES_DB=${{POSTGRES_DB?Variable not set}}
     volumes:
-      - {base_name}-db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql
 
   valkey:
     image: valkey/valkey:8-alpine
     restart: unless-stopped
-    container_name: {base_name}-valkey
+    container_name: valkey
     healthcheck:
       test:
         [
@@ -114,11 +114,11 @@ fn create_dockercompose_file(project_info: &ProjectInfo) -> String {
       - .env
     command: valkey-server --requirepass ${{VALKEY_PASSWORD?Variable not set}}
     volumes:
-      - {base_name}-valkey-data:/var/lib/valkey/data
+      - valkey-data:/var/lib/valkey/data
 
   migrations:
     image: ghcr.io/sanders41/sqlx-migration-runner:1
-    container_name: {base_name}-migrations
+    container_name: migrations
     env_file:
       - .env
     environment:
@@ -132,12 +132,12 @@ fn create_dockercompose_file(project_info: &ProjectInfo) -> String {
       - ./migrations:/migrations
 
 volumes:
-  {base_name}-db-data:
-  {base_name}-valkey-data:
+  db-data:
+  valkey-data:
 
 networks:
-  traefik-public-{base_name}:
-    name: traefik-public-{base_name}
+  traefik-public:
+    name: traefik-public
     # Allow setting it to false for testing
     external: true
 "#
@@ -191,7 +191,7 @@ fn create_dockercompose_override_file(project_info: &ProjectInfo) -> String {
       - traefik.enable=true
       - traefik.constraint-label=traefik-public
     networks:
-      - traefik-public-{base_name}
+      - traefik-public
       - default
 
   backend:
@@ -206,7 +206,7 @@ fn create_dockercompose_override_file(project_info: &ProjectInfo) -> String {
     ports:
       - "8000:8000"
     networks:
-      - traefik-public-{base_name}
+      - traefik-public
       - default
     build:
       context: .
@@ -230,16 +230,16 @@ fn create_dockercompose_override_file(project_info: &ProjectInfo) -> String {
       - ENVIRONMENT=local
     labels:
       - traefik.enable=true
-      - traefik.docker.network=traefik-public-{base_name}
+      - traefik.docker.network=traefik-public
       - traefik.constraint-label=traefik-public
-      - traefik.http.services.${{STACK_NAME:-{base_name}}}-backend.loadbalancer.server.port=8000
-      - traefik.http.routers.${{STACK_NAME:-{base_name}}}-backend-http.rule=Host(`api.127.0.0.1`)
-      - traefik.http.routers.${{STACK_NAME:-{base_name}}}-backend-http.entrypoints=http
-      - traefik.http.routers.${{STACK_NAME:-{base_name}}}-backend-https.rule=
-      - traefik.http.routers.${{STACK_NAME:-{base_name}}}-backend-https.entrypoints=
-      - traefik.http.routers.${{STACK_NAME:-{base_name}}}-backend-https.tls=
-      - traefik.http.routers.${{STACK_NAME:-{base_name}}}-backend-https.tls.certresolver=
-      - traefik.http.routers.${{STACK_NAME:-{base_name}}}-backend-http.middlewares=
+      - traefik.http.services.${{STACK_NAME?Variable not set}}-backend.loadbalancer.server.port=8000
+      - traefik.http.routers.${{STACK_NAME?Variable not set}}-backend-http.rule=Host(`api.127.0.0.1`)
+      - traefik.http.routers.${{STACK_NAME?Variable not set}}-backend-http.entrypoints=http
+      - traefik.http.routers.${{STACK_NAME?Variable not set}}-backend-https.rule=
+      - traefik.http.routers.${{STACK_NAME?Variable not set}}-backend-https.entrypoints=
+      - traefik.http.routers.${{STACK_NAME?Variable not set}}-backend-https.tls=
+      - traefik.http.routers.${{STACK_NAME?Variable not set}}-backend-https.tls.certresolver=
+      - traefik.http.routers.${{STACK_NAME?Variable not set}}-backend-http.middlewares=
 
   db:
     restart: "no"
@@ -275,7 +275,7 @@ fn create_dockercompose_override_file(project_info: &ProjectInfo) -> String {
       - 6379:6379
 
 networks:
-  traefik-public-{base_name}:
+  traefik-public:
     # For local dev, don't expect an external Traefik network
     external: false
 "#
@@ -292,14 +292,11 @@ pub fn save_dockercompose_override_file(project_info: &ProjectInfo) -> Result<()
     Ok(())
 }
 
-fn create_dockercompose_traefik_file(project_info: &ProjectInfo) -> String {
-    let base_name = &project_info.project_slug;
-
-    format!(
-        r#"services:
+fn create_dockercompose_traefik_file() -> String {
+    r#"services:
   traefik:
     image: traefik:3
-    container_name: {base_name}-traefik
+    container_name: traefik
     ports:
       # Listen on port 80, default for HTTP, necessary to redirect to HTTPS
       - 80:80
@@ -340,7 +337,7 @@ fn create_dockercompose_traefik_file(project_info: &ProjectInfo) -> String {
       # Add Docker as a mounted volume, so that Traefik can read the labels of other services
       - /var/run/docker.sock:/var/run/docker.sock:ro
       # Mount the volume to store the certificates
-      - {base_name}-traefik-public-certificates:/certificates
+      - traefik-public-certificates:/certificates
     command:
       # Enable Docker in Traefik, so that it reads labels from Docker services
       - --providers.docker
@@ -369,7 +366,7 @@ fn create_dockercompose_traefik_file(project_info: &ProjectInfo) -> String {
 
 volumes:
   # Create a volume to store the certificates, even if the container is recreated
-  {base_name}-traefik-public-certificates:
+  traefik-public-certificates:
 
 networks:
   # Use the previously created public network "traefik-public", shared with other
@@ -377,14 +374,13 @@ networks:
   traefik-public:
     name: traefik-public
     external: true
-"#
-    )
+"#.to_string()
 }
 
 pub fn save_dockercompose_traefik_file(project_info: &ProjectInfo) -> Result<()> {
     let base = &project_info.base_dir();
     let file_path = base.join("docker-compose.treafik.yml");
-    let file_content = create_dockercompose_traefik_file(project_info);
+    let file_content = create_dockercompose_traefik_file();
 
     save_file_with_content(&file_path, &file_content)?;
 
@@ -517,7 +513,7 @@ ENV \
 
 RUN : \
   && apt-get update \
-  && apt-get install -y --no-install-recommends\
+  && apt-get install -y --no-install-recommends \
   software-properties-common \
   && add-apt-repository ppa:deadsnakes/ppa \
   && apt-get update \
