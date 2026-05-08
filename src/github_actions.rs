@@ -1698,15 +1698,11 @@ jobs:
     if: "startsWith(github.ref, 'refs/tags/')"
     needs: [linux, windows, macos, sdist]
     steps:
-      - uses: actions/download-artifact@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "{python_version}"
+      - uses: actions/download-artifact@v8
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8
       - name: Publish to PyPI
-        uses: PyO3/maturin-action@v1
-        with:
-          command: upload
-          args: --non-interactive --skip-existing wheels-*/*
+        run: uv publish wheels-*/*
 "#
     )
 }
