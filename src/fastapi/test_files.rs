@@ -182,7 +182,7 @@ from uuid import uuid4
 
 import asyncpg
 import pytest
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 
 from {module}.api.deps import get_cache_client, get_db_pool
 from {module}.core.cache import cache
@@ -395,7 +395,7 @@ fn create_health_route_test_file(project_info: &ProjectInfo) -> String {
         r#"from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 
 from {module}.api.deps import get_cache_client, get_db_pool
 from {module}.core.config import settings
