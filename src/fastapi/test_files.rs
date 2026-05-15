@@ -1383,13 +1383,9 @@ fn create_main_test_file(project_info: &ProjectInfo) -> String {
     let module = &project_info.module_name();
 
     format!(
-        r#"import importlib
-from unittest.mock import patch
+        r#"from unittest.mock import patch
 
 from loguru import logger
-
-from {module} import main
-from {module}.core.config import settings
 
 
 async def test_http_exception_handler(test_client, normal_user_token_headers, caplog):
