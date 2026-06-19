@@ -9,10 +9,11 @@ mod project_generator;
 mod project_info;
 mod python_files;
 mod rust_files;
-mod utils;
 
 #[cfg(feature = "fastapi")]
 mod fastapi;
+#[cfg(feature = "fastapi")]
+mod utils;
 
 use std::{fs::remove_dir_all, process::exit, time::Duration};
 
@@ -482,7 +483,7 @@ mod tests {
             version: "0.1.0".to_string(),
             python_version: "3.12".to_string(),
             min_python_version: "3.10".to_string(),
-            project_manager: ProjectManager::Poetry,
+            project_manager: ProjectManager::Uv,
             pyo3_python_manager: None,
             is_application: true,
             is_async_project: false,

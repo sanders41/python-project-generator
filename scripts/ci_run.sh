@@ -17,7 +17,7 @@ project_manager="1"
 
 # Check for user provided project manager input
 if [ $# -gt 1 ]; then
-  if [ $2 -lt 1 ] || [ $2 -gt 5 ]; then
+  if [ $2 -lt 1 ] || [ $2 -gt 3 ]; then
     echo "Invalid project_manager value"
     exit 1
   else
@@ -44,7 +44,7 @@ use_release_drafter=""
 use_multi_os_ci=""
 pyo3_python_manager=""
 
-if [[ project_manager -eq 3 ]]; then
+if [[ project_manager -eq 2 ]]; then
   ./target/release/python-project create << EOF
 $project_name
 $project_slug

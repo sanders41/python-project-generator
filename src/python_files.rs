@@ -5,7 +5,6 @@ use anyhow::{bail, Result};
 use crate::{
     file_manager::save_file_with_content,
     project_info::{ProjectInfo, ProjectManager},
-    utils::is_python_version_or_greater,
 };
 
 fn create_dunder_main_file(module: &str, is_async_project: bool) -> String {
@@ -216,74 +215,6 @@ fn save_version_file(project_info: &ProjectInfo) -> Result<()> {
     Ok(())
 }
 
-fn create_version_test_file(
-    module: &str,
-    project_manager: &ProjectManager,
-    min_python_version: &str,
-) -> Result<Option<String>> {
-    let version_test: Option<&str> = match project_manager {
-        ProjectManager::Poetry => Some(
-            r#"def test_versions_match():
-    pyproject = Path().absolute() / "pyproject.toml"
-    with open(pyproject, "rb") as f:
-        data = tomllib.load(f)
-        pyproject_version = data["tool"]["poetry"]["version"]
-
-    assert VERSION == pyproject_version"#,
-        ),
-        _ => None,
-    };
-
-    if let Some(v) = version_test {
-        if is_python_version_or_greater(min_python_version, 11)? {
-            Ok(Some(format!(
-                r#"import tomllib
-from pathlib import Path
-
-from {module}._version import VERSION
-
-
-{v}
-"#
-            )))
-        } else {
-            Ok(Some(format!(
-                r#"import sys
-from pathlib import Path
-
-from {module}._version import VERSION
-
-if sys.version_info < (3, 11):
-    import tomli as tomllib
-else:
-    import tomllib
-
-
-{v}
-"#
-            )))
-        }
-    } else {
-        Ok(None)
-    }
-}
-
-fn save_version_test_file(project_info: &ProjectInfo) -> Result<()> {
-    let module = project_info.module_name();
-    let file_path = project_info.base_dir().join("tests/test_version.py");
-    let content = create_version_test_file(
-        &module,
-        &project_info.project_manager,
-        &project_info.min_python_version,
-    )?;
-
-    if let Some(c) = content {
-        save_file_with_content(&file_path, &c)?;
-    }
-
-    Ok(())
-}
-
 pub fn generate_python_files(project_info: &ProjectInfo) -> Result<()> {
     if save_project_init_file(project_info).is_err() {
         bail!("Error creating __init__.py file");
@@ -319,10 +250,6 @@ pub fn generate_python_files(project_info: &ProjectInfo) -> Result<()> {
         && save_version_file(project_info).is_err()
     {
         bail!("Error creating version file");
-    }
-
-    if save_version_test_file(project_info).is_err() {
-        bail!("Error creating version test file")
     }
 
     if let ProjectManager::Maturin = project_info.project_manager {
@@ -393,7 +320,7 @@ mod tests {
     #[test]
     fn test_save_project_init_file() {
         let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
+        project_info.project_manager = ProjectManager::Uv;
         let base = project_info.base_dir();
         create_dir_all(base.join(&project_info.source_dir)).unwrap();
         let expected_file = base.join(format!("{}/__init__.py", &project_info.source_dir));
@@ -443,7 +370,7 @@ mod tests {
     #[test]
     fn test_save_main_files() {
         let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
+        project_info.project_manager = ProjectManager::Uv;
         project_info.is_application = true;
         let base = project_info.base_dir();
         create_dir_all(base.join(&project_info.source_dir)).unwrap();
@@ -467,7 +394,7 @@ mod tests {
     #[test]
     fn test_save_main_files_is_async_project() {
         let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
+        project_info.project_manager = ProjectManager::Uv;
         project_info.is_application = true;
         project_info.is_async_project = true;
         let base = project_info.base_dir();
@@ -492,7 +419,7 @@ mod tests {
     #[test]
     fn test_save_main_test_file() {
         let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
+        project_info.project_manager = ProjectManager::Uv;
         project_info.is_application = true;
         let base = project_info.base_dir();
         create_dir_all(base.join("tests")).unwrap();
@@ -509,7 +436,7 @@ mod tests {
     #[test]
     fn test_save_main_test_file_is_async_project() {
         let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
+        project_info.project_manager = ProjectManager::Uv;
         project_info.is_application = true;
         project_info.is_async_project = true;
         let base = project_info.base_dir();
@@ -575,62 +502,5 @@ mod tests {
         let content = std::fs::read_to_string(expected_file).unwrap();
 
         assert_yaml_snapshot!(content);
-    }
-
-    #[test]
-    fn test_save_version_test_file_poetry_tomli() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
-        let base = project_info.base_dir();
-        create_dir_all(base.join("tests")).unwrap();
-        let expected_file = base.join("tests/test_version.py");
-        save_version_test_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        assert_yaml_snapshot!(content);
-    }
-
-    #[test]
-    fn test_save_version_test_file_poetry_no_tomli() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
-        project_info.min_python_version = "3.12".to_string();
-        let base = project_info.base_dir();
-        create_dir_all(base.join("tests")).unwrap();
-        let expected_file = base.join("tests/test_version.py");
-        save_version_test_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        assert_yaml_snapshot!(content);
-    }
-
-    #[test]
-    fn test_save_version_test_file_setuptools() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Setuptools;
-        let base = project_info.base_dir();
-        create_dir_all(base.join("tests")).unwrap();
-        let expected_file = base.join("tests/test_version.py");
-        save_version_test_file(&project_info).unwrap();
-
-        assert!(!expected_file.is_file());
-    }
-
-    #[test]
-    fn test_save_version_test_file_uv() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Uv;
-        let base = project_info.base_dir();
-        create_dir_all(base.join("tests")).unwrap();
-        let expected_file = base.join("tests/test_version.py");
-        save_version_test_file(&project_info).unwrap();
-
-        assert!(!expected_file.is_file());
     }
 }

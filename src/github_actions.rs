@@ -13,169 +13,6 @@ fn build_actions_python_test_versions(github_action_python_test_versions: &[Stri
         .join(", ")
 }
 
-fn create_poetry_ci_testing_linux_only_file(
-    source_dir: &str,
-    min_python_version: &str,
-    github_action_python_test_versions: &[String],
-) -> String {
-    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
-
-    format!(
-        r#"name: Testing
-
-on:
-  push:
-    branches:
-    - main
-  pull_request:
-env:
-  PYTHON_VERSION: "{min_python_version}"
-jobs:
-  linting:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v6
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Set up Python
-      uses: actions/setup-python@v6
-      with:
-        python-version: ${{{{ env.PYTHON_VERSION }}}}
-        cache: "poetry"
-    - name: Install Dependencies
-      run: poetry install
-    - name: Ruff format check
-      run: poetry run ruff format {source_dir} tests --check
-    - name: Lint with ruff
-      run: poetry run ruff check .
-    - name: mypy check
-      run: poetry run mypy .
-  testing:
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [{python_versions}]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v6
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v6
-      with:
-        python-version: ${{{{ matrix.python-version }}}}
-        cache: "poetry"
-    - name: Install Dependencies
-      run: poetry install
-    - name: Test with pytest
-      run: poetry run pytest
-"#
-    )
-}
-
-#[cfg(feature = "fastapi")]
-fn create_poetry_ci_testing_fastapi_file(
-    source_dir: &str,
-    min_python_version: &str,
-    github_action_python_test_versions: &[String],
-) -> String {
-    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
-
-    format!(
-        r#"name: Testing
-
-on:
-  push:
-    branches:
-    - main
-  pull_request:
-env:
-  PYTHON_VERSION: "{min_python_version}"
-  SECRET_KEY: "someKey"
-  PRODUCTION_MODE: false
-  FIRST_SUPERUSER_EMAIL: "some@email.com"
-  FIRST_SUPERUSER_PASSWORD: "somePassword1!"
-  FIRST_SUPERUSER_NAME: "Super User"
-  POSTGRES_HOST: "127.0.0.1"
-  POSTGRES_USER: "postgres"
-  POSTGRES_PASSWORD: "test_password"
-  POSTGRES_DB: "test_db"
-  VALKEY_HOST: "127.0.0.1"
-  VALKEY_PASSWORD: "test_password"
-  MEILISEARCH_HOST: http://127.0.0.1
-  STACK_NAME: "test-stack"
-  DOMAIN: "127.0.0.1"
-  LOG_LEVEL: "DEBUG"
-  CI: true
-jobs:
-  linting:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v6
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
-    - name: Cache dependencies
-      uses: Swatinem/rust-cache@v2
-    - name: Install sqlx-cli
-      run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Set up Python
-      uses: actions/setup-python@v6
-      with:
-        python-version: ${{{{ env.PYTHON_VERSION }}}}
-        cache: "poetry"
-    - name: Install Dependencies
-      run: poetry install
-    - name: Ruff format check
-      run: poetry run ruff format {source_dir} tests --check
-    - name: Lint with ruff
-      run: poetry run ruff check .
-    - name: mypy check
-      run: poetry run mypy .
-  testing:
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [{python_versions}]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v6
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v6
-      with:
-        python-version: ${{{{ matrix.python-version }}}}
-        cache: "poetry"
-    - name: Install Dependencies
-      run: poetry install
-    - name: make .env
-      run: touch .env
-    - name: Start docker containers
-      run: docker compose up db valkey migrations -d
-    - name: Test with pytest
-      run: poetry run pytest -n auto
-"#
-    )
-}
-
 fn create_setuptools_ci_testing_linux_only_file(
     source_dir: &str,
     min_python_version: &str,
@@ -924,29 +761,6 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
                 bail!("A PyO3 Python manager is required for maturin");
             }
         }
-        ProjectManager::Poetry => {
-            #[cfg(feature = "fastapi")]
-            if project_info.is_fastapi_project {
-                create_poetry_ci_testing_fastapi_file(
-                    &project_info.source_dir,
-                    &project_info.min_python_version,
-                    &project_info.github_actions_python_test_versions,
-                )
-            } else {
-                create_poetry_ci_testing_linux_only_file(
-                    &project_info.source_dir,
-                    &project_info.min_python_version,
-                    &project_info.github_actions_python_test_versions,
-                )
-            }
-
-            #[cfg(not(feature = "fastapi"))]
-            create_poetry_ci_testing_linux_only_file(
-                &project_info.source_dir,
-                &project_info.min_python_version,
-                &project_info.github_actions_python_test_versions,
-            )
-        }
         ProjectManager::Setuptools => {
             #[cfg(feature = "fastapi")]
             if project_info.is_fastapi_project {
@@ -998,75 +812,6 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
-}
-
-fn create_poetry_ci_testing_multi_os_file(
-    source_dir: &str,
-    min_python_version: &str,
-    github_action_python_test_versions: &[String],
-) -> String {
-    let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
-
-    format!(
-        r#"name: Testing
-
-on:
-  push:
-    branches:
-    - main
-  pull_request:
-env:
-  PYTHON_VERSION: "{min_python_version}"
-jobs:
-  linting:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v6
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Set up Python
-      uses: actions/setup-python@v6
-      with:
-        python-version: ${{{{ env.PYTHON_VERSION }}}}
-        cache: "poetry"
-    - name: Install Dependencies
-      run: poetry install
-    - name: Ruff format check
-      run: poetry run ruff format {source_dir} tests --check
-    - name: Lint with ruff
-      run: poetry run ruff check .
-    - name: mypy check
-      run: poetry run mypy .
-  testing:
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [{python_versions}]
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{{{ matrix.os }}}}
-    steps:
-    - uses: actions/checkout@v6
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Configure poetry
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-    - name: Set up Python ${{{{ matrix.python-version }}}}
-      uses: actions/setup-python@v6
-      with:
-        python-version: ${{{{ matrix.python-version }}}}
-        cache: "poetry"
-    - name: Install Dependencies
-      run: poetry install
-    - name: Test with pytest
-      run: poetry run pytest
-"#
-    )
 }
 
 fn create_setuptools_ci_testing_multi_os_file(
@@ -1394,11 +1139,6 @@ pub fn save_ci_testing_multi_os_file(project_info: &ProjectInfo) -> Result<()> {
                 bail!("A PyO3 Python Manager is required for maturin");
             }
         }
-        ProjectManager::Poetry => create_poetry_ci_testing_multi_os_file(
-            &project_info.source_dir,
-            &project_info.min_python_version,
-            &project_info.github_actions_python_test_versions,
-        ),
         ProjectManager::Setuptools => create_setuptools_ci_testing_multi_os_file(
             &project_info.source_dir,
             &project_info.min_python_version,
@@ -1567,34 +1307,6 @@ pub fn save_dependabot_file(project_info: &ProjectInfo) -> Result<()> {
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
-}
-
-fn create_poetry_pypi_publish_file(python_version: &str) -> String {
-    format!(
-        r#"name: PyPi Publish
-on:
-  release:
-    types:
-    - published
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v6
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Set up Python
-      uses: actions/setup-python@v6
-      with:
-        python-version: "{python_version}"
-        cache: "poetry"
-    - name: Install Dependencies
-      run: |
-        poetry install
-    - name: Publish package
-      run: poetry publish --build
-"#
-    )
 }
 
 fn create_pyo3_pypi_publish_file(python_version: &str) -> String {
@@ -1941,7 +1653,6 @@ pub fn save_pypi_publish_file(project_info: &ProjectInfo) -> Result<()> {
         .join(".github/workflows/pypi_publish.yml");
     let content = match &project_info.project_manager {
         ProjectManager::Maturin => create_pyo3_pypi_publish_file(&project_info.python_version),
-        ProjectManager::Poetry => create_poetry_pypi_publish_file(&project_info.python_version),
         ProjectManager::Setuptools => {
             create_setuptools_pypi_publish_file(&project_info.python_version)
         }
@@ -1951,34 +1662,6 @@ pub fn save_pypi_publish_file(project_info: &ProjectInfo) -> Result<()> {
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
-}
-
-fn create_poetry_docs_publish_file(python_version: &str) -> String {
-    format!(
-        r#"name: Docs Publish
-on:
-  release:
-    types:
-    - published
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v6
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Set up Python
-      uses: actions/setup-python@v6
-      with:
-        python-version: "{python_version}"
-        cache: "poetry"
-    - name: Install Dependencies
-      run: |
-        poetry install
-    - name: Publish package
-      run: poetry run mkdocs gh-deploy --force
-"#
-    )
 }
 
 fn create_setuptools_docs_publish_file(python_version: &str) -> String {
@@ -2055,7 +1738,6 @@ pub fn save_docs_publish_file(project_info: &ProjectInfo) -> Result<()> {
                 bail!("No PyO3 Python project manager specified");
             }
         }
-        ProjectManager::Poetry => create_poetry_docs_publish_file(&project_info.python_version),
         ProjectManager::Setuptools => {
             create_setuptools_docs_publish_file(&project_info.python_version)
         }
@@ -2219,42 +1901,6 @@ mod tests {
     }
 
     #[test]
-    fn test_save_poetry_ci_testing_linux_only_file() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
-        project_info.use_multi_os_ci = true;
-        let base = project_info.base_dir();
-        create_dir_all(base.join(".github/workflows")).unwrap();
-        let expected_file = base.join(".github/workflows/testing.yml");
-        save_ci_testing_linux_only_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        assert_yaml_snapshot!(content);
-    }
-
-    #[cfg(feature = "fastapi")]
-    #[test]
-    fn test_save_poetry_ci_testing_fastapi_file() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
-        project_info.is_fastapi_project = true;
-        project_info.database_manager = Some(DatabaseManager::AsyncPg);
-        let base = project_info.base_dir();
-        create_dir_all(base.join(".github/workflows")).unwrap();
-        let expected_file = base.join(".github/workflows/testing.yml");
-        save_ci_testing_linux_only_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        assert_yaml_snapshot!(content);
-    }
-
-    #[test]
     fn test_save_ci_testing_linux_only_file_pyo3() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Maturin;
@@ -2362,23 +2008,6 @@ mod tests {
     }
 
     #[test]
-    fn test_save_poetry_ci_testing_multi_os_file() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
-        project_info.use_multi_os_ci = true;
-        let base = project_info.base_dir();
-        create_dir_all(base.join(".github/workflows")).unwrap();
-        let expected_file = base.join(".github/workflows/testing.yml");
-        save_ci_testing_multi_os_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        assert_yaml_snapshot!(content);
-    }
-
-    #[test]
     fn test_save_setuptools_ci_testing_multi_os_file() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Setuptools;
@@ -2432,7 +2061,7 @@ mod tests {
     #[test]
     fn test_save_dependabot_file() {
         let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
+        project_info.project_manager = ProjectManager::Uv;
         project_info.use_dependabot = true;
         project_info.dependabot_schedule = None;
         project_info.dependabot_day = None;
@@ -2452,7 +2081,7 @@ mod tests {
     #[test]
     fn test_save_dependabot_file_daily() {
         let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
+        project_info.project_manager = ProjectManager::Uv;
         project_info.use_dependabot = true;
         project_info.dependabot_schedule = Some(DependabotSchedule::Daily);
         project_info.dependabot_day = None;
@@ -2472,7 +2101,7 @@ mod tests {
     #[test]
     fn test_save_dependabot_file_weekly_no_day() {
         let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
+        project_info.project_manager = ProjectManager::Uv;
         project_info.use_dependabot = true;
         project_info.dependabot_schedule = Some(DependabotSchedule::Weekly);
         project_info.dependabot_day = None;
@@ -2492,7 +2121,7 @@ mod tests {
     #[test]
     fn test_save_dependabot_file_weekly_tuesday() {
         let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
+        project_info.project_manager = ProjectManager::Uv;
         project_info.use_dependabot = true;
         project_info.dependabot_schedule = Some(DependabotSchedule::Weekly);
         project_info.dependabot_day = Some(Day::Tuesday);
@@ -2512,7 +2141,7 @@ mod tests {
     #[test]
     fn test_save_dependabot_file_monthly() {
         let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
+        project_info.project_manager = ProjectManager::Uv;
         project_info.use_dependabot = true;
         project_info.dependabot_schedule = Some(DependabotSchedule::Monthly);
         project_info.dependabot_day = None;
@@ -2616,40 +2245,6 @@ mod tests {
         let expected_file = base.join(".github/dependabot.yml");
 
         save_dependabot_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        assert_yaml_snapshot!(content);
-    }
-
-    #[test]
-    fn test_save_pypi_publish_file_poetry() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
-        let base = project_info.base_dir();
-        create_dir_all(base.join(".github/workflows")).unwrap();
-        let expected_file = base.join(".github/workflows/pypi_publish.yml");
-        save_pypi_publish_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        assert_yaml_snapshot!(content);
-    }
-
-    #[test]
-    fn test_save_docs_publish_file_poetry() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
-        project_info.include_docs = true;
-        project_info.docs_info = Some(docs_info_dummy());
-        let base = project_info.base_dir();
-        create_dir_all(base.join(".github/workflows")).unwrap();
-        let expected_file = base.join(".github/workflows/docs_publish.yml");
-        save_docs_publish_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
@@ -2785,7 +2380,7 @@ mod tests {
     #[test]
     fn test_save_release_drafter_file() {
         let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
+        project_info.project_manager = ProjectManager::Uv;
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();
         let expected_release_drafter_file = base.join(".github/workflows/release_drafter.yml");

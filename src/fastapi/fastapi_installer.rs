@@ -24,7 +24,6 @@ const FASTAPI_BASE_DEV_DEPENDENCIES: &[&str] = &["httpx2", "pytest-xdist"];
 pub fn install_fastapi_dependencies(project_info: &ProjectInfo) -> Result<()> {
     match project_info.project_manager {
         ProjectManager::Uv => uv_fastapi_dependency_installer(project_info)?,
-        ProjectManager::Poetry => poetry_fastapi_dependency_installer(project_info)?,
         ProjectManager::Setuptools => setuptools_fastapi_dependency_installer(project_info)?,
         ProjectManager::Maturin => maturin_fastapi_dependency_installer(project_info)?,
     };
@@ -54,40 +53,6 @@ fn uv_fastapi_dependency_installer(project_info: &ProjectInfo) -> Result<()> {
     let mut dev_args = vec!["add", "--group=dev"];
     dev_args.extend(dev_dependencies);
     let output = std::process::Command::new("uv")
-        .args(dev_args)
-        .current_dir(project_info.base_dir())
-        .output()?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("Failed to install FastAPI dependencies: {stderr}");
-    }
-
-    Ok(())
-}
-
-fn poetry_fastapi_dependency_installer(project_info: &ProjectInfo) -> Result<()> {
-    let dependencies = FASTAPI_BASE_DEPENDENCIES.to_vec();
-    /* if project_info.database_manager == Some(DatabaseManager::SqlAlchemy) {
-        dependencies.push("sqlalchemy");
-        dependencies.push("alembic");
-    } */
-    let mut args = vec!["add"];
-    args.extend(dependencies);
-    let output = std::process::Command::new("poetry")
-        .args(args)
-        .current_dir(project_info.base_dir())
-        .output()?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("Failed to install FastAPI dependencies: {stderr}");
-    }
-
-    let dev_dependencies = FASTAPI_BASE_DEV_DEPENDENCIES.to_vec();
-    let mut dev_args = vec!["add", "--group=dev"];
-    dev_args.extend(dev_dependencies);
-    let output = std::process::Command::new("poetry")
         .args(dev_args)
         .current_dir(project_info.base_dir())
         .output()?;

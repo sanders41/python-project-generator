@@ -95,7 +95,6 @@ impl fmt::Display for Pyo3PythonManager {
 #[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
 pub enum ProjectManager {
     Maturin,
-    Poetry,
     Setuptools,
     #[default]
     Uv,
@@ -105,7 +104,6 @@ impl fmt::Display for ProjectManager {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Maturin => write!(f, "Maturin"),
-            Self::Poetry => write!(f, "Poetry"),
             Self::Setuptools => write!(f, "Setuptools"),
             Self::Uv => write!(f, "uv"),
         }
@@ -398,14 +396,13 @@ fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectMana
     let default_str = match default {
         Some(d) => match d {
             ProjectManager::Uv => "1".to_string(),
-            ProjectManager::Poetry => "2".to_string(),
             ProjectManager::Maturin => "3".to_string(),
             ProjectManager::Setuptools => "4".to_string(),
         },
-        None => "poetry".to_string(),
+        None => "uv".to_string(),
     };
     let prompt_text =
-        "Project Manager\n  1 - uv\n  2 - Poetry\n  3 - Maturin\n  4 - setuptools\n  Choose from [1, 2, 3, 4]"
+        "Project Manager\n  1 - uv\n  2 - Maturin\n  3 - setuptools\n  Choose from [1, 2, 3]"
             .to_string();
     let prompt = Prompt {
         prompt_text,
@@ -416,10 +413,8 @@ fn project_manager_prompt(default: Option<ProjectManager>) -> Result<ProjectMana
     if input == "1" {
         Ok(ProjectManager::Uv)
     } else if input == "2" || input.is_empty() {
-        Ok(ProjectManager::Poetry)
-    } else if input == "3" {
         Ok(ProjectManager::Maturin)
-    } else if input == "4" {
+    } else if input == "3" {
         Ok(ProjectManager::Setuptools)
     } else {
         bail!("Invalid selection");
