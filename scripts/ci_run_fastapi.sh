@@ -18,7 +18,7 @@ project_manager="1"
 
 # Check for user provided project manager input
 if [ $# -gt 1 ]; then
-  if [ $2 -lt 1 ] || [ $2 -gt 5 ]; then
+  if [ $2 -lt 1 ] || [ $2 -gt 3 ]; then
     echo "Invalid project_manager value"
     exit 1
   else
@@ -60,7 +60,7 @@ if [ $# -gt 2 ]; then
   fi
 fi
 
-if [[ $project_manager -eq 3 ]]; then
+if [[ $project_manager -eq 2 ]]; then
   if [ "$fastapi_project" = "1" ]; then
     ./target/release/python-project create << EOF
 $project_name

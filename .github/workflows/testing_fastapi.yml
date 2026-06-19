@@ -117,7 +117,7 @@ jobs:
       - name: Build package
         run: cargo build --release -F fastapi
       - name: Run creation
-        run: ./scripts/ci_run_fastapi.sh "fastapi" 4
+        run: ./scripts/ci_run_fastapi.sh "fastapi" 3
         shell: bash
       - name: prek check
         working-directory: ${{ env.WORKING_DIR }}
@@ -153,7 +153,7 @@ jobs:
       - name: Build package
         run: cargo build --release -F fastapi
       - name: Run creation
-        run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 4
+        run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 3
         shell: bash
       - name: prek check
         working-directory: ${{ env.WORKING_DIR }}
@@ -186,7 +186,7 @@ jobs:
       - name: Build package
         run: cargo build --release -F fastapi
       - name: Run creation
-        run: ./scripts/ci_run_fastapi.sh "fastapi" 3
+        run: ./scripts/ci_run_fastapi.sh "fastapi" 2
         shell: bash
       - name: prek check
         working-directory: ${{ env.WORKING_DIR }}
@@ -224,7 +224,7 @@ jobs:
       - name: Build package
         run: cargo build --release -F fastapi
       - name: Run creation
-        run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 3
+        run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 2
         shell: bash
       - name: Compile Rust
         working-directory: ${{ env.WORKING_DIR }}
@@ -259,7 +259,7 @@ jobs:
       - name: Build package
         run: cargo build --release -F fastapi
       - name: Run creation
-        run: ./scripts/ci_run_fastapi.sh "fastapi" 3 2
+        run: ./scripts/ci_run_fastapi.sh "fastapi" 2 2
         shell: bash
       - name: Compile Rust
         working-directory: ${{ env.WORKING_DIR }}
@@ -299,7 +299,7 @@ jobs:
       - name: Build package
         run: cargo build --release -F fastapi
       - name: Run creation
-        run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 3 2
+        run: ./scripts/ci_run_fastapi.sh ${{ matrix.project_type }} 2 2
         shell: bash
       - name: Compile Rust
         working-directory: ${{ env.WORKING_DIR }}
