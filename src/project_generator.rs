@@ -289,7 +289,6 @@ fn save_pre_commit_file(project_info: &ProjectInfo) -> Result<()> {
 fn create_pyproject_toml(project_info: &ProjectInfo) -> Result<String> {
     let module = project_info.module_name();
     let min_python_version = &project_info.min_python_version;
-    let pyupgrade_version = &project_info.min_python_version.replace(['.', '^'], "");
     let project_name = &module.replace('_', "-");
     let project_description = &project_info.project_description;
     let creator = &project_info.creator;
@@ -511,7 +510,6 @@ exclude_lines = [
 
 [tool.ruff]
 line-length = {max_line_length}
-target-version = "py{pyupgrade_version}"
 fix = true
 
 [tool.ruff.lint]
