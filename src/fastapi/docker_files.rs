@@ -456,84 +456,6 @@ USER appuser
 ENTRYPOINT ["./entrypoint.sh"]
 "#,
         )),
-        ProjectManager::Poetry => Ok(format!(
-            r#"# syntax=docker/dockerfile:1
-
-FROM ubuntu:26.04 AS builder
-
-WORKDIR /app
-
-ENV \
-  PYTHONUNBUFFERED=true \
-  POETRY_NO_INTERACTION=true \
-  POETRY_VIRTUALENVS_IN_PROJECT=true \
-  POETRY_CACHE_DIR=/tmp/poetry_cache
-
-RUN : \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends \
-  build-essential \
-  curl \
-  ca-certificates \
-  software-properties-common \
-  && add-apt-repository ppa:deadsnakes/ppa \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends \
-  python{python_version} \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
-
-# Install Poetry
-RUN curl -sSL https://install.python-poetry.org | python{python_version} -
-
-ENV PATH="/root/.local/bin:$PATH"
-
-COPY pyproject.toml poetry.lock ./
-
-COPY . ./
-
-RUN --mount=type=cache,target=$POETRY_CACHE_DIR \
-  poetry config virtualenvs.in-project true \
-  && poetry install --only=main
-
-
-# Build production stage
-FROM ubuntu:26.04 AS prod
-
-RUN useradd appuser
-
-WORKDIR /app
-
-RUN chown appuser:appuser /app
-
-ENV \
-  PYTHONUNBUFFERED=true \
-  PATH="/app/.venv/bin:$PATH" \
-  PORT="8000"
-
-RUN : \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends \
-  software-properties-common \
-  && add-apt-repository ppa:deadsnakes/ppa \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends python{python_version} \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
-
-COPY --from=builder /app/.venv /app/.venv
-COPY --from=builder /app/{source_dir} /app/{source_dir}
-COPY ./scripts/entrypoint.sh /app
-
-RUN chmod +x /app/entrypoint.sh
-
-EXPOSE 8000
-
-USER appuser
-
-ENTRYPOINT ["./entrypoint.sh"]
-"#
-        )),
         ProjectManager::Setuptools => Ok(format!(
             r#"# syntax=docker/dockerfile:1
 
@@ -897,7 +819,7 @@ mod tests {
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.10".to_string(),
-            project_manager: ProjectManager::Poetry,
+            project_manager: ProjectManager::Uv,
             pyo3_python_manager: Some(Pyo3PythonManager::Uv),
             is_application: true,
             is_async_project: false,
@@ -927,22 +849,6 @@ mod tests {
     fn test_save_dockerfile_uv() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Uv;
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("Dockerfile");
-        save_dockerfile(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        assert_yaml_snapshot!(content);
-    }
-
-    #[test]
-    fn test_save_dockerfile_poetry() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join("Dockerfile");

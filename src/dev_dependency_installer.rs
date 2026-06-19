@@ -1,7 +1,6 @@
 use anyhow::{bail, Result};
 
 use crate::{
-    package_version::PythonPackage,
     project_generator::{determine_dev_packages, format_package_with_extras},
     project_info::{ProjectInfo, ProjectManager, Pyo3PythonManager},
 };
@@ -9,7 +8,6 @@ use crate::{
 pub fn install_dev_dependencies(project_info: &ProjectInfo) -> Result<()> {
     match project_info.project_manager {
         ProjectManager::Uv => uv_dev_dependency_installer(project_info)?,
-        ProjectManager::Poetry => poetry_dev_dependency_installer(project_info)?,
         ProjectManager::Setuptools => setuptools_dev_dependency_installer(project_info)?,
         ProjectManager::Maturin => maturin_dev_dependency_installer(project_info)?,
     };
@@ -33,33 +31,6 @@ fn uv_dev_dependency_installer(project_info: &ProjectInfo) -> Result<()> {
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         bail!("Failed to install dev dependencies: {stderr}");
-    }
-
-    Ok(())
-}
-
-fn poetry_dev_dependency_installer(project_info: &ProjectInfo) -> Result<()> {
-    let packages = determine_dev_packages(project_info)?;
-
-    for package in packages {
-        let package_spec = format_package_with_extras(&package);
-        let mut args = vec!["add", "--group=dev"];
-
-        if package == PythonPackage::Tomli {
-            args.extend(&[&package_spec, "--python", "<3.11"]);
-        } else {
-            args.push(&package_spec);
-        }
-
-        let output = std::process::Command::new("poetry")
-            .args(args)
-            .current_dir(project_info.base_dir())
-            .output()?;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            bail!("Failed to install {}: {stderr}", package);
-        }
     }
 
     Ok(())
@@ -133,7 +104,6 @@ fn maturin_dev_dependency_installer(project_info: &ProjectInfo) -> Result<()> {
 pub fn update_prek_hooks(project_info: &ProjectInfo) -> Result<()> {
     match project_info.project_manager {
         ProjectManager::Uv => uv_prek_autoupdate(project_info)?,
-        ProjectManager::Poetry => poetry_prek_autoupdate(project_info)?,
         ProjectManager::Setuptools => setuptools_prek_autoupdate(project_info)?,
         ProjectManager::Maturin => maturin_prek_autoupdate(project_info)?,
     };
@@ -143,20 +113,6 @@ pub fn update_prek_hooks(project_info: &ProjectInfo) -> Result<()> {
 
 fn uv_prek_autoupdate(project_info: &ProjectInfo) -> Result<()> {
     let output = std::process::Command::new("uv")
-        .args(["run", "prek", "autoupdate"])
-        .current_dir(project_info.base_dir())
-        .output()?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("Failed to update prek hooks: {stderr}");
-    }
-
-    Ok(())
-}
-
-fn poetry_prek_autoupdate(project_info: &ProjectInfo) -> Result<()> {
-    let output = std::process::Command::new("poetry")
         .args(["run", "prek", "autoupdate"])
         .current_dir(project_info.base_dir())
         .output()?;
@@ -210,7 +166,6 @@ fn maturin_prek_autoupdate(project_info: &ProjectInfo) -> Result<()> {
 pub fn install_prek_hooks(project_info: &ProjectInfo) -> Result<()> {
     match project_info.project_manager {
         ProjectManager::Uv => uv_prek_install(project_info)?,
-        ProjectManager::Poetry => poetry_prek_install(project_info)?,
         ProjectManager::Setuptools => setuptools_prek_install(project_info)?,
         ProjectManager::Maturin => maturin_prek_install(project_info)?,
     };
@@ -220,20 +175,6 @@ pub fn install_prek_hooks(project_info: &ProjectInfo) -> Result<()> {
 
 fn uv_prek_install(project_info: &ProjectInfo) -> Result<()> {
     let output = std::process::Command::new("uv")
-        .args(["run", "prek", "install"])
-        .current_dir(project_info.base_dir())
-        .output()?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("Failed to install prek hooks: {stderr}");
-    }
-
-    Ok(())
-}
-
-fn poetry_prek_install(project_info: &ProjectInfo) -> Result<()> {
-    let output = std::process::Command::new("poetry")
         .args(["run", "prek", "install"])
         .current_dir(project_info.base_dir())
         .output()?;

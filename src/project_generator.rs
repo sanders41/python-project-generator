@@ -13,7 +13,6 @@ use crate::{
     project_info::{LicenseType, ProjectInfo, ProjectManager, Pyo3PythonManager},
     python_files::generate_python_files,
     rust_files::{save_cargo_toml_file, save_lib_file},
-    utils::is_python_version_or_greater,
 };
 
 #[cfg(feature = "fastapi")]
@@ -229,12 +228,6 @@ pub fn determine_dev_packages(project_info: &ProjectInfo) -> Result<Vec<PythonPa
     packages.push(PythonPackage::PytestCov);
     packages.push(PythonPackage::Ruff);
 
-    if !is_python_version_or_greater(&project_info.min_python_version, 11)?
-        && matches!(project_info.project_manager, ProjectManager::Poetry)
-    {
-        packages.push(PythonPackage::Tomli);
-    }
-
     Ok(packages)
 }
 
@@ -301,7 +294,6 @@ fn create_pyproject_toml(project_info: &ProjectInfo) -> Result<String> {
     let project_description = &project_info.project_description;
     let creator = &project_info.creator;
     let creator_email = &project_info.creator_email;
-    let version = &project_info.version;
     let license = &project_info.license;
     let license_text = license_str(&project_info.license);
     let max_line_length = &project_info.max_line_length;
@@ -387,39 +379,6 @@ features = ["pyo3/extension-module"]
             } else {
                 bail!("A PyO3 Python manager is required for maturin projects");
             }
-        }
-        ProjectManager::Poetry => {
-            let mut pyproject = format!(
-                r#"[tool.poetry]
-name = "{project_name}"
-version = "{version}"
-description = "{project_description}"
-authors = ["{creator} <{creator_email}>"]
-"#
-            );
-
-            if license != &LicenseType::NoLicense {
-                pyproject.push_str(&format!(
-                    "license = \"{license_text}\"
-"
-                ));
-            }
-
-            pyproject.push_str(&format!(
-                r#"readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^{min_python_version}"
-
-[tool.poetry.group.dev.dependencies]
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-"#
-            ));
-            pyproject
         }
         ProjectManager::Setuptools => {
             let mut pyproject = format!(
@@ -731,85 +690,6 @@ fn save_docs_css(project_info: &ProjectInfo) -> Result<()> {
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
-}
-
-fn create_poetry_justfile(project_info: &ProjectInfo) -> String {
-    let module = project_info.module_name();
-
-    #[cfg_attr(not(feature = "fastapi"), allow(unused_mut))]
-    let mut justfile = format!(
-        r#"@_default:
-  just --list
-
-@lint:
-  echo mypy
-  just --justfile {{{{justfile()}}}} mypy
-  echo ruff-check
-  just --justfile {{{{justfile()}}}} ruff-check
-  echo ruff-format
-  just --justfile {{{{justfile()}}}} ruff-format
-
-@mypy:
-  poetry run mypy {module} tests
-
-@ruff-check:
-  poetry run ruff check {module} tests
-
-@ruff-format:
-  poetry run ruff format {module} tests
-
-@install:
-  poetry install
-
-@test *args="":
-  poetry run pytest {{{{args}}}}
-"#
-    );
-
-    #[cfg(feature = "fastapi")]
-    if project_info.is_fastapi_project {
-        justfile.push_str(
-            r#"
-granian_cmd := if os() != "windows" {
-  "poetry run granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --loop uvloop --reload"
-} else {
-  "poetry run granian app.main:app --host 127.0.0.1 --port 8000 --interface asgi --no-ws --runtime-mode st --reload"
-}
-
-@backend-server:
-  {{granian_cmd}}
-
-@test-parallel *args="":
-  poetry run pytest -n auto {{args}}
-
-@docker-up:
-  docker compose up --build
-
-@docker-up-detached:
-  docker compose up --build -d
-
-@docker-up-services:
-  docker compose up db valkey migrations
-
-@docker-up-services-detached:
-  docker compose up db valkey migrations -d
-
-@docker-down:
-  docker compose down
-
-@docker-down-volumes:
-  docker compose down --volumes
-
-@docker-pull:
-  docker compose pull db valkey migrations
-
-@docker-build:
-  docker compose build
-"#,
-        )
-    }
-
-    justfile
 }
 
 fn create_pyo3_justfile(project_info: &ProjectInfo) -> Result<String> {
@@ -1185,7 +1065,6 @@ granian_cmd := if os() != "windows" {
 fn save_justfile(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info.base_dir().join("justfile");
     let content = match &project_info.project_manager {
-        ProjectManager::Poetry => create_poetry_justfile(project_info),
         ProjectManager::Maturin => create_pyo3_justfile(project_info)?,
         ProjectManager::Setuptools => create_setuptools_justfile(project_info),
         ProjectManager::Uv => create_uv_justfile(project_info),
@@ -1348,7 +1227,7 @@ mod tests {
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.10".to_string(),
-            project_manager: ProjectManager::Poetry,
+            project_manager: ProjectManager::Uv,
             pyo3_python_manager: Some(Pyo3PythonManager::Uv),
             is_application: true,
             is_async_project: false,
@@ -1392,7 +1271,7 @@ mod tests {
     #[test]
     fn test_save_gitigngore_file() {
         let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
+        project_info.project_manager = ProjectManager::Uv;
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
         let expected_file = base.join(".gitignore");
@@ -1435,89 +1314,6 @@ mod tests {
 
         insta::with_settings!({filters => vec![
             (r": v\d+\.\d+\.\d+", ": v1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_poetry_pyproject_toml_file_mit_application() {
-        let mut project_info = project_info_dummy();
-        project_info.license = LicenseType::Mit;
-        project_info.project_manager = ProjectManager::Poetry;
-        project_info.is_application = true;
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r#""\d+\.\d+\.\d+"#, "\"1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_poetry_pyproject_toml_file_apache_application() {
-        let mut project_info = project_info_dummy();
-        project_info.license = LicenseType::Apache2;
-        project_info.project_manager = ProjectManager::Poetry;
-        project_info.is_application = true;
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r#""\d+\.\d+\.\d+"#, "\"1.0.0"),
-            (r#"">=\d+\.\d+\.\d+"#, "\">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_save_poetry_pyproject_toml_file_no_license_application() {
-        let mut project_info = project_info_dummy();
-        project_info.license = LicenseType::NoLicense;
-        project_info.project_manager = ProjectManager::Poetry;
-        project_info.is_application = true;
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r#""\d+\.\d+\.\d+"#, "\"1.0.0"),
-            (r#"">=\d+\.\d+\.\d+"#, "\">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
-    }
-
-    #[test]
-    fn test_create_poetry_pyproject_toml_mit_lib() {
-        let mut project_info = project_info_dummy();
-        project_info.license = LicenseType::Mit;
-        project_info.project_manager = ProjectManager::Poetry;
-        project_info.is_application = false;
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("pyproject.toml");
-        save_pyproject_toml_file(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        insta::with_settings!({filters => vec![
-            (r#""\d+\.\d+\.\d+"#, "\"1.0.0"),
-            (r#"">=\d+\.\d+\.\d+"#, "\">=1.0.0"),
         ]}, { assert_yaml_snapshot!(content)});
     }
 
@@ -1831,41 +1627,6 @@ mod tests {
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
-        assert_yaml_snapshot!(content);
-    }
-
-    #[test]
-    fn test_save_justfile_poetry() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("justfile");
-        save_justfile(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
-        assert_yaml_snapshot!(content);
-    }
-
-    #[cfg(feature = "fastapi")]
-    #[test]
-    fn test_save_justfile_poetry_fastapi_project() {
-        let mut project_info = project_info_dummy();
-        project_info.project_manager = ProjectManager::Poetry;
-        project_info.is_fastapi_project = true;
-        project_info.database_manager = Some(DatabaseManager::AsyncPg);
-        let base = project_info.base_dir();
-        create_dir_all(&base).unwrap();
-        let expected_file = base.join("justfile");
-        save_justfile(&project_info).unwrap();
-
-        assert!(expected_file.is_file());
-
-        let content = std::fs::read_to_string(expected_file).unwrap();
-
         assert_yaml_snapshot!(content);
     }
 

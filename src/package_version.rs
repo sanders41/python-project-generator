@@ -12,7 +12,6 @@ pub enum PythonPackage {
     PytestAsyncio,
     PytestCov,
     Ruff,
-    Tomli,
 }
 
 impl fmt::Display for PythonPackage {
@@ -28,7 +27,6 @@ impl fmt::Display for PythonPackage {
             PythonPackage::PytestAsyncio => write!(f, "pytest-asyncio"),
             PythonPackage::PytestCov => write!(f, "pytest-cov"),
             PythonPackage::Ruff => write!(f, "ruff"),
-            PythonPackage::Tomli => write!(f, "tomli"),
         }
     }
 }

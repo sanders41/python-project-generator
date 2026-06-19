@@ -274,7 +274,7 @@ mod tests {
             version: "0.1.0".to_string(),
             python_version: "3.11".to_string(),
             min_python_version: "3.10".to_string(),
-            project_manager: ProjectManager::Poetry,
+            project_manager: ProjectManager::Uv,
             pyo3_python_manager: None,
             is_application: true,
             is_async_project: false,

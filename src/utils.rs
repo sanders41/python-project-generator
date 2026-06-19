@@ -10,7 +10,6 @@ pub fn is_python_version_or_greater(version: &str, min_minor_version: i32) -> Re
     }
 }
 
-#[cfg(feature = "fastapi")]
 pub fn is_allowed_fastapi_python_version(version: &str) -> Result<bool> {
     let version_parts = split_version(version)?;
 
