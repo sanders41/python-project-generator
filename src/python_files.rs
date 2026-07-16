@@ -129,7 +129,7 @@ fn save_pyo3_test_file(project_info: &ProjectInfo) -> Result<()> {
     let module = project_info.module_name();
     let file_path = project_info
         .base_dir()
-        .join(format!("tests/test_{}.py", &module));
+        .join(format!("tests/test_{}.py", module));
     let content = create_pyo3_test_file(&module);
 
     save_file_with_content(&file_path, &content)?;
@@ -169,7 +169,7 @@ fn save_project_init_file(project_info: &ProjectInfo) -> Result<()> {
     let module = project_info.module_name();
     let file_path = project_info
         .base_dir()
-        .join(format!("{}/__init__.py", &module));
+        .join(format!("{}/__init__.py", module));
     let content = create_project_init_file(&module, &project_info.project_manager);
 
     save_file_with_content(&file_path, &content)?;
@@ -191,7 +191,7 @@ pub fn save_pyi_file(project_info: &ProjectInfo) -> Result<()> {
     let module = project_info.module_name();
     let file_path = project_info
         .base_dir()
-        .join(format!("{}/_{}.pyi", &module, &module));
+        .join(format!("{}/_{}.pyi", module, module));
     let content = create_pyi_file();
 
     save_file_with_content(&file_path, &content)?;
@@ -207,7 +207,7 @@ fn save_version_file(project_info: &ProjectInfo) -> Result<()> {
     let module = project_info.module_name();
     let file_path = project_info
         .base_dir()
-        .join(format!("{}/_version.py", &module));
+        .join(format!("{}/_version.py", module));
     let content = create_version_file(&project_info.version);
 
     save_file_with_content(&file_path, &content)?;
