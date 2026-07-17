@@ -33,6 +33,7 @@ impl fmt::Display for PythonPackage {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum PrekHook {
+    Builtin,
     PreCommit,
     MyPy,
     Ruff,
@@ -41,6 +42,7 @@ pub enum PrekHook {
 impl fmt::Display for PrekHook {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            PrekHook::Builtin => write!(f, "builtin"),
             PrekHook::MyPy => write!(f, "mypy"),
             PrekHook::PreCommit => write!(f, "pre-commit"),
             PrekHook::Ruff => write!(f, "ruff"),
@@ -48,16 +50,18 @@ impl fmt::Display for PrekHook {
     }
 }
 
-pub fn default_pre_commit_rev(hook: &PrekHook) -> String {
+pub fn default_pre_commit_rev(hook: &PrekHook) -> Option<String> {
     match hook {
-        PrekHook::MyPy => "v1.18.2".to_string(),
-        PrekHook::PreCommit => "v6.0.0".to_string(),
-        PrekHook::Ruff => "v0.14.4".to_string(),
+        PrekHook::Builtin => None,
+        PrekHook::MyPy => Some("v1.18.2".to_string()),
+        PrekHook::PreCommit => Some("v6.0.0".to_string()),
+        PrekHook::Ruff => Some("v0.14.4".to_string()),
     }
 }
 
 pub fn pre_commit_repo(hook: &PrekHook) -> String {
     match hook {
+        PrekHook::Builtin => "builtin".to_string(),
         PrekHook::MyPy => "https://github.com/pre-commit/mirrors-mypy".to_string(),
         PrekHook::PreCommit => "https://github.com/pre-commit/pre-commit-hooks".to_string(),
         PrekHook::Ruff => "https://github.com/astral-sh/ruff-pre-commit".to_string(),

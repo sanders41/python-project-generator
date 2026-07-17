@@ -9,7 +9,7 @@ use crate::{
         save_docs_publish_file, save_pypi_publish_file, save_release_drafter_file,
     },
     licenses::{generate_license, license_str},
-    package_version::{PrekHook, PythonPackage},
+    package_version::{default_pre_commit_rev, pre_commit_repo, PrekHook, PythonPackage},
     project_info::{LicenseType, ProjectInfo, ProjectManager, Pyo3PythonManager},
     python_files::generate_python_files,
     rust_files::{save_cargo_toml_file, save_lib_file},
@@ -239,48 +239,56 @@ pub fn format_package_with_extras(package: &PythonPackage) -> String {
     }
 }
 
-fn create_pre_commit_file() -> String {
-    use crate::package_version::{default_pre_commit_rev, pre_commit_repo};
+fn create_prek_toml_file() -> String {
+    let mut prek_toml = format!(
+        r#"[update]
+exclude_tags = ["*-{{alpha,beta,dev,rc}}*", "*.{{alpha,beta,dev,rc}}*"]
 
-    let mut pre_commit_str = "repos:".to_string();
+[[repos]]
+repo = "{}"
+hooks = [
+  {{ id = "check-added-large-files" }},
+  {{ id = "check-toml" }},
+  {{ id = "check-yaml" }},
+  {{ id = "end-of-file-fixer" }},
+  {{ id = "trailing-whitespace" }},
+]
+"#,
+        pre_commit_repo(&PrekHook::Builtin)
+    );
+
     let hooks = vec![PrekHook::PreCommit, PrekHook::MyPy, PrekHook::Ruff];
 
     for hook in hooks {
         let repo = pre_commit_repo(&hook);
-        let rev = default_pre_commit_rev(&hook);
+        prek_toml.push_str(&format!("\n[[repos]]\nrepo = \"{repo}\"\n"));
+
+        if let Some(rev) = default_pre_commit_rev(&hook) {
+            prek_toml.push_str(&format!("rev = \"{rev}\"\n"));
+        }
 
         match hook {
             PrekHook::PreCommit => {
-                let info = format!(
-                    "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: check-added-large-files\n    - id: check-toml\n    - id: check-yaml\n    - id: debug-statements\n    - id: end-of-file-fixer\n    - id: trailing-whitespace",
-                    repo, rev
-                );
-                pre_commit_str.push_str(&info);
+                prek_toml.push_str("hooks = [\n  { id = \"debug-statements\" },\n]\n");
             }
             PrekHook::MyPy => {
-                let info = format!(
-                    "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: mypy",
-                    repo, rev
-                );
-                pre_commit_str.push_str(&info);
+                prek_toml.push_str("hooks = [\n  { id = \"mypy\" },\n]\n");
             }
             PrekHook::Ruff => {
-                let info = format!(
-                    "\n  - repo: {}\n    rev: {}\n    hooks:\n    - id: ruff-check\n      args: [--fix, --exit-non-zero-on-fix]\n    - id: ruff-format",
-                    repo, rev
+                prek_toml.push_str(
+                    "hooks = [\n  { id = \"ruff-check\", args = [\"--fix\", \"--exit-non-zero-on-fix\"] },\n  { id = \"ruff-format\" },\n]\n",
                 );
-                pre_commit_str.push_str(&info);
             }
+            PrekHook::Builtin => {}
         }
     }
 
-    pre_commit_str.push('\n');
-    pre_commit_str
+    prek_toml
 }
 
-fn save_pre_commit_file(project_info: &ProjectInfo) -> Result<()> {
-    let file_path = project_info.base_dir().join(".pre-commit-config.yaml");
-    let content = create_pre_commit_file();
+fn save_prek_toml_file(project_info: &ProjectInfo) -> Result<()> {
+    let file_path = project_info.base_dir().join("prek.toml");
+    let content = create_prek_toml_file();
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
@@ -1102,8 +1110,8 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
         bail!("Error creating .gitignore file");
     }
 
-    if save_pre_commit_file(project_info).is_err() {
-        bail!("Error creating .gitignore file");
+    if save_prek_toml_file(project_info).is_err() {
+        bail!("Error creating prek.toml file");
     }
 
     if save_readme_file(project_info).is_err() {
@@ -1299,19 +1307,19 @@ mod tests {
     }
 
     #[test]
-    fn test_save_pre_commit_file() {
+    fn test_save_prek_toml_file() {
         let project_info = project_info_dummy();
         let base = project_info.base_dir();
         create_dir_all(&base).unwrap();
-        let expected_file = base.join(".pre-commit-config.yaml");
-        save_pre_commit_file(&project_info).unwrap();
+        let expected_file = base.join("prek.toml");
+        save_prek_toml_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
 
         let content = std::fs::read_to_string(expected_file).unwrap();
 
         insta::with_settings!({filters => vec![
-            (r": v\d+\.\d+\.\d+", ": v1.0.0"),
+            (r#"rev = "v\d+\.\d+\.\d+""#, r#"rev = "v1.0.0""#),
         ]}, { assert_yaml_snapshot!(content)});
     }
 
