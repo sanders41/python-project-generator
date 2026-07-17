@@ -15,7 +15,7 @@ pub fn save_empty_src_file(project_info: &ProjectInfo, file_name: &str) -> Resul
     let module = project_info.module_name();
     let file_path = project_info
         .base_dir()
-        .join(format!("{}/{}", &module, file_name));
+        .join(format!("{}/{}", module, file_name));
     File::create(file_path)?;
 
     Ok(())

@@ -129,7 +129,7 @@ fn save_pyo3_test_file(project_info: &ProjectInfo) -> Result<()> {
     let module = project_info.module_name();
     let file_path = project_info
         .base_dir()
-        .join(format!("tests/test_{}.py", &module));
+        .join(format!("tests/test_{}.py", module));
     let content = create_pyo3_test_file(&module);
 
     save_file_with_content(&file_path, &content)?;
@@ -169,7 +169,7 @@ fn save_project_init_file(project_info: &ProjectInfo) -> Result<()> {
     let module = project_info.module_name();
     let file_path = project_info
         .base_dir()
-        .join(format!("{}/__init__.py", &module));
+        .join(format!("{}/__init__.py", module));
     let content = create_project_init_file(&module, &project_info.project_manager);
 
     save_file_with_content(&file_path, &content)?;
@@ -191,7 +191,7 @@ pub fn save_pyi_file(project_info: &ProjectInfo) -> Result<()> {
     let module = project_info.module_name();
     let file_path = project_info
         .base_dir()
-        .join(format!("{}/_{}.pyi", &module, &module));
+        .join(format!("{}/_{}.pyi", module, module));
     let content = create_pyi_file();
 
     save_file_with_content(&file_path, &content)?;
@@ -207,7 +207,7 @@ fn save_version_file(project_info: &ProjectInfo) -> Result<()> {
     let module = project_info.module_name();
     let file_path = project_info
         .base_dir()
-        .join(format!("{}/_version.py", &module));
+        .join(format!("{}/_version.py", module));
     let content = create_version_file(&project_info.version);
 
     save_file_with_content(&file_path, &content)?;
@@ -323,7 +323,7 @@ mod tests {
         project_info.project_manager = ProjectManager::Uv;
         let base = project_info.base_dir();
         create_dir_all(base.join(&project_info.source_dir)).unwrap();
-        let expected_file = base.join(format!("{}/__init__.py", &project_info.source_dir));
+        let expected_file = base.join(format!("{}/__init__.py", project_info.source_dir));
 
         save_project_init_file(&project_info).unwrap();
 
@@ -340,7 +340,7 @@ mod tests {
         project_info.project_manager = ProjectManager::Maturin;
         let base = project_info.base_dir();
         create_dir_all(base.join(&project_info.source_dir)).unwrap();
-        let expected_file = base.join(format!("{}/__init__.py", &project_info.source_dir));
+        let expected_file = base.join(format!("{}/__init__.py", project_info.source_dir));
         save_project_init_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
@@ -357,7 +357,7 @@ mod tests {
         project_info.source_dir = "z_my_project".to_string();
         let base = project_info.base_dir();
         create_dir_all(base.join(&project_info.source_dir)).unwrap();
-        let expected_file = base.join(format!("{}/__init__.py", &project_info.source_dir));
+        let expected_file = base.join(format!("{}/__init__.py", project_info.source_dir));
         save_project_init_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());
@@ -375,8 +375,8 @@ mod tests {
         let base = project_info.base_dir();
         create_dir_all(base.join(&project_info.source_dir)).unwrap();
         let expected_dunder_main_file =
-            base.join(format!("{}/__main__.py", &project_info.source_dir));
-        let expected_main_file = base.join(format!("{}/main.py", &project_info.source_dir));
+            base.join(format!("{}/__main__.py", project_info.source_dir));
+        let expected_main_file = base.join(format!("{}/main.py", project_info.source_dir));
         save_main_files(&project_info).unwrap();
 
         assert!(expected_dunder_main_file.is_file());
@@ -400,8 +400,8 @@ mod tests {
         let base = project_info.base_dir();
         create_dir_all(base.join(&project_info.source_dir)).unwrap();
         let expected_dunder_main_file =
-            base.join(format!("{}/__main__.py", &project_info.source_dir));
-        let expected_main_file = base.join(format!("{}/main.py", &project_info.source_dir));
+            base.join(format!("{}/__main__.py", project_info.source_dir));
+        let expected_main_file = base.join(format!("{}/main.py", project_info.source_dir));
         save_main_files(&project_info).unwrap();
 
         assert!(expected_dunder_main_file.is_file());
@@ -457,7 +457,7 @@ mod tests {
         project_info.project_manager = ProjectManager::Maturin;
         let base = project_info.base_dir();
         create_dir_all(base.join("tests")).unwrap();
-        let expected_file = base.join(format!("tests/test_{}.py", &project_info.source_dir));
+        let expected_file = base.join(format!("tests/test_{}.py", project_info.source_dir));
 
         save_pyo3_test_file(&project_info).unwrap();
 
@@ -477,7 +477,7 @@ mod tests {
         create_dir_all(base.join(&project_info.source_dir)).unwrap();
         let expected_file = base.join(format!(
             "{}/_{}.pyi",
-            &project_info.source_dir, &project_info.source_dir
+            project_info.source_dir, project_info.source_dir
         ));
 
         save_pyi_file(&project_info).unwrap();
@@ -494,7 +494,7 @@ mod tests {
         let project_info = project_info_dummy();
         let base = project_info.base_dir();
         create_dir_all(base.join(&project_info.source_dir)).unwrap();
-        let expected_file = base.join(format!("{}/_version.py", &project_info.source_dir));
+        let expected_file = base.join(format!("{}/_version.py", project_info.source_dir));
         save_version_file(&project_info).unwrap();
 
         assert!(expected_file.is_file());

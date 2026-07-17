@@ -639,7 +639,7 @@ fn save_mkdocs_yaml(project_info: &ProjectInfo) -> Result<()> {
 fn save_docs_cname(project_info: &ProjectInfo) -> Result<()> {
     if let Some(docs_info) = &project_info.docs_info {
         let file_path = project_info.base_dir().join("docs/CNAME");
-        let content = format!("{}\n", &docs_info.site_url);
+        let content = format!("{}\n", docs_info.site_url);
 
         save_file_with_content(&file_path, &content)?;
 
