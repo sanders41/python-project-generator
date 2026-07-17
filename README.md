@@ -327,7 +327,7 @@ just lint
 ### prek
 
 [prek](https://github.com/j178/prek) runs linting and formatting on your code (as defined in the
-provided .pre-commit-config.yaml file) every time you make a commit to your code. If any of the
+provided prek.toml file) every time you make a commit to your code. If any of the
 lints fail prek will cancel the commit. When possible, prek will also automatically
 fix any errors that fail. For example prek can automatically apply changes that fail ruff
 formatting. prek caches information and only runs on files that have changed so it is fast
