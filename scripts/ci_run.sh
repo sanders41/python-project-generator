@@ -43,6 +43,7 @@ use_continuous_deployment=""
 use_release_drafter=""
 use_multi_os_ci=""
 pyo3_python_manager=""
+type_checker=""
 
 if [[ project_manager -eq 2 ]]; then
   ./target/release/python-project create << EOF
@@ -60,6 +61,7 @@ $min_python_version
 $gha_versions
 $project_manager
 $pyo3_python_manager
+$type_checker
 $application
 $max_line_length
 $use_dependabot
@@ -82,6 +84,7 @@ $python_version
 $min_python_version
 $gha_versions
 $project_manager
+$type_checker
 $application
 $max_line_length
 $use_dependabot

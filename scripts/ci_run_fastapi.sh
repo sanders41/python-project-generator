@@ -49,6 +49,7 @@ use_dependabot=""
 use_continuous_deployment=""
 use_release_drafter=""
 pyo3_python_manager=""
+type_checker=""
 
 # Check for user provided pyo3_python_manager input
 if [ $# -gt 2 ]; then
@@ -78,6 +79,7 @@ $min_python_version
 $gha_versions
 $project_manager
 $pyo3_python_manager
+$type_checker
 $max_line_length
 $use_dependabot
 $use_continuous_deployment
@@ -100,6 +102,7 @@ $min_python_version
 $gha_versions
 $project_manager
 $pyo3_python_manager
+$type_checker
 $application
 $is_async_project
 $max_line_length
@@ -125,6 +128,7 @@ $python_version
 $min_python_version
 $gha_versions
 $project_manager
+$type_checker
 $max_line_length
 $use_dependabot
 $use_continuous_deployment
@@ -146,6 +150,7 @@ $python_version
 $min_python_version
 $gha_versions
 $project_manager
+$type_checker
 $application
 $max_line_length
 $use_dependabot
