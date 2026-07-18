@@ -203,6 +203,18 @@ fn main() {
                     exit(1);
                 }
             }
+            Param::TypeChecker { value } => {
+                if let Err(e) = Config::default().save_type_checker(value) {
+                    print_error(e);
+                    exit(1);
+                }
+            }
+            Param::ResetTypeChecker => {
+                if let Err(e) = Config::default().reset_type_checker() {
+                    print_error(e);
+                    exit(1);
+                }
+            }
             Param::ApplicationOrLibrary { value } => match value {
                 ApplicationOrLib::Application => {
                     if let Err(e) = Config::default().save_is_application(true) {
@@ -461,7 +473,7 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::project_info::{LicenseType, ProjectManager};
+    use super::project_info::{LicenseType, ProjectManager, TypeChecker};
     use super::*;
     use std::fs::create_dir_all;
     use tmp_path::tmp_path;
@@ -485,6 +497,7 @@ mod tests {
             min_python_version: "3.10".to_string(),
             project_manager: ProjectManager::Uv,
             pyo3_python_manager: None,
+            type_checker: TypeChecker::Mypy,
             is_application: true,
             is_async_project: false,
             github_actions_python_test_versions: vec![

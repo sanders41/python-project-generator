@@ -16,7 +16,7 @@ For package management choose between:
 
 Dev packages:
 
-- [mypy](https://www.mypy-lang.org/) for static type checking
+- [mypy](https://www.mypy-lang.org/) or [pyrefly](https://pyrefly.org/) for static type checking
 - [pytest](https://docs.pytest.org/en/latest/) for testing
 - [pytest-cov](https://github.com/pytest-dev/pytest-cov) for test coverage reports
 - [ruff](https://beta.ruff.rs/docs/) for linting and code formatting
@@ -24,7 +24,7 @@ Dev packages:
 ## Python project with Rust modules included packages
 
 - [maturin](https://github.com/PyO3/maturin) for package management
-- [mypy](https://www.mypy-lang.org/) for static type checking
+- [mypy](https://www.mypy-lang.org/) or [pyrefly](https://pyrefly.org/) for static type checking
 - [pytest](https://docs.pytest.org/en/latest/) for testing
 - [pytest-cov](https://github.com/pytest-dev/pytest-cov) for test coverage reports
 - [ruff](https://beta.ruff.rs/docs/) for linting and code formatting
@@ -130,6 +130,11 @@ generating the project.
 - Project Manager
 
   Specifies how project dependencies and builds should be handled
+
+- Type Checker
+
+  Choose between [mypy](https://www.mypy-lang.org/) and
+  [pyrefly](https://pyrefly.org/) for static type checking.
 
 - Application or Library
 

@@ -8,6 +8,7 @@ pub enum PythonPackage {
     Mkdocstrings,
     MyPy,
     Prek,
+    Pyrefly,
     Pytest,
     PytestAsyncio,
     PytestCov,
@@ -23,6 +24,7 @@ impl fmt::Display for PythonPackage {
             PythonPackage::Mkdocstrings => write!(f, "mkdocstrings"),
             PythonPackage::MyPy => write!(f, "mypy"),
             PythonPackage::Prek => write!(f, "prek"),
+            PythonPackage::Pyrefly => write!(f, "pyrefly"),
             PythonPackage::Pytest => write!(f, "pytest"),
             PythonPackage::PytestAsyncio => write!(f, "pytest-asyncio"),
             PythonPackage::PytestCov => write!(f, "pytest-cov"),
@@ -36,6 +38,7 @@ pub enum PrekHook {
     Builtin,
     PreCommit,
     MyPy,
+    Pyrefly,
     Ruff,
 }
 
@@ -45,6 +48,7 @@ impl fmt::Display for PrekHook {
             PrekHook::Builtin => write!(f, "builtin"),
             PrekHook::MyPy => write!(f, "mypy"),
             PrekHook::PreCommit => write!(f, "pre-commit"),
+            PrekHook::Pyrefly => write!(f, "pyrefly"),
             PrekHook::Ruff => write!(f, "ruff"),
         }
     }
@@ -55,6 +59,7 @@ pub fn default_pre_commit_rev(hook: &PrekHook) -> Option<String> {
         PrekHook::Builtin => None,
         PrekHook::MyPy => Some("v1.18.2".to_string()),
         PrekHook::PreCommit => Some("v6.0.0".to_string()),
+        PrekHook::Pyrefly => Some("1.1.1".to_string()),
         PrekHook::Ruff => Some("v0.14.4".to_string()),
     }
 }
@@ -64,6 +69,7 @@ pub fn pre_commit_repo(hook: &PrekHook) -> String {
         PrekHook::Builtin => "builtin".to_string(),
         PrekHook::MyPy => "https://github.com/pre-commit/mirrors-mypy".to_string(),
         PrekHook::PreCommit => "https://github.com/pre-commit/pre-commit-hooks".to_string(),
+        PrekHook::Pyrefly => "https://github.com/facebook/pyrefly-pre-commit".to_string(),
         PrekHook::Ruff => "https://github.com/astral-sh/ruff-pre-commit".to_string(),
     }
 }
