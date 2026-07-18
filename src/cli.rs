@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand, ValueEnum};
 
 use crate::project_info::{
-    Day, DependabotSchedule, LicenseType, ProjectManager, Pyo3PythonManager,
+    Day, DependabotSchedule, LicenseType, ProjectManager, Pyo3PythonManager, TypeChecker,
 };
 
 #[derive(Clone, Debug, ValueEnum)]
@@ -88,6 +88,12 @@ pub enum Param {
 
     /// Remove the saved PyO3 Python manager
     ResetPyo3PythonManager,
+
+    /// Save a default type checker
+    TypeChecker { value: TypeChecker },
+
+    /// Remove the saved type checker
+    ResetTypeChecker,
 
     /// Save a default value for is async project
     IsAsyncProject { value: BooleanChoice },

@@ -272,7 +272,7 @@ async def login_access_token(
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     access_token = security.create_access_token(
-        str(user.id), user.is_superuser, expires_delta=access_token_expires
+        user.id, user.is_superuser, expires_delta=access_token_expires
     )
 
     response.set_cookie(

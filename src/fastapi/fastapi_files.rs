@@ -242,7 +242,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
         )
 
         original_exc_type = type(exc.__cause__).__name__ if exc.__cause__ else "HTTPException"
-        original_exc_msg = str(exc.__cause__) if exc.__cause__ else str(exc.detail)
+        original_exc_msg = str(exc.__cause__) if exc.__cause__ else exc.detail
 
         msg = f"""HTTP {{exc.status_code}} error in {{request.method}} {{request.url.path}}\n
             Original exception: {{original_exc_type}}: {{original_exc_msg}}\n

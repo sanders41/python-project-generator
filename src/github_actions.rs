@@ -2,7 +2,9 @@ use anyhow::{bail, Result};
 
 use crate::{
     file_manager::save_file_with_content,
-    project_info::{Day, DependabotSchedule, ProjectInfo, ProjectManager, Pyo3PythonManager},
+    project_info::{
+        Day, DependabotSchedule, ProjectInfo, ProjectManager, Pyo3PythonManager, TypeChecker,
+    },
 };
 
 fn build_actions_python_test_versions(github_action_python_test_versions: &[String]) -> String {
@@ -17,8 +19,14 @@ fn create_setuptools_ci_testing_linux_only_file(
     source_dir: &str,
     min_python_version: &str,
     github_action_python_test_versions: &[String],
+    type_checker: &TypeChecker,
 ) -> String {
     let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+    let type_checker_command = match type_checker {
+        TypeChecker::Mypy => format!("mypy {source_dir} tests"),
+        TypeChecker::Pyrefly => "pyrefly check".to_string(),
+    };
+    let type_checker = type_checker.to_string();
 
     format!(
         r#"name: Testing
@@ -48,8 +56,8 @@ jobs:
       run: ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: ruff check .
-    - name: mypy check
-      run: mypy .
+    - name: {type_checker} check
+      run: {type_checker_command}
   testing:
     strategy:
       fail-fast: false
@@ -78,8 +86,14 @@ fn create_setuptools_ci_testing_fastapi_file(
     source_dir: &str,
     min_python_version: &str,
     github_action_python_test_versions: &[String],
+    type_checker: &TypeChecker,
 ) -> String {
     let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+    let type_checker_command = match type_checker {
+        TypeChecker::Mypy => format!("mypy {source_dir} tests"),
+        TypeChecker::Pyrefly => "pyrefly check".to_string(),
+    };
+    let type_checker = type_checker.to_string();
 
     format!(
         r#"name: Testing
@@ -125,8 +139,8 @@ jobs:
       run: ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: ruff check .
-    - name: mypy check
-      run: mypy .
+    - name: {type_checker} check
+      run: {type_checker_command}
   testing:
     strategy:
       fail-fast: false
@@ -164,8 +178,14 @@ fn create_uv_ci_testing_linux_only_file(
     source_dir: &str,
     min_python_version: &str,
     github_action_python_test_versions: &[String],
+    type_checker: &TypeChecker,
 ) -> String {
     let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+    let type_checker_command = match type_checker {
+        TypeChecker::Mypy => format!("uv run mypy {source_dir} tests"),
+        TypeChecker::Pyrefly => "uv run pyrefly check".to_string(),
+    };
+    let type_checker = type_checker.to_string();
 
     format!(
         r#"name: Testing
@@ -196,8 +216,8 @@ jobs:
       run: uv run ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: uv run ruff check .
-    - name: mypy check
-      run: uv run mypy .
+    - name: {type_checker} check
+      run: {type_checker_command}
   testing:
     strategy:
       fail-fast: false
@@ -227,8 +247,14 @@ fn create_uv_ci_testing_fastapi_file(
     source_dir: &str,
     min_python_version: &str,
     github_action_python_test_versions: &[String],
+    type_checker: &TypeChecker,
 ) -> String {
     let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+    let type_checker_command = match type_checker {
+        TypeChecker::Mypy => format!("uv run mypy {source_dir} tests"),
+        TypeChecker::Pyrefly => "uv run pyrefly check".to_string(),
+    };
+    let type_checker = type_checker.to_string();
 
     format!(
         r#"name: Testing
@@ -275,8 +301,8 @@ jobs:
       run: uv run ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: uv run ruff check .
-    - name: mypy check
-      run: uv run mypy .
+    - name: {type_checker} check
+      run: {type_checker_command}
   testing:
     strategy:
       fail-fast: false
@@ -316,8 +342,16 @@ fn create_ci_testing_linux_only_file_pyo3(
     min_python_version: &str,
     github_action_python_test_versions: &[String],
     pyo3_python_manager: &Pyo3PythonManager,
+    type_checker: &TypeChecker,
 ) -> String {
     let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+    let type_checker_command = match (pyo3_python_manager, type_checker) {
+        (Pyo3PythonManager::Uv, TypeChecker::Mypy) => format!("uv run mypy {source_dir} tests"),
+        (Pyo3PythonManager::Uv, TypeChecker::Pyrefly) => "uv run pyrefly check".to_string(),
+        (Pyo3PythonManager::Setuptools, TypeChecker::Mypy) => format!("mypy {source_dir} tests"),
+        (Pyo3PythonManager::Setuptools, TypeChecker::Pyrefly) => "pyrefly check".to_string(),
+    };
+    let type_checker = type_checker.to_string();
     match pyo3_python_manager {
         Pyo3PythonManager::Uv => format!(
             r#"name: Testing
@@ -379,8 +413,8 @@ jobs:
       run: uv run ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: uv run ruff check .
-    - name: mypy check
-      run: uv run mypy {source_dir} tests
+    - name: {type_checker} check
+      run: {type_checker_command}
   testing:
     strategy:
       fail-fast: false
@@ -464,8 +498,8 @@ jobs:
       run: ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: ruff check .
-    - name: mypy check
-      run: mypy .
+    - name: {type_checker} check
+      run: {type_checker_command}
   testing:
     strategy:
       fail-fast: false
@@ -498,8 +532,16 @@ fn create_ci_testing_fastapi_file_pyo3(
     min_python_version: &str,
     github_action_python_test_versions: &[String],
     pyo3_python_manager: &Pyo3PythonManager,
+    type_checker: &TypeChecker,
 ) -> String {
     let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+    let type_checker_command = match (pyo3_python_manager, type_checker) {
+        (Pyo3PythonManager::Uv, TypeChecker::Mypy) => format!("uv run mypy {source_dir} tests"),
+        (Pyo3PythonManager::Uv, TypeChecker::Pyrefly) => "uv run pyrefly check".to_string(),
+        (Pyo3PythonManager::Setuptools, TypeChecker::Mypy) => format!("mypy {source_dir} tests"),
+        (Pyo3PythonManager::Setuptools, TypeChecker::Pyrefly) => "pyrefly check".to_string(),
+    };
+    let type_checker = type_checker.to_string();
     match pyo3_python_manager {
         Pyo3PythonManager::Uv => format!(
             r#"name: Testing
@@ -577,8 +619,8 @@ jobs:
       run: uv run ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: uv run ruff check .
-    - name: mypy check
-      run: uv run mypy {source_dir} tests
+    - name: {type_checker} check
+      run: {type_checker_command}
   testing:
     strategy:
       fail-fast: false
@@ -688,8 +730,8 @@ jobs:
       run: ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: ruff check .
-    - name: mypy check
-      run: mypy .
+    - name: {type_checker} check
+      run: {type_checker_command}
   testing:
     strategy:
       fail-fast: false
@@ -740,6 +782,7 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
                         &project_info.min_python_version,
                         &project_info.github_actions_python_test_versions,
                         pyo3_python_manager,
+                        &project_info.type_checker,
                     )
                 } else {
                     create_ci_testing_linux_only_file_pyo3(
@@ -747,6 +790,7 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
                         &project_info.min_python_version,
                         &project_info.github_actions_python_test_versions,
                         pyo3_python_manager,
+                        &project_info.type_checker,
                     )
                 }
 
@@ -756,6 +800,7 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
                     &project_info.min_python_version,
                     &project_info.github_actions_python_test_versions,
                     pyo3_python_manager,
+                    &project_info.type_checker,
                 )
             } else {
                 bail!("A PyO3 Python manager is required for maturin");
@@ -768,12 +813,14 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
                     &project_info.source_dir,
                     &project_info.min_python_version,
                     &project_info.github_actions_python_test_versions,
+                    &project_info.type_checker,
                 )
             } else {
                 create_setuptools_ci_testing_linux_only_file(
                     &project_info.source_dir,
                     &project_info.min_python_version,
                     &project_info.github_actions_python_test_versions,
+                    &project_info.type_checker,
                 )
             }
 
@@ -782,6 +829,7 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
                 &project_info.source_dir,
                 &project_info.min_python_version,
                 &project_info.github_actions_python_test_versions,
+                &project_info.type_checker,
             )
         }
         ProjectManager::Uv => {
@@ -791,12 +839,14 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
                     &project_info.source_dir,
                     &project_info.min_python_version,
                     &project_info.github_actions_python_test_versions,
+                    &project_info.type_checker,
                 )
             } else {
                 create_uv_ci_testing_linux_only_file(
                     &project_info.source_dir,
                     &project_info.min_python_version,
                     &project_info.github_actions_python_test_versions,
+                    &project_info.type_checker,
                 )
             }
 
@@ -805,6 +855,7 @@ pub fn save_ci_testing_linux_only_file(project_info: &ProjectInfo) -> Result<()>
                 &project_info.source_dir,
                 &project_info.min_python_version,
                 &project_info.github_actions_python_test_versions,
+                &project_info.type_checker,
             )
         }
     };
@@ -818,8 +869,14 @@ fn create_setuptools_ci_testing_multi_os_file(
     source_dir: &str,
     min_python_version: &str,
     github_action_python_test_versions: &[String],
+    type_checker: &TypeChecker,
 ) -> String {
     let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+    let type_checker_command = match type_checker {
+        TypeChecker::Mypy => format!("mypy {source_dir} tests"),
+        TypeChecker::Pyrefly => "pyrefly check".to_string(),
+    };
+    let type_checker = type_checker.to_string();
 
     format!(
         r#"name: Testing
@@ -849,8 +906,8 @@ jobs:
       run: ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: ruff check .
-    - name: mypy check
-      run: mypy .
+    - name: {type_checker} check
+      run: {type_checker_command}
   testing:
     strategy:
       fail-fast: false
@@ -880,8 +937,16 @@ fn create_ci_testing_multi_os_file_pyo3(
     min_python_version: &str,
     github_action_python_test_versions: &[String],
     pyo3_python_manager: &Pyo3PythonManager,
+    type_checker: &TypeChecker,
 ) -> String {
     let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+    let type_checker_command = match (pyo3_python_manager, type_checker) {
+        (Pyo3PythonManager::Uv, TypeChecker::Mypy) => format!("uv run mypy {source_dir} tests"),
+        (Pyo3PythonManager::Uv, TypeChecker::Pyrefly) => "uv run pyrefly check".to_string(),
+        (Pyo3PythonManager::Setuptools, TypeChecker::Mypy) => format!("mypy {source_dir} tests"),
+        (Pyo3PythonManager::Setuptools, TypeChecker::Pyrefly) => "pyrefly check".to_string(),
+    };
+    let type_checker = type_checker.to_string();
     match pyo3_python_manager {
         Pyo3PythonManager::Uv => format!(
             r#"name: Testing
@@ -943,8 +1008,8 @@ jobs:
       run: uv run ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: uv run ruff check .
-    - name: mypy check
-      run: uv run mypy {source_dir} tests
+    - name: {type_checker} check
+      run: {type_checker_command}
   testing:
     strategy:
       fail-fast: false
@@ -1029,8 +1094,8 @@ jobs:
       run: ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: ruff check .
-    - name: mypy check
-      run: mypy .
+    - name: {type_checker} check
+      run: {type_checker_command}
   testing:
     strategy:
       fail-fast: false
@@ -1062,8 +1127,14 @@ fn create_uv_ci_testing_multi_os_file(
     source_dir: &str,
     min_python_version: &str,
     github_action_python_test_versions: &[String],
+    type_checker: &TypeChecker,
 ) -> String {
     let python_versions = build_actions_python_test_versions(github_action_python_test_versions);
+    let type_checker_command = match type_checker {
+        TypeChecker::Mypy => format!("uv run mypy {source_dir} tests"),
+        TypeChecker::Pyrefly => "uv run pyrefly check".to_string(),
+    };
+    let type_checker = type_checker.to_string();
 
     format!(
         r#"name: Testing
@@ -1095,8 +1166,8 @@ jobs:
       run: uv run ruff format {source_dir} tests --check
     - name: Lint with ruff
       run: uv run ruff check .
-    - name: mypy check
-      run: uv run mypy .
+    - name: {type_checker} check
+      run: {type_checker_command}
   testing:
     strategy:
       fail-fast: false
@@ -1134,6 +1205,7 @@ pub fn save_ci_testing_multi_os_file(project_info: &ProjectInfo) -> Result<()> {
                     &project_info.min_python_version,
                     &project_info.github_actions_python_test_versions,
                     pyo3_python_manager,
+                    &project_info.type_checker,
                 )
             } else {
                 bail!("A PyO3 Python Manager is required for maturin");
@@ -1143,11 +1215,13 @@ pub fn save_ci_testing_multi_os_file(project_info: &ProjectInfo) -> Result<()> {
             &project_info.source_dir,
             &project_info.min_python_version,
             &project_info.github_actions_python_test_versions,
+            &project_info.type_checker,
         ),
         ProjectManager::Uv => create_uv_ci_testing_multi_os_file(
             &project_info.source_dir,
             &project_info.min_python_version,
             &project_info.github_actions_python_test_versions,
+            &project_info.type_checker,
         ),
     };
 
@@ -1820,7 +1894,7 @@ pub fn save_release_drafter_file(project_info: &ProjectInfo) -> Result<()> {
 mod tests {
     use super::*;
     use crate::project_info::{
-        DocsInfo, LicenseType, ProjectInfo, ProjectManager, Pyo3PythonManager,
+        DocsInfo, LicenseType, ProjectInfo, ProjectManager, Pyo3PythonManager, TypeChecker,
     };
     use insta::assert_yaml_snapshot;
     use std::fs::create_dir_all;
@@ -1845,6 +1919,7 @@ mod tests {
             min_python_version: "3.10".to_string(),
             project_manager: ProjectManager::Maturin,
             pyo3_python_manager: Some(Pyo3PythonManager::Uv),
+            type_checker: TypeChecker::Mypy,
             is_application: true,
             is_async_project: false,
             github_actions_python_test_versions: vec![
@@ -1973,6 +2048,60 @@ mod tests {
     fn test_save_uv_ci_testing_linux_only_file() {
         let mut project_info = project_info_dummy();
         project_info.project_manager = ProjectManager::Uv;
+        project_info.use_multi_os_ci = false;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        save_ci_testing_linux_only_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_uv_ci_testing_linux_only_file_pyrefly() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        project_info.type_checker = TypeChecker::Pyrefly;
+        project_info.use_multi_os_ci = false;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        save_ci_testing_linux_only_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_setuptools_ci_testing_linux_only_file_pyrefly() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Setuptools;
+        project_info.type_checker = TypeChecker::Pyrefly;
+        project_info.use_multi_os_ci = false;
+        let base = project_info.base_dir();
+        create_dir_all(base.join(".github/workflows")).unwrap();
+        let expected_file = base.join(".github/workflows/testing.yml");
+        save_ci_testing_linux_only_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
+    }
+
+    #[test]
+    fn test_save_ci_testing_linux_only_file_pyo3_pyrefly() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Maturin;
+        project_info.type_checker = TypeChecker::Pyrefly;
         project_info.use_multi_os_ci = false;
         let base = project_info.base_dir();
         create_dir_all(base.join(".github/workflows")).unwrap();

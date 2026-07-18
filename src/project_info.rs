@@ -110,6 +110,22 @@ impl fmt::Display for ProjectManager {
     }
 }
 
+#[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
+pub enum TypeChecker {
+    #[default]
+    Mypy,
+    Pyrefly,
+}
+
+impl fmt::Display for TypeChecker {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Mypy => write!(f, "mypy"),
+            Self::Pyrefly => write!(f, "pyrefly"),
+        }
+    }
+}
+
 #[cfg(feature = "fastapi")]
 #[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
 pub enum Database {
@@ -201,6 +217,7 @@ pub struct ProjectInfo {
     pub min_python_version: String,
     pub project_manager: ProjectManager,
     pub pyo3_python_manager: Option<Pyo3PythonManager>,
+    pub type_checker: TypeChecker,
     pub is_async_project: bool,
     pub is_application: bool,
     pub github_actions_python_test_versions: Vec<String>,
@@ -441,6 +458,30 @@ fn pyo3_python_manager_prompt(default: Option<Pyo3PythonManager>) -> Result<Pyo3
         Ok(Pyo3PythonManager::Uv)
     } else if input == "2" {
         Ok(Pyo3PythonManager::Setuptools)
+    } else {
+        bail!("Invalid selection");
+    }
+}
+
+fn type_checker_prompt(default: Option<TypeChecker>) -> Result<TypeChecker> {
+    let default_str = match default {
+        Some(d) => match d {
+            TypeChecker::Mypy => "1".to_string(),
+            TypeChecker::Pyrefly => "2".to_string(),
+        },
+        None => "1".to_string(),
+    };
+    let prompt_text = "Type Checker\n  1 - mypy\n  2 - pyrefly\n  Choose from [1, 2]".to_string();
+    let prompt = Prompt {
+        prompt_text,
+        default: Some(default_str),
+    };
+    let input = prompt.show_prompt()?;
+
+    if input == "1" {
+        Ok(TypeChecker::Mypy)
+    } else if input == "2" {
+        Ok(TypeChecker::Pyrefly)
     } else {
         bail!("Invalid selection");
     }
@@ -712,6 +753,13 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         None
     };
 
+    let type_checker = if use_defaults {
+        config.type_checker.unwrap_or_default()
+    } else {
+        let default = config.type_checker.unwrap_or_default();
+        type_checker_prompt(Some(default))?
+    };
+
     #[cfg(not(feature = "fastapi"))]
     let is_application = default_or_prompt_bool(
         "Application or Library\n  1 - Application\n  2 - Library\n  Choose from [1, 2]"
@@ -878,6 +926,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         min_python_version,
         project_manager,
         pyo3_python_manager,
+        type_checker,
         is_application,
         is_async_project,
         github_actions_python_test_versions,

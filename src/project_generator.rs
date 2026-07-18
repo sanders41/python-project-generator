@@ -10,7 +10,7 @@ use crate::{
     },
     licenses::{generate_license, license_str},
     package_version::{default_pre_commit_rev, pre_commit_repo, PrekHook, PythonPackage},
-    project_info::{LicenseType, ProjectInfo, ProjectManager, Pyo3PythonManager},
+    project_info::{LicenseType, ProjectInfo, ProjectManager, Pyo3PythonManager, TypeChecker},
     python_files::generate_python_files,
     rust_files::{save_cargo_toml_file, save_lib_file},
 };
@@ -217,7 +217,11 @@ pub fn determine_dev_packages(project_info: &ProjectInfo) -> Result<Vec<PythonPa
         packages.push(PythonPackage::Mkdocstrings);
     }
 
-    packages.push(PythonPackage::MyPy);
+    match project_info.type_checker {
+        TypeChecker::Mypy => packages.push(PythonPackage::MyPy),
+        TypeChecker::Pyrefly => packages.push(PythonPackage::Pyrefly),
+    }
+
     packages.push(PythonPackage::Prek);
     packages.push(PythonPackage::Pytest);
 
@@ -239,7 +243,7 @@ pub fn format_package_with_extras(package: &PythonPackage) -> String {
     }
 }
 
-fn create_prek_toml_file() -> String {
+fn create_prek_toml_file(type_checker: &TypeChecker) -> String {
     let mut prek_toml = format!(
         r#"[update]
 exclude_tags = ["*-{{alpha,beta,dev,rc}}*", "*.{{alpha,beta,dev,rc}}*"]
@@ -257,7 +261,11 @@ hooks = [
         pre_commit_repo(&PrekHook::Builtin)
     );
 
-    let hooks = vec![PrekHook::PreCommit, PrekHook::MyPy, PrekHook::Ruff];
+    let type_checker_hook = match type_checker {
+        TypeChecker::Mypy => PrekHook::MyPy,
+        TypeChecker::Pyrefly => PrekHook::Pyrefly,
+    };
+    let hooks = vec![PrekHook::PreCommit, type_checker_hook, PrekHook::Ruff];
 
     for hook in hooks {
         let repo = pre_commit_repo(&hook);
@@ -274,6 +282,11 @@ hooks = [
             PrekHook::MyPy => {
                 prek_toml.push_str("hooks = [\n  { id = \"mypy\" },\n]\n");
             }
+            PrekHook::Pyrefly => {
+                prek_toml.push_str(
+                    "hooks = [\n  {\n    id = \"pyrefly-check\",\n    name = \"pyrefly\",\n    pass_filenames = false,\n    language = \"system\",\n    entry = \"uv run pyrefly check\"\n  }\n]\n",
+                );
+            }
             PrekHook::Ruff => {
                 prek_toml.push_str(
                     "hooks = [\n  { id = \"ruff-check\", args = [\"--fix\", \"--exit-non-zero-on-fix\"] },\n  { id = \"ruff-format\" },\n]\n",
@@ -288,7 +301,7 @@ hooks = [
 
 fn save_prek_toml_file(project_info: &ProjectInfo) -> Result<()> {
     let file_path = project_info.base_dir().join("prek.toml");
-    let content = create_prek_toml_file();
+    let content = create_prek_toml_file(&project_info.type_checker);
     save_file_with_content(&file_path, &content)?;
 
     Ok(())
@@ -468,8 +481,10 @@ path = "{module}/_version.py"
         }
     };
 
-    pyproject.push_str(
-        r#"[tool.mypy]
+    match project_info.type_checker {
+        TypeChecker::Mypy => {
+            pyproject.push_str(
+                r#"[tool.mypy]
 check_untyped_defs = true
 disallow_untyped_defs = true
 
@@ -477,17 +492,27 @@ disallow_untyped_defs = true
 module = ["tests.*"]
 disallow_untyped_defs = false
 "#,
-    );
+            );
 
-    #[cfg(feature = "fastapi")]
-    if project_info.is_fastapi_project {
-        pyproject.push_str(
-            r#"
+            #[cfg(feature = "fastapi")]
+            if project_info.is_fastapi_project {
+                pyproject.push_str(
+                    r#"
 [[tool.mypy.overrides]]
 module = ["asyncpg.*"]
 ignore_missing_imports = true
 "#,
-        );
+                );
+            }
+        }
+        TypeChecker::Pyrefly => {
+            pyproject.push_str(
+                r#"[[tool.pyrefly.sub-config]]
+matches = "tests/**"
+check-unannotated-defs = false
+"#,
+            );
+        }
     }
 
     pyproject.push_str(&format!(
@@ -700,6 +725,11 @@ fn save_docs_css(project_info: &ProjectInfo) -> Result<()> {
 
 fn create_pyo3_justfile(project_info: &ProjectInfo) -> Result<String> {
     let module = project_info.module_name();
+    let type_checker = project_info.type_checker.to_string();
+    let type_checker_command = match project_info.type_checker {
+        TypeChecker::Mypy => format!("mypy {module} tests"),
+        TypeChecker::Pyrefly => "pyrefly check".to_string(),
+    };
     let pyo3_python_manager = if let Some(manager) = &project_info.pyo3_python_manager {
         manager
     } else {
@@ -719,8 +749,8 @@ fn create_pyo3_justfile(project_info: &ProjectInfo) -> Result<String> {
   just --justfile {{{{justfile()}}}} clippy
   echo cargo fmt
   just --justfile {{{{justfile()}}}} fmt
-  echo mypy
-  just --justfile {{{{justfile()}}}} mypy
+  echo {type_checker}
+  just --justfile {{{{justfile()}}}} {type_checker}
   echo ruff check
   just --justfile {{{{justfile()}}}} ruff-check
   echo ruff formatting
@@ -755,8 +785,8 @@ fn create_pyo3_justfile(project_info: &ProjectInfo) -> Result<String> {
 @fmt:
   cargo fmt --all -- --check
 
-@mypy:
-  uv run mypy {module} tests
+@{type_checker}:
+  uv run {type_checker_command}
 
 @ruff-check:
   uv run ruff check {module} tests --fix
@@ -802,8 +832,8 @@ granian_cmd := if os() != "windows" {
   just --justfile {{{{justfile()}}}} clippy
   echo cargo fmt
   just --justfile {{{{justfile()}}}} fmt
-  echo mypy
-  just --justfile {{{{justfile()}}}} mypy
+  echo {type_checker}
+  just --justfile {{{{justfile()}}}} {type_checker}
   echo ruff check
   just --justfile {{{{justfile()}}}} ruff-check
   echo ruff formatting
@@ -832,8 +862,8 @@ granian_cmd := if os() != "windows" {
 @fmt:
   cargo fmt --all -- --check
 
-@mypy:
-  python -m mypy {module} tests
+@{type_checker}:
+  python -m {type_checker_command}
 
 @ruff-check:
   python -m ruff check {module} tests --fix
@@ -906,6 +936,11 @@ granian_cmd := if os() != "windows" {
 
 fn create_setuptools_justfile(project_info: &ProjectInfo) -> String {
     let module = project_info.module_name();
+    let type_checker = project_info.type_checker.to_string();
+    let type_checker_command = match project_info.type_checker {
+        TypeChecker::Mypy => format!("mypy {module} tests"),
+        TypeChecker::Pyrefly => "pyrefly check".to_string(),
+    };
 
     #[cfg_attr(not(feature = "fastapi"), allow(unused_mut))]
     let mut justfile = format!(
@@ -913,15 +948,15 @@ fn create_setuptools_justfile(project_info: &ProjectInfo) -> String {
   just --list
 
 @lint:
-  echo mypy
-  just --justfile {{{{justfile()}}}} mypy
+  echo {type_checker}
+  just --justfile {{{{justfile()}}}} {type_checker}
   echo ruff-check
   just --justfile {{{{justfile()}}}} ruff-check
   echo ruff-format
   just --justfile {{{{justfile()}}}} ruff-format
 
-@mypy:
-  python -m mypy {module} tests
+@{type_checker}:
+  python -m {type_checker_command}
 
 @ruff-check:
   python -m ruff check {module} tests
@@ -985,6 +1020,11 @@ granian_cmd := if os() != "windows" {
 
 fn create_uv_justfile(project_info: &ProjectInfo) -> String {
     let module = project_info.module_name();
+    let type_checker = project_info.type_checker.to_string();
+    let type_checker_command = match project_info.type_checker {
+        TypeChecker::Mypy => format!("mypy {module} tests"),
+        TypeChecker::Pyrefly => "pyrefly check".to_string(),
+    };
 
     #[cfg_attr(not(feature = "fastapi"), allow(unused_mut))]
     let mut justfile = format!(
@@ -992,15 +1032,15 @@ fn create_uv_justfile(project_info: &ProjectInfo) -> String {
   just --list
 
 @lint:
-  echo mypy
-  just --justfile {{{{justfile()}}}} mypy
+  echo {type_checker}
+  just --justfile {{{{justfile()}}}} {type_checker}
   echo ruff-check
   just --justfile {{{{justfile()}}}} ruff-check
   echo ruff-format
   just --justfile {{{{justfile()}}}} ruff-format
 
-@mypy:
-  uv run mypy {module} tests
+@{type_checker}:
+  uv run {type_checker_command}
 
 @ruff-check:
   uv run ruff check {module} tests
@@ -1212,7 +1252,7 @@ pub fn generate_project(project_info: &ProjectInfo) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project_info::{DocsInfo, LicenseType, ProjectInfo, Pyo3PythonManager};
+    use crate::project_info::{DocsInfo, LicenseType, ProjectInfo, Pyo3PythonManager, TypeChecker};
     use insta::assert_yaml_snapshot;
     use tmp_path::tmp_path;
 
@@ -1235,6 +1275,7 @@ mod tests {
             min_python_version: "3.10".to_string(),
             project_manager: ProjectManager::Uv,
             pyo3_python_manager: Some(Pyo3PythonManager::Uv),
+            type_checker: TypeChecker::Mypy,
             is_application: true,
             is_async_project: false,
             github_actions_python_test_versions: vec![
@@ -1321,6 +1362,61 @@ mod tests {
         insta::with_settings!({filters => vec![
             (r#"rev = "v\d+\.\d+\.\d+""#, r#"rev = "v1.0.0""#),
         ]}, { assert_yaml_snapshot!(content)});
+    }
+
+    #[test]
+    fn test_save_prek_toml_file_pyrefly() {
+        let mut project_info = project_info_dummy();
+        project_info.type_checker = TypeChecker::Pyrefly;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("prek.toml");
+        save_prek_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        insta::with_settings!({filters => vec![
+            (r#"rev = "v\d+\.\d+\.\d+""#, r#"rev = "v1.0.0""#),
+        ]}, { assert_yaml_snapshot!(content)});
+    }
+
+    #[test]
+    fn test_save_pyproject_toml_file_pyrefly() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        project_info.type_checker = TypeChecker::Pyrefly;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
+    }
+
+    #[test]
+    fn test_save_justfile_uv_pyrefly() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        project_info.type_checker = TypeChecker::Pyrefly;
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("justfile");
+        save_justfile(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        assert_yaml_snapshot!(content);
     }
 
     #[test]

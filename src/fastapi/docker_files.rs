@@ -800,7 +800,9 @@ pub fn save_entrypoint_script(project_info: &ProjectInfo) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::project_info::{DatabaseManager, LicenseType, ProjectInfo, Pyo3PythonManager};
+    use crate::project_info::{
+        DatabaseManager, LicenseType, ProjectInfo, Pyo3PythonManager, TypeChecker,
+    };
     use insta::assert_yaml_snapshot;
     use std::fs::create_dir_all;
     use tmp_path::tmp_path;
@@ -821,6 +823,7 @@ mod tests {
             min_python_version: "3.10".to_string(),
             project_manager: ProjectManager::Uv,
             pyo3_python_manager: Some(Pyo3PythonManager::Uv),
+            type_checker: TypeChecker::Mypy,
             is_application: true,
             is_async_project: false,
             github_actions_python_test_versions: vec![
