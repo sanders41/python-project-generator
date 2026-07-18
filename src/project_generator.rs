@@ -506,6 +506,18 @@ ignore_missing_imports = true
             }
         }
         TypeChecker::Pyrefly => {
+            #[cfg(feature = "fastapi")]
+            if project_info.is_fastapi_project {
+                pyproject.push_str(
+                    r#"[tool.pyrefly]
+ignore-missing-imports = [
+  "asyncpg.*",
+]
+
+"#,
+                );
+            }
+
             pyproject.push_str(
                 r#"[[tool.pyrefly.sub-config]]
 matches = "tests/**"
@@ -1746,6 +1758,29 @@ mod tests {
         let content = std::fs::read_to_string(expected_file).unwrap();
 
         assert_yaml_snapshot!(content);
+    }
+
+    #[cfg(feature = "fastapi")]
+    #[test]
+    fn test_save_pyproject_toml_file_pyrefly_fastapi() {
+        let mut project_info = project_info_dummy();
+        project_info.project_manager = ProjectManager::Uv;
+        project_info.type_checker = TypeChecker::Pyrefly;
+        project_info.is_fastapi_project = true;
+        project_info.database_manager = Some(DatabaseManager::AsyncPg);
+        let base = project_info.base_dir();
+        create_dir_all(&base).unwrap();
+        let expected_file = base.join("pyproject.toml");
+        save_pyproject_toml_file(&project_info).unwrap();
+
+        assert!(expected_file.is_file());
+
+        let content = std::fs::read_to_string(expected_file).unwrap();
+
+        insta::with_settings!({filters => vec![
+            (r"==\d+\.\d+\.\d+", "==1.0.0"),
+            (r">=\d+\.\d+\.\d+", ">=1.0.0"),
+        ]}, { assert_yaml_snapshot!(content)});
     }
 
     #[cfg(feature = "fastapi")]
