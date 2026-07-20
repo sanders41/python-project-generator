@@ -101,7 +101,7 @@ jobs:
         if: runner.os == 'Windows'
         run: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "${{ env.MIN_PYTHON_VERSION }}"
       - name: Build package
@@ -137,7 +137,7 @@ jobs:
         if: runner.os == 'Windows'
         run: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
       - name: Build package
@@ -177,7 +177,7 @@ jobs:
         if: runner.os == 'Windows'
         run: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "${{ env.MIN_PYTHON_VERSION }}"
       - name: Build package
@@ -219,7 +219,7 @@ jobs:
         if: runner.os == 'Windows'
         run: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
       - name: Build package
@@ -252,7 +252,7 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.9.1
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "${{ env.MIN_PYTHON_VERSION }}"
       - name: Build package
@@ -292,7 +292,7 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2.9.1
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "${{ env.MIN_PYTHON_VERSION }}"
       - name: Build package
