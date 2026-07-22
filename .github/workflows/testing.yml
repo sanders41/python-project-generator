@@ -12,6 +12,7 @@ env:
   WORKING_DIR: "my-project"
   MIN_PYTHON_VERSION: "3.10"
   CI: true # For insta
+  SKIP: no-commit-to-branch
 jobs:
   clippy:
     name: Clippy
