@@ -16,7 +16,7 @@ fn build_actions_python_test_versions(github_action_python_test_versions: &[Stri
 }
 
 fn create_prek_skip(type_checker: &TypeChecker) -> String {
-    let mut prek_skip = String::from("\n      env:\n        SKIP: no-commit-to-branch");
+    let mut prek_skip = String::from("\n      env:\n        PREK_SKIP: no-commit-to-branch");
     if let TypeChecker::Pyrefly = type_checker {
         prek_skip.push_str(",pyrefly-check");
     }
