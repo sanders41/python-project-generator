@@ -15,6 +15,15 @@ fn build_actions_python_test_versions(github_action_python_test_versions: &[Stri
         .join(", ")
 }
 
+fn create_prek_skip(type_checker: &TypeChecker) -> String {
+    let mut prek_skip = String::from("\n      env:\n        SKIP: no-commit-to-branch");
+    if let TypeChecker::Pyrefly = type_checker {
+        prek_skip.push_str(",pyrefly-check");
+    }
+
+    prek_skip
+}
+
 fn create_setuptools_ci_testing_linux_only_file(
     source_dir: &str,
     min_python_version: &str,
@@ -26,10 +35,7 @@ fn create_setuptools_ci_testing_linux_only_file(
         TypeChecker::Mypy => format!("mypy {source_dir} tests"),
         TypeChecker::Pyrefly => "pyrefly check".to_string(),
     };
-    let prek_skip = match type_checker {
-        TypeChecker::Mypy => "",
-        TypeChecker::Pyrefly => "\n      env:\n        SKIP: pyrefly-check",
-    };
+    let prek_skip = create_prek_skip(type_checker);
     let type_checker = type_checker.to_string();
 
     format!(
@@ -102,10 +108,7 @@ fn create_setuptools_ci_testing_fastapi_file(
         TypeChecker::Mypy => format!("mypy {source_dir} tests"),
         TypeChecker::Pyrefly => "pyrefly check".to_string(),
     };
-    let prek_skip = match type_checker {
-        TypeChecker::Mypy => "",
-        TypeChecker::Pyrefly => "\n      env:\n        SKIP: pyrefly-check",
-    };
+    let prek_skip = create_prek_skip(type_checker);
     let type_checker = type_checker.to_string();
 
     format!(
@@ -203,10 +206,7 @@ fn create_uv_ci_testing_linux_only_file(
         TypeChecker::Mypy => format!("uv run mypy {source_dir} tests"),
         TypeChecker::Pyrefly => "uv run pyrefly check".to_string(),
     };
-    let prek_skip = match type_checker {
-        TypeChecker::Mypy => "",
-        TypeChecker::Pyrefly => "\n      env:\n        SKIP: pyrefly-check",
-    };
+    let prek_skip = create_prek_skip(type_checker);
     let type_checker = type_checker.to_string();
 
     format!(
@@ -281,10 +281,7 @@ fn create_uv_ci_testing_fastapi_file(
         TypeChecker::Mypy => format!("uv run mypy {source_dir} tests"),
         TypeChecker::Pyrefly => "uv run pyrefly check".to_string(),
     };
-    let prek_skip = match type_checker {
-        TypeChecker::Mypy => "",
-        TypeChecker::Pyrefly => "\n      env:\n        SKIP: pyrefly-check",
-    };
+    let prek_skip = create_prek_skip(type_checker);
     let type_checker = type_checker.to_string();
 
     format!(
@@ -387,10 +384,7 @@ fn create_ci_testing_linux_only_file_pyo3(
         (Pyo3PythonManager::Setuptools, TypeChecker::Mypy) => format!("mypy {source_dir} tests"),
         (Pyo3PythonManager::Setuptools, TypeChecker::Pyrefly) => "pyrefly check".to_string(),
     };
-    let prek_skip = match type_checker {
-        TypeChecker::Mypy => "",
-        TypeChecker::Pyrefly => "\n      env:\n        SKIP: pyrefly-check",
-    };
+    let prek_skip = create_prek_skip(type_checker);
     let type_checker = type_checker.to_string();
     match pyo3_python_manager {
         Pyo3PythonManager::Uv => format!(
@@ -591,10 +585,7 @@ fn create_ci_testing_fastapi_file_pyo3(
         (Pyo3PythonManager::Setuptools, TypeChecker::Mypy) => format!("mypy {source_dir} tests"),
         (Pyo3PythonManager::Setuptools, TypeChecker::Pyrefly) => "pyrefly check".to_string(),
     };
-    let prek_skip = match type_checker {
-        TypeChecker::Mypy => "",
-        TypeChecker::Pyrefly => "\n      env:\n        SKIP: pyrefly-check",
-    };
+    let prek_skip = create_prek_skip(type_checker);
     let type_checker = type_checker.to_string();
     match pyo3_python_manager {
         Pyo3PythonManager::Uv => format!(
@@ -940,10 +931,7 @@ fn create_setuptools_ci_testing_multi_os_file(
         TypeChecker::Mypy => format!("mypy {source_dir} tests"),
         TypeChecker::Pyrefly => "pyrefly check".to_string(),
     };
-    let prek_skip = match type_checker {
-        TypeChecker::Mypy => "",
-        TypeChecker::Pyrefly => "\n      env:\n        SKIP: pyrefly-check",
-    };
+    let prek_skip = create_prek_skip(type_checker);
     let type_checker = type_checker.to_string();
 
     format!(
@@ -1019,10 +1007,7 @@ fn create_ci_testing_multi_os_file_pyo3(
         (Pyo3PythonManager::Setuptools, TypeChecker::Mypy) => format!("mypy {source_dir} tests"),
         (Pyo3PythonManager::Setuptools, TypeChecker::Pyrefly) => "pyrefly check".to_string(),
     };
-    let prek_skip = match type_checker {
-        TypeChecker::Mypy => "",
-        TypeChecker::Pyrefly => "\n      env:\n        SKIP: pyrefly-check",
-    };
+    let prek_skip = create_prek_skip(type_checker);
     let type_checker = type_checker.to_string();
     match pyo3_python_manager {
         Pyo3PythonManager::Uv => format!(
@@ -1221,10 +1206,7 @@ fn create_uv_ci_testing_multi_os_file(
         TypeChecker::Mypy => format!("uv run mypy {source_dir} tests"),
         TypeChecker::Pyrefly => "uv run pyrefly check".to_string(),
     };
-    let prek_skip = match type_checker {
-        TypeChecker::Mypy => "",
-        TypeChecker::Pyrefly => "\n      env:\n        SKIP: pyrefly-check",
-    };
+    let prek_skip = create_prek_skip(type_checker);
     let type_checker = type_checker.to_string();
 
     format!(
