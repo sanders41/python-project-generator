@@ -255,6 +255,7 @@ hooks = [
   {{ id = "check-toml" }},
   {{ id = "check-yaml" }},
   {{ id = "end-of-file-fixer" }},
+  {{ id = "no-commit-to-branch" }},
   {{ id = "trailing-whitespace" }},
 ]
 "#,
