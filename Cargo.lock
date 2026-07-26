@@ -1024,7 +1024,6 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "tempfile",
  "time",
  "tmp-path",
 ]
@@ -1663,13 +1662,12 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tmp-path"
-version = "0.1.2"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a626bc67f14c4647484ad5b5f1fe946349d83aa20ccd65cbf290e8ef03716d7c"
+checksum = "3801390d3d35be6c636b682daeef481ec279fae7eafa0632151fedf0f92689c8"
 dependencies = [
  "quote",
- "syn 2.0.119",
- "tempfile",
+ "syn 3.0.3",
 ]
 
 [[package]]
