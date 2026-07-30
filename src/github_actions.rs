@@ -72,7 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
-    - uses: j178/prek-action@v2{prek_skip}
+    - uses: j178/prek-action@v3.0.0{prek_skip}
   testing:
     strategy:
       fail-fast: false
@@ -161,7 +161,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
-    - uses: j178/prek-action@v2{prek_skip}
+    - uses: j178/prek-action@v3.0.0{prek_skip}
   testing:
     strategy:
       fail-fast: false
@@ -244,7 +244,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
-    - uses: j178/prek-action@v2{prek_skip}
+    - uses: j178/prek-action@v3.0.0{prek_skip}
   testing:
     strategy:
       fail-fast: false
@@ -335,7 +335,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
-    - uses: j178/prek-action@v2{prek_skip}
+    - uses: j178/prek-action@v3.0.0{prek_skip}
   testing:
     strategy:
       fail-fast: false
@@ -453,7 +453,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
-    - uses: j178/prek-action@v2{prek_skip}
+    - uses: j178/prek-action@v3.0.0{prek_skip}
   testing:
     strategy:
       fail-fast: false
@@ -543,7 +543,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
-    - uses: j178/prek-action@v2{prek_skip}
+    - uses: j178/prek-action@v3.0.0{prek_skip}
   testing:
     strategy:
       fail-fast: false
@@ -670,7 +670,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
-    - uses: j178/prek-action@v2{prek_skip}
+    - uses: j178/prek-action@v3.0.0{prek_skip}
   testing:
     strategy:
       fail-fast: false
@@ -786,7 +786,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
-    - uses: j178/prek-action@v2{prek_skip}
+    - uses: j178/prek-action@v3.0.0{prek_skip}
   testing:
     strategy:
       fail-fast: false
@@ -968,7 +968,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
-    - uses: j178/prek-action@v2{prek_skip}
+    - uses: j178/prek-action@v3.0.0{prek_skip}
   testing:
     strategy:
       fail-fast: false
@@ -1076,7 +1076,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
-    - uses: j178/prek-action@v2{prek_skip}
+    - uses: j178/prek-action@v3.0.0{prek_skip}
   testing:
     strategy:
       fail-fast: false
@@ -1167,7 +1167,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
-    - uses: j178/prek-action@v2{prek_skip}
+    - uses: j178/prek-action@v3.0.0{prek_skip}
   testing:
     strategy:
       fail-fast: false
@@ -1245,7 +1245,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
-    - uses: j178/prek-action@v2{prek_skip}
+    - uses: j178/prek-action@v3.0.0{prek_skip}
   testing:
     strategy:
       fail-fast: false
