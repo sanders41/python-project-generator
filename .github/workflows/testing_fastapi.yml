@@ -36,7 +36,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2.9.1
+        uses: Swatinem/rust-cache@v2.9.2
       - name: Install sqlx-cli
         run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
       - name: Install uv
@@ -76,7 +76,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2.9.1
+        uses: Swatinem/rust-cache@v2.9.2
       - name: Install uv
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Set up Python
@@ -107,7 +107,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2.9.1
+        uses: Swatinem/rust-cache@v2.9.2
       - name: Install sqlx-cli
         run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
       - name: Set up Python
@@ -145,7 +145,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2.9.1
+        uses: Swatinem/rust-cache@v2.9.2
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
@@ -174,7 +174,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2.9.1
+        uses: Swatinem/rust-cache@v2.9.2
       - name: Install sqlx-cli
         run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
       - name: Install uv
@@ -214,7 +214,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2.9.1
+        uses: Swatinem/rust-cache@v2.9.2
       - name: Install uv
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Set up Python
@@ -249,7 +249,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2.9.1
+        uses: Swatinem/rust-cache@v2.9.2
       - name: Install sqlx-cli
         run: cargo install sqlx-cli --no-default-features -F native-tls -F postgres
       - name: Set up Python
@@ -291,7 +291,7 @@ jobs:
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2.9.1
+        uses: Swatinem/rust-cache@v2.9.2
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
