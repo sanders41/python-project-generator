@@ -990,17 +990,16 @@ fn license_prompt(default: Option<LicenseType>) -> Result<LicenseType> {
         default: default_license,
     };
     let input = prompt.show_prompt()?;
-    let license: LicenseType;
 
-    if input == "1" || input.is_empty() {
-        license = LicenseType::Mit;
+    let license = if input == "1" || input.is_empty() {
+        LicenseType::Mit
     } else if input == "2" {
-        license = LicenseType::Apache2;
+        LicenseType::Apache2
     } else if input == "3" {
-        license = LicenseType::NoLicense;
+        LicenseType::NoLicense
     } else {
         bail!("Invalid license type");
-    }
+    };
 
     Ok(license)
 }
