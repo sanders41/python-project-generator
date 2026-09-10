@@ -23,7 +23,7 @@ fastapi = []
 anyhow = "1.0.102"
 clap = { version = "4.6.2", features = ["color", "suggestions", "derive"] }
 colored = "3.1.1"
-dirs = "6.0.0"
+dirs = "7.0.0"
 exponential-backoff = "2.1.0"
 indicatif = "0.18.6"
 rayon = "1.12.0"
