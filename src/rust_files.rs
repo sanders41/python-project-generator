@@ -161,7 +161,7 @@ mod tests {
 
         insta::with_settings!({filters => vec![
             (r"\d+\.\d+\.\d+", "1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
+        ]}, { assert_yaml_snapshot!(content);});
     }
 
     #[test]

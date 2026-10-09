@@ -1374,7 +1374,7 @@ mod tests {
 
         insta::with_settings!({filters => vec![
             (r#"rev = "v\d+\.\d+\.\d+""#, r#"rev = "v1.0.0""#),
-        ]}, { assert_yaml_snapshot!(content)});
+        ]}, { assert_yaml_snapshot!(content);});
     }
 
     #[test]
@@ -1392,7 +1392,7 @@ mod tests {
 
         insta::with_settings!({filters => vec![
             (r#"rev = "v\d+\.\d+\.\d+""#, r#"rev = "v1.0.0""#),
-        ]}, { assert_yaml_snapshot!(content)});
+        ]}, { assert_yaml_snapshot!(content);});
     }
 
     #[test]
@@ -1412,7 +1412,7 @@ mod tests {
         insta::with_settings!({filters => vec![
             (r"==\d+\.\d+\.\d+", "==1.0.0"),
             (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
+        ]}, { assert_yaml_snapshot!(content);});
     }
 
     #[test]
@@ -1450,7 +1450,7 @@ mod tests {
         insta::with_settings!({filters => vec![
             (r"==\d+\.\d+\.\d+", "==1.0.0"),
             (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
+        ]}, { assert_yaml_snapshot!(content);});
     }
 
     #[test]
@@ -1471,7 +1471,7 @@ mod tests {
         insta::with_settings!({filters => vec![
             (r"==\d+\.\d+\.\d+", "==1.0.0"),
             (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
+        ]}, { assert_yaml_snapshot!(content);});
     }
 
     #[test]
@@ -1492,7 +1492,7 @@ mod tests {
         insta::with_settings!({filters => vec![
             (r"==\d+\.\d+\.\d+", "==1.0.0"),
             (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
+        ]}, { assert_yaml_snapshot!(content);});
     }
 
     #[test]
@@ -1513,7 +1513,7 @@ mod tests {
         insta::with_settings!({filters => vec![
             (r"==\d+\.\d+\.\d+", "==1.0.0"),
             (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
+        ]}, { assert_yaml_snapshot!(content);});
     }
 
     #[test]
@@ -1534,7 +1534,7 @@ mod tests {
         insta::with_settings!({filters => vec![
             (r"==\d+\.\d+\.\d+", "==1.0.0"),
             (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
+        ]}, { assert_yaml_snapshot!(content);});
     }
 
     #[test]
@@ -1555,7 +1555,7 @@ mod tests {
         insta::with_settings!({filters => vec![
             (r"==\d+\.\d+\.\d+", "==1.0.0"),
             (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
+        ]}, { assert_yaml_snapshot!(content);});
     }
 
     #[test]
@@ -1576,7 +1576,7 @@ mod tests {
         insta::with_settings!({filters => vec![
             (r"==\d+\.\d+\.\d+", "==1.0.0"),
             (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
+        ]}, { assert_yaml_snapshot!(content);});
     }
 
     #[test]
@@ -1597,7 +1597,7 @@ mod tests {
         insta::with_settings!({filters => vec![
             (r"==\d+\.\d+\.\d+", "==1.0.0"),
             (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
+        ]}, { assert_yaml_snapshot!(content);});
     }
 
     #[test]
@@ -1618,7 +1618,7 @@ mod tests {
         insta::with_settings!({filters => vec![
             (r"==\d+\.\d+\.\d+", "==1.0.0"),
             (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
+        ]}, { assert_yaml_snapshot!(content);});
     }
 
     #[test]
@@ -1639,7 +1639,7 @@ mod tests {
         insta::with_settings!({filters => vec![
             (r"==\d+\.\d+\.\d+", "==1.0.0"),
             (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
+        ]}, { assert_yaml_snapshot!(content);});
     }
 
     #[test]
@@ -1660,7 +1660,7 @@ mod tests {
         insta::with_settings!({filters => vec![
             (r"==\d+\.\d+\.\d+", "==1.0.0"),
             (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
+        ]}, { assert_yaml_snapshot!(content);});
     }
 
     #[test]
@@ -1678,7 +1678,7 @@ mod tests {
 
         insta::with_settings!({filters => vec![
             (r"\d+\.\d+\.\d+", "1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
+        ]}, { assert_yaml_snapshot!(content);});
     }
 
     #[test]
@@ -1781,7 +1781,7 @@ mod tests {
         insta::with_settings!({filters => vec![
             (r"==\d+\.\d+\.\d+", "==1.0.0"),
             (r">=\d+\.\d+\.\d+", ">=1.0.0"),
-        ]}, { assert_yaml_snapshot!(content)});
+        ]}, { assert_yaml_snapshot!(content);});
     }
 
     #[cfg(feature = "fastapi")]
