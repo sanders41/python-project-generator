@@ -11,9 +11,6 @@ use time::OffsetDateTime;
 
 use crate::config::Config;
 
-#[cfg(feature = "fastapi")]
-use crate::utils::is_allowed_fastapi_python_version;
-
 #[derive(Clone, Debug, Default, Deserialize, Serialize, ValueEnum, PartialEq, Eq)]
 pub enum DependabotSchedule {
     #[default]
@@ -625,7 +622,7 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
 
     let python_version_default = match config.python_version {
         Some(python) => python,
-        None => "3.14".to_string(),
+        None => "3.15".to_string(),
     };
     let python_version = if use_defaults {
         python_version_default
@@ -633,31 +630,11 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
         python_version_prompt(python_version_default)?
     };
 
-    #[cfg(feature = "fastapi")]
-    if is_fastapi_project && !is_allowed_fastapi_python_version(&python_version)? {
-        bail!("The minimum supported Python version for FastAPI projects is 3.11");
-    }
-
     let min_python_version_default = {
-        #[cfg(feature = "fastapi")]
-        {
-            if is_fastapi_project {
-                match config.min_python_version {
-                    Some(python) => python,
-                    None => "3.11".to_string(),
-                }
-            } else {
-                match config.min_python_version {
-                    Some(python) => python,
-                    None => "3.10".to_string(),
-                }
-            }
-        }
-        #[cfg(not(feature = "fastapi"))]
         {
             match config.min_python_version {
                 Some(python) => python,
-                None => "3.10".to_string(),
+                None => "3.11".to_string(),
             }
         }
     };
@@ -667,11 +644,6 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
     } else {
         python_min_version_prompt(min_python_version_default)?
     };
-
-    #[cfg(feature = "fastapi")]
-    if is_fastapi_project && !is_allowed_fastapi_python_version(&min_python_version)? {
-        bail!("The minimum supported Python version for FastAPI projects is 3.11");
-    }
 
     let github_actions_python_test_version_default =
         match config.github_actions_python_test_versions {
@@ -685,42 +657,21 @@ pub fn get_project_info(use_defaults: bool) -> Result<ProjectInfo> {
                     } else {
                         let mut versions: Vec<String> = Vec::new();
 
-                        // Up to 3.14
-                        for i in min..15 {
+                        // Up to 3.15
+                        for i in min..16 {
                             versions.push(format!("3.{i}"));
                         }
 
                         versions
                     }
                 } else {
-                    #[cfg(feature = "fastapi")]
-                    if is_fastapi_project {
-                        vec![
-                            "3.11".to_string(),
-                            "3.12".to_string(),
-                            "3.13".to_string(),
-                            "3.14".to_string(),
-                        ]
-                    } else {
-                        vec![
-                            "3.10".to_string(),
-                            "3.11".to_string(),
-                            "3.12".to_string(),
-                            "3.13".to_string(),
-                            "3.14".to_string(),
-                        ]
-                    }
-
-                    #[cfg(not(feature = "fastapi"))]
-                    {
-                        vec![
-                            "3.10".to_string(),
-                            "3.11".to_string(),
-                            "3.12".to_string(),
-                            "3.13".to_string(),
-                            "3.14".to_string(),
-                        ]
-                    }
+                    vec![
+                        "3.11".to_string(),
+                        "3.12".to_string(),
+                        "3.13".to_string(),
+                        "3.14".to_string(),
+                        "3.15".to_string(),
+                    ]
                 }
             }
         };
@@ -1056,7 +1007,7 @@ mod tests {
 
     #[test]
     fn test_valid_two_digit_python_version() {
-        assert!(is_valid_python_version("3.10"));
+        assert!(is_valid_python_version("3.11"));
     }
 
     #[test]
@@ -1091,6 +1042,6 @@ mod tests {
 
     #[test]
     fn test_invalid_python_version_non_numeric_patch() {
-        assert!(!is_valid_python_version("3.10.a"));
+        assert!(!is_valid_python_version("3.11.a"));
     }
 }
